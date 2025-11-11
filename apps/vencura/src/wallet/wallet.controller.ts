@@ -29,6 +29,28 @@ import { SendTransactionDto } from './dto/send-transaction.dto';
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all wallets for the authenticated user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Wallets retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          address: { type: 'string' },
+          network: { type: 'string' },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getWallets(@CurrentUser() user: { id: string; email: string }) {
+    return this.walletService.getUserWallets(user.id);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new custodial wallet' })

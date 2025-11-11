@@ -9,7 +9,8 @@ import {
   type LocalAccount,
   type Hex,
   type TypedData,
-  type TransactionRequest,
+  type SignableMessage,
+  type TransactionSerializable,
 } from 'viem';
 import { arbitrumSepolia } from 'viem/chains';
 import type { DynamicEvmWalletClient } from '@dynamic-labs-wallet/node-evm';
@@ -87,6 +88,19 @@ export class WalletService {
       address: wallet.accountAddress,
       network,
     };
+  }
+
+  async getUserWallets(userId: string) {
+    const wallets = await this.db
+      .select({
+        id: schema.wallets.id,
+        address: schema.wallets.address,
+        network: schema.wallets.network,
+      })
+      .from(schema.wallets)
+      .where(eq(schema.wallets.userId, userId));
+
+    return wallets;
   }
 
   async getBalance(walletId: string, userId: string) {
@@ -182,17 +196,29 @@ export class WalletService {
 
     const dynamicEvmClient = await this.getDynamicEvmClient();
 
+    // Helper to convert SignableMessage to string for Dynamic SDK
+    const messageToString = (message: SignableMessage): string => {
+      if (typeof message === 'string') return message;
+      if (message instanceof Uint8Array) {
+        return new TextDecoder().decode(message);
+      }
+      if ('raw' in message) {
+        if (typeof message.raw === 'string') return message.raw;
+        return new TextDecoder().decode(message.raw);
+      }
+      return String(message);
+    };
+
     // Create a wallet account that can sign transactions
     const account = {
       address: wallet.address as `0x${string}`,
-      source: 'mpc' as const,
       type: 'local' as const,
-      publicKey: '0x' as `0x${string}`,
-      signMessage: async ({ message }: { message: string | Uint8Array }) => {
+      signMessage: async ({ message }: { message: SignableMessage }) => {
+        const messageStr = messageToString(message);
         return (await dynamicEvmClient.signMessage({
           accountAddress: wallet.address,
           externalServerKeyShares,
-          message,
+          message: messageStr,
         })) as Hex;
       },
       signTypedData: async <
@@ -206,14 +232,20 @@ export class WalletService {
           typedData: parameters,
         })) as Hex;
       },
-      signTransaction: async (transaction: TransactionRequest) => {
+      signTransaction: async <
+        serializer extends any = any,
+        transaction extends TransactionSerializable = TransactionSerializable,
+      >(
+        transaction: transaction,
+        _options?: { serializer?: serializer },
+      ) => {
         return (await dynamicEvmClient.signTransaction({
           senderAddress: wallet.address,
           externalServerKeyShares,
-          transaction,
+          transaction: transaction as any,
         })) as Hex;
       },
-    } satisfies LocalAccount;
+    } as LocalAccount;
 
     const walletClient = createWalletClient({
       account,

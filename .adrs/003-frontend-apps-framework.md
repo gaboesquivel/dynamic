@@ -38,22 +38,32 @@ Full-stack React framework with file-based routing.
 
 ### Option B – TanStack Start
 
-Full-stack React framework with file-based routing and streaming SSR.
+Full-stack React framework with file-based routing and streaming SSR, built by the TanStack team.
 
 **Pros**
 
-- Streaming SSR capabilities
-- Modern React patterns
-- File-based routing
+- Streaming SSR capabilities with excellent performance
+- Modern React patterns and hooks-first approach
+- File-based routing similar to Next.js
+- Built on Vite for fast development and builds
+- Strong TypeScript support
+- Flexible and unopinionated architecture
+- Excellent developer experience with TanStack Router integration
+- Lightweight compared to Next.js
+- Good integration with TanStack ecosystem (Query, Router, etc.)
+- Built-in support for React Server Components
+- Progressive enhancement and streaming capabilities
 
 **Cons**
 
-- Newer framework with smaller ecosystem
-- Less community resources and examples
+- Newer framework with smaller ecosystem compared to Next.js
+- Less community resources, documentation, and examples
 - Fewer third-party integrations and plugins
-- Team familiarity with Next.js
+- Team familiarity with Next.js may require learning curve
 - Next.js has more mature tooling and IDE support
-- Better integration with design tools and prototyping platforms
+- Better integration with design tools and prototyping platforms in Next.js
+- Less battle-tested at scale compared to Next.js
+- Fewer deployment options and hosting integrations
 
 ### Option C – Remix
 

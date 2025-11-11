@@ -16,7 +16,9 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Vencura API')
-    .setDescription('Custodial wallet API for Vencura')
+    .setDescription(
+      'Custodial wallet API for Vencura. Get your authentication token from the vencura-ui frontend after logging in with Dynamic, then paste it here.',
+    )
     .setVersion('1.0')
     .addBearerAuth(
       {
@@ -24,7 +26,8 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         name: 'JWT',
-        description: 'Enter Dynamic authentication token',
+        description:
+          'Get token from vencura-ui frontend after Dynamic login, then paste here',
         in: 'header',
       },
       'JWT-auth',
