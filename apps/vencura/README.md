@@ -1,98 +1,230 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Vencura API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A custodial wallet backend API built with NestJS, Dynamic authentication, Viem, and PGLite.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+Vencura is a backend API that enables users to create and manage custodial Ethereum wallets. It provides secure wallet operations including balance queries, message signing, and transaction sending on the Arbitrum Sepolia testnet.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+- **Dynamic Authentication**: Secure user authentication using `@dynamic-labs/sdk-api`
+- **Dynamic Wallets**: Server-side wallet management using `@dynamic-labs-wallet/node-evm`
+- **Custodial Wallets**: Create and manage Ethereum wallets on the backend
+- **Blockchain Operations**:
+  - Get wallet balance
+  - Sign messages with wallet private keys
+  - Send transactions on Arbitrum Sepolia testnet
+- **Database**: PGLite with DrizzleORM for lightweight, embedded database
+- **API Documentation**: Interactive Swagger UI at `/api`
+- **Security**: AES-256-GCM encryption for private key storage
+- **Testing**: Comprehensive unit and E2E tests
 
-```bash
-$ npm install
-```
+## Tech Stack
 
-## Compile and run the project
+- **Framework**: NestJS
+- **Authentication**: Dynamic Labs SDK Client
+- **Blockchain**: Viem
+- **Database**: PGLite with DrizzleORM
+- **API Documentation**: Swagger/OpenAPI
 
-```bash
-# development
-$ npm run start
+## Getting Started
 
-# watch mode
-$ npm run start:dev
+### Prerequisites
 
-# production mode
-$ npm run start:prod
-```
+- Node.js >= 20.0.0
+- pnpm (package manager)
 
-## Run tests
+### Installation
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+pnpm install
 ```
 
-## Deployment
+### Environment Variables
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Create a `.env` file in the root directory:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+```env
+PORT=3000
+DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id
+DYNAMIC_API_TOKEN=your_dynamic_api_token
+ARBITRUM_SEPOLIA_RPC_URL=https://arbitrum-sepolia.infura.io/v3/91de7ed3c17344cc95f8ea31bf6b3adf
+ENCRYPTION_KEY=your_encryption_key_32_chars_minimum
+```
+
+**Required Environment Variables:**
+
+- `DYNAMIC_ENVIRONMENT_ID`: Your Dynamic environment ID from the Dynamic dashboard
+- `DYNAMIC_API_TOKEN`: Your Dynamic API token for server-side authentication
+- `ARBITRUM_SEPOLIA_RPC_URL`: RPC endpoint for Arbitrum Sepolia testnet (default provided)
+- `ENCRYPTION_KEY`: Encryption key for private keys (minimum 32 characters)
+
+### Running the Application
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Development mode
+pnpm run start:dev
+
+# Production mode
+pnpm run build
+pnpm run start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+The API will be available at `http://localhost:3000`
 
-## Resources
+### Access Swagger UI
 
-Check out a few resources that may come in handy when working with NestJS:
+Once the server is running, visit `http://localhost:3000/api` to access the interactive Swagger UI documentation and test the API endpoints.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## API Endpoints
 
-## Support
+All endpoints require Bearer token authentication (Dynamic auth token).
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### Create Wallet
 
-## Stay in touch
+```http
+POST /wallets
+Authorization: Bearer <dynamic-auth-token>
+Content-Type: application/json
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+{
+  "network": "arbitrum-sepolia"
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": "wallet-uuid",
+  "address": "0x...",
+  "network": "arbitrum-sepolia"
+}
+```
+
+### Get Balance
+
+```http
+GET /wallets/:id/balance
+Authorization: Bearer <dynamic-auth-token>
+```
+
+**Response:**
+
+```json
+{
+  "balance": 0.5
+}
+```
+
+### Sign Message
+
+```http
+POST /wallets/:id/sign
+Authorization: Bearer <dynamic-auth-token>
+Content-Type: application/json
+
+{
+  "message": "Hello, World!"
+}
+```
+
+**Response:**
+
+```json
+{
+  "signedMessage": "0x..."
+}
+```
+
+### Send Transaction
+
+```http
+POST /wallets/:id/send
+Authorization: Bearer <dynamic-auth-token>
+Content-Type: application/json
+
+{
+  "to": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+  "amount": 0.001
+}
+```
+
+**Response:**
+
+```json
+{
+  "transactionHash": "0x..."
+}
+```
+
+## Testing
+
+```bash
+# Unit tests
+pnpm run test
+
+# Watch mode
+pnpm run test:watch
+
+# E2E tests
+pnpm run test:e2e
+
+# Test coverage
+pnpm run test:cov
+```
+
+## Database
+
+The application uses PGLite, an embedded PostgreSQL database. Database schemas are defined using DrizzleORM.
+
+### Database Commands
+
+```bash
+# Generate migrations
+pnpm run db:generate
+
+# Run migrations
+pnpm run db:migrate
+```
+
+## Project Structure
+
+```
+src/
+├── auth/              # Authentication module
+│   ├── auth.service.ts
+│   ├── auth.guard.ts
+│   └── decorators/
+├── wallet/            # Wallet module
+│   ├── wallet.service.ts
+│   ├── wallet.controller.ts
+│   └── dto/
+├── database/          # Database module
+│   ├── database.module.ts
+│   └── schema/
+├── common/            # Shared services
+│   └── encryption.service.ts
+├── config/            # Configuration
+│   └── configuration.ts
+└── main.ts           # Application entry point
+```
+
+## Security Considerations
+
+- Private keys are encrypted using AES-256-GCM before storage
+- All API endpoints require Dynamic authentication
+- Users can only access their own wallets
+- Encryption key should be kept secure and never committed to version control
+
+## Architecture Decisions
+
+- **PGLite**: Chosen for lightweight, embedded database that doesn't require external PostgreSQL server
+- **Viem**: Modern TypeScript-first library for Ethereum interactions
+- **DrizzleORM**: Type-safe ORM with excellent TypeScript support
+- **Dynamic SDK**: Provides secure authentication and user management
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+PROPRIETARY
