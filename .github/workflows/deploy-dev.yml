@@ -27,7 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -120,7 +120,7 @@ jobs:
       - name: Build Docker image
         working-directory: ./apps/vencura
         run: |
-          COMMIT_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          COMMIT_SHA="${{ github.event.workflow_run.head_sha }}"
           IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:$COMMIT_SHA"
           docker build -t $IMAGE_TAG .
           docker push $IMAGE_TAG
@@ -491,7 +491,7 @@ jobs:
             const url = '${{ steps.service-url.outputs.url }}';
             const customDomain = process.env.CUSTOM_DOMAIN || '';
             const prNumber = '${{ steps.deployment.outputs.pr_number }}';
-            const commitSha = '${{ github.event.workflow_run.head_sha || github.sha }}';
+            const commitSha = '${{ github.event.workflow_run.head_sha }}';
             const commitShortSha = commitSha.substring(0, 7);
             
             let body = `🚀 **Ephemeral deployment ready!**
