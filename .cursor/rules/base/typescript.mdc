@@ -13,7 +13,7 @@ alwaysApply: false
 - Use lowercase-with-dashes for directories (e.g., `components/auth-wizard`)
 - Favor named exports for components
 - Use functional & declarative programming patterns; avoid classes
-- Infer types and keep them inline unless you need to reuse them
+pn- Infer types and keep them inline unless you need to reuse them
 
 ## Code Style
 - **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
