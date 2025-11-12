@@ -1,0 +1,26 @@
+{
+  "name": "@vencura/core",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "description": "TypeScript SDK for Vencura API",
+  "license": "PROPRIETARY",
+  "scripts": {
+    "build": "pnpm generate-sdk",
+    "generate-sdk": "ts-node --esm scripts/generate-sdk.ts",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.32.0",
+    "swagger-typescript-api": "^13.2.16",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
+
