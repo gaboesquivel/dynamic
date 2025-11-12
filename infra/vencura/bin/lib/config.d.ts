@@ -12,6 +12,7 @@ export interface Config {
     cloudSqlBackupEnabled: boolean;
     cloudSqlHaEnabled: boolean;
     imageTag: string;
+    cloudflareBaseDomain: string;
 }
 export declare function getConfig(): Config;
 export declare function resourceName(config: Config, resource: string): string;

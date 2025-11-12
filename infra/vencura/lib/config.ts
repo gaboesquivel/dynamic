@@ -14,6 +14,7 @@ export interface Config {
   cloudSqlBackupEnabled: boolean;
   cloudSqlHaEnabled: boolean;
   imageTag: string;
+  cloudflareBaseDomain: string;
 }
 
 export function getConfig(): Config {
@@ -30,6 +31,10 @@ export function getConfig(): Config {
   const zone = gcpConfig.get('zone') || `${region}-a`;
   const environment = config.get('environment') || 'dev';
   const appName = 'vencura';
+  const cloudflareBaseDomain =
+    process.env.CLOUDFLARE_BASE_DOMAIN ||
+    config.get('cloudflareBaseDomain') ||
+    'gaboesquivel.com';
 
   return {
     projectId,
@@ -45,6 +50,7 @@ export function getConfig(): Config {
     cloudSqlBackupEnabled: config.getBoolean('cloudSqlBackupEnabled') || false,
     cloudSqlHaEnabled: config.getBoolean('cloudSqlHaEnabled') || false,
     imageTag: config.get('imageTag') || 'latest',
+    cloudflareBaseDomain,
   };
 }
 
