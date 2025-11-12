@@ -51,16 +51,12 @@ export class SolanaWalletClient extends BaseWalletClient {
   }
 
   private async getDynamicSvmClient(): Promise<DynamicSvmWalletClient> {
-    if (this.dynamicSvmClient) {
-      return this.dynamicSvmClient
-    }
+    if (this.dynamicSvmClient) return this.dynamicSvmClient
 
     const environmentId = this.configService.get<string>('dynamic.environmentId')
     const apiToken = this.configService.get<string>('dynamic.apiToken')
 
-    if (!environmentId || !apiToken) {
-      throw new Error('Dynamic configuration is not set')
-    }
+    if (!environmentId || !apiToken) throw new Error('Dynamic configuration is not set')
 
     const { DynamicSvmWalletClient: DynamicSvmWalletClientClass } = await import(
       '@dynamic-labs-wallet/node-svm'
@@ -74,9 +70,7 @@ export class SolanaWalletClient extends BaseWalletClient {
   }
 
   private getConnection(): Connection {
-    if (this.connection) {
-      return this.connection
-    }
+    if (this.connection) return this.connection
 
     // Get RPC URL with priority: custom env var > Dynamic default > Solana default
     const customRpcUrl = this.configService.get<string>(
@@ -94,10 +88,8 @@ export class SolanaWalletClient extends BaseWalletClient {
   async createWallet(): Promise<CreateWalletResult> {
     const dynamicSvmClient = await this.getDynamicSvmClient()
 
-    const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')
-
     const wallet = await dynamicSvmClient.createWalletAccount({
-      thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
+      thresholdSignatureScheme: 'TWO_OF_TWO',
       backUpToClientShareService: false,
     })
 
