@@ -65,6 +65,7 @@ export class SolanaWalletClient extends BaseWalletClient {
     const { DynamicSvmWalletClient: DynamicSvmWalletClientClass } = await import(
       '@dynamic-labs-wallet/node-svm'
     )
+
     this.dynamicSvmClient = new DynamicSvmWalletClientClass({
       environmentId,
     }) as DynamicSvmWalletClient
@@ -171,13 +172,15 @@ export class SolanaWalletClient extends BaseWalletClient {
 
     // Send transaction - Dynamic SDK may return Transaction object or serialized Buffer
     let signature: string
-    if (Buffer.isBuffer(signedTransaction)) {
+    if (signedTransaction instanceof Transaction) {
+      // Serialize the transaction and send as raw transaction
+      signature = await connection.sendRawTransaction(signedTransaction.serialize())
+    } else if (Buffer.isBuffer(signedTransaction)) {
       signature = await connection.sendRawTransaction(signedTransaction)
     } else {
-      // Dynamic SDK returns a Transaction object - serialize it for sendRawTransaction
+      // Try to serialize if it's a Transaction-like object
       const tx = signedTransaction as Transaction
-      const serialized = tx.serialize()
-      signature = await connection.sendRawTransaction(serialized)
+      signature = await connection.sendRawTransaction(tx.serialize())
     }
 
     // Wait for confirmation

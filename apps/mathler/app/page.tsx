@@ -1,12 +1,20 @@
-import { Button } from '@workspace/ui/components/button'
+'use client'
 
-export default function Page() {
+import { useState, useEffect } from 'react'
+import MathlerGame from '@/components/mathler-game'
+
+export default function Home() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
+
   return (
-    <div className="flex items-center justify-center min-h-svh">
-      <div className="flex flex-col items-center justify-center gap-4">
-        <h1 className="text-2xl font-bold">Hello World</h1>
-        <Button size="sm">Button</Button>
-      </div>
-    </div>
+    <main className="min-h-screen bg-background flex items-center justify-center p-4">
+      <MathlerGame />
+    </main>
   )
 }

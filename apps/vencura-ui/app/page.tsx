@@ -9,6 +9,7 @@ import * as React from 'react'
 
 export default function Page() {
   const { user } = useDynamicContext()
+  const isAuthenticated = !!user
   const [showToken, setShowToken] = useState(false)
   const [copied, setCopied] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
@@ -67,8 +68,7 @@ export default function Page() {
                   </p>
                   {user.userId && (
                     <p>
-                      <span className="text-muted-foreground">User ID:</span>{' '}
-                      {user.userId}
+                      <span className="text-muted-foreground">User ID:</span> {user.userId}
                     </p>
                   )}
                 </div>
