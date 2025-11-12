@@ -713,15 +713,17 @@ The infrastructure is fully integrated with GitHub Actions workflows. See the [I
 **Persistent Dev Deployments:**
 
 - **Trigger**: Push to `main` branch
-- **What's Automated**: ✅ Builds image, pushes to registry, runs `pulumi preview`, runs `pulumi up`, updates Cloud Run service, retrieves outputs
-- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources)
+- **What's Automated**: ✅ Runs `pulumi preview`, runs `pulumi up` (which builds Docker image, pushes to registry, and updates Cloud Run service), retrieves outputs
+- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources including Docker builds)
+- **Docker Builds**: Handled automatically by Pulumi during `pulumi up` - no manual build/push steps needed
 - **Manual Steps**: ❌ None - fully automated (after initial setup)
 
 **Production Deployments:**
 
 - **Trigger**: Manual workflow dispatch (requires typing "deploy" to confirm)
-- **What's Automated**: ✅ Validates confirmation, builds image, pushes to registry, runs `pulumi preview`, runs `pulumi up`, updates Cloud Run service, runs health checks, retrieves outputs
-- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources)
+- **What's Automated**: ✅ Validates confirmation, runs `pulumi preview`, runs `pulumi up` (which builds Docker image, pushes to registry, and updates Cloud Run service), runs health checks, retrieves outputs
+- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources including Docker builds)
+- **Docker Builds**: Handled automatically by Pulumi during `pulumi up` - no manual build/push steps needed
 - **Manual Steps**: ✅ Manual trigger only (safety measure) - everything else is automated
 
 ## Cloudflare Custom Domain Setup
@@ -928,12 +930,19 @@ pulumi stack output
 
 **Issue**: `Image 'us-central1-docker.pkg.dev/.../vencura:latest' not found` (when running `pulumi up` locally)
 
-- **Solution**: Pulumi now automatically builds and pushes Docker images when running locally. Make sure:
-  1. Docker is installed and running
-  2. You're authenticated with GCP: `gcloud auth application-default login`
-  3. Docker is configured for Artifact Registry: `gcloud auth configure-docker REGION-docker.pkg.dev` (replace REGION with your region, e.g., `us-central1`)
-  4. The image will be built automatically before Cloud Run service creation
-  5. **Note**: In CI/CD, image building is skipped (GitHub workflows handle it), so this only applies to local development
+- **Solution**: Pulumi automatically builds and pushes Docker images:
+  - **Local Development**: 
+    1. Docker is installed and running
+    2. You're authenticated with GCP: `gcloud auth application-default login`
+    3. Docker is configured for Artifact Registry: `gcloud auth configure-docker REGION-docker.pkg.dev` (replace REGION with your region, e.g., `us-central1`)
+    4. The image will be built automatically during `pulumi up`
+  - **CI/CD (Persistent Deployments)**: 
+    - Pulumi handles Docker builds automatically during `pulumi up`
+    - Image tag is set from commit SHA via `GCP_IMAGE_TAG` environment variable
+    - No manual Docker build/push steps needed
+  - **CI/CD (Ephemeral PR Deployments)**: 
+    - Uses `gcloud` commands directly (no Pulumi)
+    - Docker authentication handled via `gcloud auth print-access-token`
 
 ## Architecture Diagrams
 

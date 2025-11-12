@@ -58,10 +58,6 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker $REGION-docker.pkg.dev
-
       - name: Install Pulumi
         uses: pulumi/actions@v4
 
@@ -72,13 +68,6 @@ jobs:
           echo "Running database migrations..."
           # gcloud run jobs execute vencura-migrations --region $REGION
 
-      - name: Build Docker image
-        run: |
-          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:prod"
-          docker build -t $IMAGE_TAG -f apps/vencura/Dockerfile .
-          docker push $IMAGE_TAG
-          echo "image=$IMAGE_TAG" >> $GITHUB_ENV
-
       - name: Install infrastructure dependencies
         working-directory: ./infra/vencura
         run: |
@@ -88,6 +77,7 @@ jobs:
         working-directory: ./infra/vencura
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GCP_IMAGE_TAG: ${{ github.sha }}
         run: |
           pulumi stack select prod
           pulumi config set gcp:project ${{ env.PROJECT_ID }} --non-interactive
@@ -99,6 +89,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
+          GCP_IMAGE_TAG: ${{ github.sha }}
         run: |
           pulumi stack select prod
           pulumi preview --non-interactive
@@ -109,6 +100,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
+          GCP_IMAGE_TAG: ${{ github.sha }}
         run: |
           pulumi stack select prod
           pulumi up --yes --non-interactive
@@ -120,6 +112,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
+          GCP_IMAGE_TAG: ${{ github.sha }}
         run: |
           pulumi stack select prod
           CLOUD_RUN_URL=$(pulumi stack output cloudRunUrl)
@@ -131,13 +124,6 @@ jobs:
           echo "db_connection=$DB_CONNECTION" >> $GITHUB_OUTPUT
           echo "vpc_connector=$VPC_CONNECTOR" >> $GITHUB_OUTPUT
           echo "service_account=$SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
-
-      - name: Update Cloud Run service with new image
-        run: |
-          gcloud run services update ${{ env.SERVICE_NAME }} \
-            --image ${{ env.image }} \
-            --region ${{ env.REGION }} \
-            --quiet
 
       - name: Health check
         run: |

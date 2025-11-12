@@ -61,9 +61,10 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for Artifact Registry
+      - name: Configure Docker for Artifact Registry (Ephemeral deployments)
+        if: steps.deployment.outputs.type == 'ephemeral' || steps.deployment.outputs.type == ''
         run: |
-          gcloud auth configure-docker $REGION-docker.pkg.dev
+          gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin $REGION-docker.pkg.dev
 
       - name: Install Pulumi
         uses: pulumi/actions@v4
@@ -133,14 +134,6 @@ jobs:
             echo "service_name=$SERVICE_NAME_DEV" >> $GITHUB_OUTPUT
             echo "use_pglite=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Build Docker image
-        run: |
-          COMMIT_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
-          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:$COMMIT_SHA"
-          docker build -t $IMAGE_TAG -f apps/vencura/Dockerfile .
-          docker push $IMAGE_TAG
-          echo "image=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Create temporary secrets for PR deployment
         if: steps.deployment.outputs.type == 'ephemeral'
@@ -216,6 +209,15 @@ jobs:
           
           echo "secret_prefix=$SECRET_PREFIX" >> $GITHUB_OUTPUT
 
+      - name: Build and push Docker image (Ephemeral PR)
+        if: steps.deployment.outputs.type == 'ephemeral'
+        run: |
+          COMMIT_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:$COMMIT_SHA"
+          docker build -t $IMAGE_TAG -f apps/vencura/Dockerfile .
+          docker push $IMAGE_TAG
+          echo "image=$IMAGE_TAG" >> $GITHUB_ENV
+
       - name: Deploy to Cloud Run (Ephemeral PR)
         if: steps.deployment.outputs.type == 'ephemeral'
         run: |
@@ -249,6 +251,7 @@ jobs:
         working-directory: ./infra/vencura
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           pulumi stack select dev
           pulumi config set gcp:project ${{ env.PROJECT_ID }} --non-interactive
@@ -261,6 +264,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
+          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           pulumi stack select dev
           pulumi preview --non-interactive
@@ -272,6 +276,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
+          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           pulumi stack select dev
           pulumi up --yes --non-interactive
@@ -284,6 +289,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
+          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           pulumi stack select dev
           CLOUD_RUN_URL=$(pulumi stack output cloudRunUrl)
@@ -295,14 +301,6 @@ jobs:
           echo "db_connection=$DB_CONNECTION" >> $GITHUB_OUTPUT
           echo "vpc_connector=$VPC_CONNECTOR" >> $GITHUB_OUTPUT
           echo "service_account=$SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
-
-      - name: Update Cloud Run service with new image
-        if: steps.deployment.outputs.type == 'persistent'
-        run: |
-          gcloud run services update ${{ steps.deployment.outputs.service_name }} \
-            --image ${{ env.image }} \
-            --region ${{ env.REGION }} \
-            --quiet
 
       - name: Get service URL
         id: service-url

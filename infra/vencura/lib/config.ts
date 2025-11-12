@@ -36,6 +36,13 @@ export function getConfig(): Config {
     config.get('cloudflareBaseDomain') ||
     'gaboesquivel.com';
 
+  // imageTag: Read from environment variable (for CI/CD with commit SHA), then Pulumi config, then default
+  const imageTag =
+    process.env.GCP_IMAGE_TAG ||
+    process.env.GITHUB_SHA?.substring(0, 7) ||
+    config.get('imageTag') ||
+    'latest';
+
   return {
     projectId,
     region,
@@ -51,7 +58,7 @@ export function getConfig(): Config {
     cloudRunMaxInstances: config.getNumber('cloudRunMaxInstances') ?? 2,
     cloudSqlBackupEnabled: config.getBoolean('cloudSqlBackupEnabled') || false,
     cloudSqlHaEnabled: config.getBoolean('cloudSqlHaEnabled') || false,
-    imageTag: config.get('imageTag') || 'latest',
+    imageTag,
     cloudflareBaseDomain,
   };
 }
