@@ -8,7 +8,8 @@ import { useState } from "react";
 import * as React from "react";
 
 export default function Page() {
-  const { user, isAuthenticated } = useDynamicContext();
+  const { user } = useDynamicContext();
+  const isAuthenticated = !!user;
   const [showToken, setShowToken] = useState(false);
   const [copied, setCopied] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -71,10 +72,10 @@ export default function Page() {
                     <span className="text-muted-foreground">Email:</span>{" "}
                     {user.email || "N/A"}
                   </p>
-                  {(user.userId || user.id) && (
+                  {user.userId && (
                     <p>
                       <span className="text-muted-foreground">User ID:</span>{" "}
-                      {user.userId || user.id || "N/A"}
+                      {user.userId}
                     </p>
                   )}
                 </div>

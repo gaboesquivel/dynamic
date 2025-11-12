@@ -5,7 +5,7 @@ import {
   PublicKey,
   LAMPORTS_PER_SOL,
   SystemProgram,
-  type Transaction,
+  Transaction,
 } from '@solana/web3.js';
 import { getDefaultRpcUrl, type ChainMetadata } from '../../common/chains';
 import {
@@ -66,6 +66,7 @@ export class SolanaWalletClient extends BaseWalletClient {
 
     const { DynamicSvmWalletClient: DynamicSvmWalletClientClass } =
       await import('@dynamic-labs-wallet/node-svm');
+
     this.dynamicSvmClient = new DynamicSvmWalletClientClass({
       environmentId,
     }) as DynamicSvmWalletClient;
@@ -175,13 +176,16 @@ export class SolanaWalletClient extends BaseWalletClient {
     // Send transaction - Dynamic SDK may return Transaction object or serialized Buffer
     let signature: string;
     if (signedTransaction instanceof Transaction) {
-      signature = await connection.sendTransaction(signedTransaction);
+      // Serialize the transaction and send as raw transaction
+      signature = await connection.sendRawTransaction(
+        signedTransaction.serialize(),
+      );
     } else if (Buffer.isBuffer(signedTransaction)) {
       signature = await connection.sendRawTransaction(signedTransaction);
     } else {
       // Try to serialize if it's a Transaction-like object
       const tx = signedTransaction as Transaction;
-      signature = await connection.sendTransaction(tx);
+      signature = await connection.sendRawTransaction(tx.serialize());
     }
 
     // Wait for confirmation

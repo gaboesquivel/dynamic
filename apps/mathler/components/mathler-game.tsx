@@ -140,9 +140,10 @@ function calculateFeedback(
   }
 
   for (let i = 0; i < guess.length; i++) {
-    if (guessChars[i] && targetChars.includes(guessChars[i])) {
+    const char = guessChars[i];
+    if (char && targetChars.includes(char)) {
       feedback[i] = "present";
-      targetChars[targetChars.indexOf(guessChars[i])] = "";
+      targetChars[targetChars.indexOf(char)] = "";
     }
   }
 

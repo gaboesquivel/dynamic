@@ -12,5 +12,5 @@ export class CreateWalletDto {
     ],
   })
   @IsNotEmpty()
-  chainId: number | string;
+  chainId!: number | string;
 }
