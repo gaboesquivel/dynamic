@@ -119,7 +119,7 @@ export class CreateWalletDto {
     example: 'arbitrum-sepolia',
     description: 'Blockchain network',
   })
-  network?: string; // ⚠️ No validation
+  network?: string // ⚠️ No validation
 }
 ```
 
@@ -191,7 +191,7 @@ network?: string = 'arbitrum-sepolia';
 
 ```typescript
 // In main.ts or app configuration
-app.use(express.json({ limit: '10kb' })); // Reasonable limit for API
+app.use(express.json({ limit: '10kb' })) // Reasonable limit for API
 ```
 
 **Priority**: High (1 week)
@@ -297,10 +297,10 @@ app.use(express.json({ limit: '10kb' })); // Reasonable limit for API
 
 ```typescript
 // Instead of:
-throw new Error('ARBITRUM_SEPOLIA_RPC_URL is not set');
+throw new Error('ARBITRUM_SEPOLIA_RPC_URL is not set')
 
 // Use:
-throw new InternalServerErrorException('Configuration error');
+throw new InternalServerErrorException('Configuration error')
 // Log detailed error server-side
 ```
 
@@ -355,7 +355,7 @@ throw new InternalServerErrorException('Configuration error');
 **Remediation**:
 
 ```typescript
-import helmet from 'helmet';
+import helmet from 'helmet'
 
 app.use(
   helmet({
@@ -370,7 +370,7 @@ app.use(
       preload: true,
     },
   }),
-);
+)
 ```
 
 **Priority**: Medium (1 month)

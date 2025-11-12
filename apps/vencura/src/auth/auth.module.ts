@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { AuthService } from './auth.service';
-import { AuthGuard } from './auth.guard';
+import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
+import { AuthService } from './auth.service'
+import { AuthGuard } from './auth.guard'
 
 @Module({
   imports: [ConfigModule],

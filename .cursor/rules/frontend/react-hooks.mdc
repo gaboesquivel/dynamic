@@ -10,6 +10,11 @@ alwaysApply: false
 - Use useAsync/useAsyncFn for one-off async operations
 - Follow hooks naming conventions (use-kebab-case.ts)
 
+## Code Style
+- **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
+- Multi-line if statements must use brackets
+- Prefer one-liners for simple conditional logic
+
 ## TanStack Query Patterns
 ```tsx
 import { useQuery, useMutation } from '@tanstack/react-query'

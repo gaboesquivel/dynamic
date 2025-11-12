@@ -1,118 +1,105 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { Button } from "@workspace/ui/components/button";
-import {
-  getBalance,
-  signMessage,
-  sendTransaction,
-  type Wallet,
-} from "@/lib/api-client";
-import { getChainByNetworkId, isValidAddress } from "@/lib/chains";
+import { useState } from 'react'
+import { Button } from '@workspace/ui/components/button'
+import { getBalance, signMessage, sendTransaction, type Wallet } from '@/lib/api-client'
+import { getChainByNetworkId, isValidAddress } from '@/lib/chains'
 
 type WalletCardProps = {
-  wallet: Wallet;
-  onRefresh?: () => Promise<void> | void;
-};
+  wallet: Wallet
+  onRefresh?: () => Promise<void> | void
+}
 
 export function WalletCard({ wallet, onRefresh }: WalletCardProps) {
-  const [balance, setBalance] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
-  const [signedMessage, setSignedMessage] = useState<string | null>(null);
-  const [txTo, setTxTo] = useState("");
-  const [txAmount, setTxAmount] = useState("");
-  const [txHash, setTxHash] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState('')
+  const [signedMessage, setSignedMessage] = useState<string | null>(null)
+  const [txTo, setTxTo] = useState('')
+  const [txAmount, setTxAmount] = useState('')
+  const [txHash, setTxHash] = useState<string | null>(null)
 
   const handleGetBalance = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const result = await getBalance(wallet.id);
-      setBalance(result.balance);
+      const result = await getBalance(wallet.id)
+      setBalance(result.balance)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to get balance");
+      setError(err instanceof Error ? err.message : 'Failed to get balance')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSignMessage = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+    e?.preventDefault()
     if (!message.trim()) {
-      setError("Please enter a message to sign");
-      return;
+      setError('Please enter a message to sign')
+      return
     }
-    setLoading(true);
-    setError(null);
-    setSignedMessage(null);
+    setLoading(true)
+    setError(null)
+    setSignedMessage(null)
     try {
-      const result = await signMessage(wallet.id, message.trim());
-      setSignedMessage(result.signedMessage);
+      const result = await signMessage(wallet.id, message.trim())
+      setSignedMessage(result.signedMessage)
       // Clear message after successful sign
-      setMessage("");
+      setMessage('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sign message");
+      setError(err instanceof Error ? err.message : 'Failed to sign message')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const chainInfo = getChainByNetworkId(wallet.network);
-  const currency =
-    chainInfo?.currency || (wallet.chainType === "solana" ? "SOL" : "ETH");
+  const chainInfo = getChainByNetworkId(wallet.network)
+  const currency = chainInfo?.currency || (wallet.chainType === 'solana' ? 'SOL' : 'ETH')
 
   const handleSendTransaction = async () => {
     if (!txTo.trim() || !txAmount.trim()) {
-      setError("Please enter recipient address and amount");
-      return;
+      setError('Please enter recipient address and amount')
+      return
     }
     if (!isValidAddress(txTo.trim(), wallet.chainType)) {
       const addressFormat =
-        wallet.chainType === "solana"
-          ? "Solana address"
-          : "Ethereum address (0x...)";
-      setError(`Please enter a valid ${addressFormat}`);
-      return;
+        wallet.chainType === 'solana' ? 'Solana address' : 'Ethereum address (0x...)'
+      setError(`Please enter a valid ${addressFormat}`)
+      return
     }
-    const amount = parseFloat(txAmount);
+    const amount = parseFloat(txAmount)
     if (isNaN(amount) || amount <= 0) {
-      setError("Please enter a valid amount greater than 0");
-      return;
+      setError('Please enter a valid amount greater than 0')
+      return
     }
-    setLoading(true);
-    setError(null);
-    setTxHash(null);
+    setLoading(true)
+    setError(null)
+    setTxHash(null)
     try {
-      const result = await sendTransaction(wallet.id, txTo.trim(), amount);
-      setTxHash(result.transactionHash);
-      setTxTo("");
-      setTxAmount("");
+      const result = await sendTransaction(wallet.id, txTo.trim(), amount)
+      setTxHash(result.transactionHash)
+      setTxTo('')
+      setTxAmount('')
       // Refresh balance after transaction
-      await handleGetBalance();
+      await handleGetBalance()
       if (onRefresh) {
-        await onRefresh();
+        await onRefresh()
       }
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to send transaction",
-      );
+      setError(err instanceof Error ? err.message : 'Failed to send transaction')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="border rounded-lg p-4 space-y-4">
       <div>
         <h3 className="font-semibold">Wallet Address</h3>
-        <p className="text-sm text-muted-foreground font-mono break-all">
-          {wallet.address}
-        </p>
+        <p className="text-sm text-muted-foreground font-mono break-all">{wallet.address}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Network: {chainInfo?.name || wallet.network}{" "}
-          {chainInfo?.testnet && "(Testnet)"}
+          Network: {chainInfo?.name || wallet.network} {chainInfo?.testnet && '(Testnet)'}
         </p>
         {wallet.chainType && (
           <p className="text-xs text-muted-foreground">
@@ -123,17 +110,12 @@ export function WalletCard({ wallet, onRefresh }: WalletCardProps) {
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Button
-            onClick={handleGetBalance}
-            disabled={loading}
-            size="sm"
-            variant="outline"
-          >
+          <Button onClick={handleGetBalance} disabled={loading} size="sm" variant="outline">
             Get Balance
           </Button>
           {balance !== null && (
             <span className="text-sm">
-              Balance:{" "}
+              Balance:{' '}
               <strong>
                 {balance} {currency}
               </strong>
@@ -148,9 +130,9 @@ export function WalletCard({ wallet, onRefresh }: WalletCardProps) {
           <input
             type="text"
             value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              setError(null);
+            onChange={e => {
+              setMessage(e.target.value)
+              setError(null)
             }}
             placeholder="Enter message to sign"
             className="flex-1 px-3 py-2 border rounded-md text-sm"
@@ -162,12 +144,8 @@ export function WalletCard({ wallet, onRefresh }: WalletCardProps) {
         </form>
         {signedMessage && (
           <div className="mt-2">
-            <p className="text-xs text-muted-foreground mb-1">
-              Signed Message:
-            </p>
-            <p className="text-xs font-mono break-all bg-muted p-2 rounded">
-              {signedMessage}
-            </p>
+            <p className="text-xs text-muted-foreground mb-1">Signed Message:</p>
+            <p className="text-xs font-mono break-all bg-muted p-2 rounded">{signedMessage}</p>
           </div>
         )}
       </div>
@@ -178,14 +156,14 @@ export function WalletCard({ wallet, onRefresh }: WalletCardProps) {
           <input
             type="text"
             value={txTo}
-            onChange={(e) => {
-              setTxTo(e.target.value);
-              setError(null);
+            onChange={e => {
+              setTxTo(e.target.value)
+              setError(null)
             }}
             placeholder={
-              wallet.chainType === "solana"
-                ? "Recipient address (Solana)"
-                : "Recipient address (0x...)"
+              wallet.chainType === 'solana'
+                ? 'Recipient address (Solana)'
+                : 'Recipient address (0x...)'
             }
             className="w-full px-3 py-2 border rounded-md text-sm font-mono"
             disabled={loading}
@@ -195,37 +173,27 @@ export function WalletCard({ wallet, onRefresh }: WalletCardProps) {
               type="number"
               step="0.0001"
               value={txAmount}
-              onChange={(e) => setTxAmount(e.target.value)}
+              onChange={e => setTxAmount(e.target.value)}
               placeholder={`Amount (${currency})`}
               className="flex-1 px-3 py-2 border rounded-md text-sm"
               disabled={loading}
             />
-            <Button
-              onClick={handleSendTransaction}
-              disabled={loading}
-              size="sm"
-            >
+            <Button onClick={handleSendTransaction} disabled={loading} size="sm">
               Send
             </Button>
           </div>
           {txHash && (
             <div className="mt-2">
-              <p className="text-xs text-muted-foreground mb-1">
-                Transaction Hash:
-              </p>
-              <p className="text-xs font-mono break-all bg-muted p-2 rounded">
-                {txHash}
-              </p>
+              <p className="text-xs text-muted-foreground mb-1">Transaction Hash:</p>
+              <p className="text-xs font-mono break-all bg-muted p-2 rounded">{txHash}</p>
             </div>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-          {error}
-        </div>
+        <div className="text-sm text-destructive bg-destructive/10 p-2 rounded">{error}</div>
       )}
     </div>
-  );
+  )
 }

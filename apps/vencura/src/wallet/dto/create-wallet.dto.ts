@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsNotEmpty } from 'class-validator'
 
 export class CreateWalletDto {
   @ApiProperty({
@@ -12,5 +12,5 @@ export class CreateWalletDto {
     ],
   })
   @IsNotEmpty()
-  chainId: number | string;
+  chainId!: number | string
 }

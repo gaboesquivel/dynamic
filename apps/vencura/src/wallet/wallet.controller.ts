@@ -1,27 +1,12 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Param,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { WalletService } from './wallet.service';
-import { AuthGuard } from '../auth/auth.guard';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CreateWalletDto } from './dto/create-wallet.dto';
-import { SignMessageDto } from './dto/sign-message.dto';
-import { SendTransactionDto } from './dto/send-transaction.dto';
+import { Controller, Post, Get, Body, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common'
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
+import { Throttle } from '@nestjs/throttler'
+import { WalletService } from './wallet.service'
+import { AuthGuard } from '../auth/auth.guard'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { CreateWalletDto } from './dto/create-wallet.dto'
+import { SignMessageDto } from './dto/sign-message.dto'
+import { SendTransactionDto } from './dto/send-transaction.dto'
 
 @ApiTags('wallets')
 @Controller('wallets')
@@ -54,7 +39,7 @@ export class WalletController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getWallets(@CurrentUser() user: { id: string; email: string }) {
-    return this.walletService.getUserWallets(user.id);
+    return this.walletService.getUserWallets(user.id)
   }
 
   @Post()
@@ -92,7 +77,7 @@ export class WalletController {
     @CurrentUser() user: { id: string; email: string },
     @Body() createWalletDto: CreateWalletDto,
   ) {
-    return this.walletService.createWallet(user.id, createWalletDto.chainId);
+    return this.walletService.createWallet(user.id, createWalletDto.chainId)
   }
 
   @Get(':id/balance')
@@ -114,7 +99,7 @@ export class WalletController {
     @CurrentUser() user: { id: string; email: string },
     @Param('id') walletId: string,
   ) {
-    return this.walletService.getBalance(walletId, user.id);
+    return this.walletService.getBalance(walletId, user.id)
   }
 
   @Post(':id/sign')
@@ -139,11 +124,7 @@ export class WalletController {
     @Param('id') walletId: string,
     @Body() signMessageDto: SignMessageDto,
   ) {
-    return this.walletService.signMessage(
-      walletId,
-      user.id,
-      signMessageDto.message,
-    );
+    return this.walletService.signMessage(walletId, user.id, signMessageDto.message)
   }
 
   @Post(':id/send')
@@ -173,6 +154,6 @@ export class WalletController {
       user.id,
       sendTransactionDto.to,
       sendTransactionDto.amount,
-    );
+    )
   }
 }

@@ -30,6 +30,11 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
       "prettier/prettier": ["error", { endOfLine: "auto" }],
+      // Allow single-line if statements without brackets
+      curly: "off",
+      "@typescript-eslint/brace-style": "off",
+      // Enforce no semicolons
+      "semi": ["error", "never"],
     },
   },
   {

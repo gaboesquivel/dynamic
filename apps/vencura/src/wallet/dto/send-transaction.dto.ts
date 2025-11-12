@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, Min, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger'
+import { IsString, IsNotEmpty, IsNumber, Min, Matches } from 'class-validator'
 
 export class SendTransactionDto {
   @ApiProperty({
@@ -12,10 +12,10 @@ export class SendTransactionDto {
     message:
       'Invalid Ethereum address format. Must be a valid 0x-prefixed 40-character hex address.',
   })
-  to!: string;
+  to!: string
 
   @ApiProperty({ example: 0.001, description: 'Amount in ETH' })
   @IsNumber()
   @Min(0)
-  amount!: number;
+  amount!: number
 }

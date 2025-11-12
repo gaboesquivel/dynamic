@@ -1,4 +1,4 @@
-import { defineConfig } from 'drizzle-kit';
+import { defineConfig } from 'drizzle-kit'
 
 export default defineConfig({
   schema: './src/database/schema/index.ts',
@@ -9,4 +9,4 @@ export default defineConfig({
     // This is just for drizzle-kit compatibility
     url: 'pglite://./data',
   },
-});
+})

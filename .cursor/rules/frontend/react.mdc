@@ -24,3 +24,8 @@ alwaysApply: false
 ## Accessibility
 - Use semantic HTML elements
 - Maintain proper color contrast
+
+## Code Style
+- **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
+- Multi-line if statements must use brackets
+- Prefer one-liners for simple conditional logic

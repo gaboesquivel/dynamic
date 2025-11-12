@@ -1,12 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-  getChainMetadata,
-  getChainType,
-} from '../../common/chains';
-import { BaseWalletClient } from './base-wallet-client';
-import { EvmWalletClient } from './evm-wallet-client';
-import { SolanaWalletClient } from './solana-wallet-client';
+import { Injectable } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { getChainMetadata, getChainType } from '../../common/chains'
+import { BaseWalletClient } from './base-wallet-client'
+import { EvmWalletClient } from './evm-wallet-client'
+import { SolanaWalletClient } from './solana-wallet-client'
 
 @Injectable()
 export class WalletClientFactory {
@@ -16,21 +13,21 @@ export class WalletClientFactory {
    * Create appropriate wallet client based on chain type
    */
   createWalletClient(chainId: number | string): BaseWalletClient | null {
-    const chainMetadata = getChainMetadata(chainId);
+    const chainMetadata = getChainMetadata(chainId)
     if (!chainMetadata) {
-      return null;
+      return null
     }
 
-    const chainType = getChainType(chainId);
+    const chainType = getChainType(chainId)
     if (!chainType) {
-      return null;
+      return null
     }
 
     switch (chainType) {
       case 'evm':
-        return new EvmWalletClient(this.configService, chainMetadata);
+        return new EvmWalletClient(this.configService, chainMetadata)
       case 'solana':
-        return new SolanaWalletClient(this.configService, chainMetadata);
+        return new SolanaWalletClient(this.configService, chainMetadata)
       // Add other chain types as they become supported
       case 'cosmos':
       case 'bitcoin':
@@ -40,11 +37,9 @@ export class WalletClientFactory {
       case 'sui':
       case 'spark':
       case 'tron':
-        throw new Error(
-          `Chain type ${chainType} is not yet implemented. Chain ID: ${chainId}`,
-        );
+        throw new Error(`Chain type ${chainType} is not yet implemented. Chain ID: ${chainId}`)
       default:
-        return null;
+        return null
     }
   }
 }

@@ -1,7 +1,7 @@
-import { Module, Global } from '@nestjs/common';
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
-import * as schema from './schema';
+import { Module, Global } from '@nestjs/common'
+import { PGlite } from '@electric-sql/pglite'
+import { drizzle } from 'drizzle-orm/pglite'
+import * as schema from './schema'
 
 @Global()
 @Module({
@@ -9,15 +9,15 @@ import * as schema from './schema';
     {
       provide: 'PGLITE',
       useFactory: async () => {
-        const client = new PGlite();
-        await client.waitReady;
-        return client;
+        const client = new PGlite()
+        await client.waitReady
+        return client
       },
     },
     {
       provide: 'DATABASE',
       useFactory: (client: PGlite) => {
-        return drizzle(client, { schema });
+        return drizzle(client, { schema })
       },
       inject: ['PGLITE'],
     },

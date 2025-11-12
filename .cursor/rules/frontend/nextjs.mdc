@@ -10,6 +10,11 @@ alwaysApply: false
 - Minimize `'use client'` directives to leverage SSR benefits
 - Use `nuqs` for URL search parameter state management
 
+## Code Style
+- **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
+- Multi-line if statements must use brackets
+- Prefer one-liners for simple conditional logic
+
 ## Server vs Client Components
 - Favor Server Components and Next.js SSR
 - Use client components only when necessary (interactive UI, browser APIs)

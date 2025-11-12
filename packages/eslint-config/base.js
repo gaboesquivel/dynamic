@@ -19,6 +19,11 @@ export const config = [
     },
     rules: {
       "turbo/no-undeclared-env-vars": "warn",
+      // Allow single-line if statements without brackets
+      curly: "off",
+      "@typescript-eslint/brace-style": "off",
+      // Enforce no semicolons
+      "semi": ["error", "never"],
     },
   },
   {

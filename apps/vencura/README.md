@@ -513,7 +513,7 @@ const [wallet] = await this.db
       eq(schema.wallets.userId, userId), // User isolation enforced
     ),
   )
-  .limit(1);
+  .limit(1)
 ```
 
 ### Key Management

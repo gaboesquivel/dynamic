@@ -291,11 +291,11 @@ The `EncryptionService` provides symmetric encryption using AES-256-GCM:
 
 ```typescript
 // From AuthService.verifyToken()
-const publicKey = await this.getPublicKey(); // Fetch from Dynamic API
+const publicKey = await this.getPublicKey() // Fetch from Dynamic API
 const decoded = jwt.verify(token, publicKey, {
   algorithms: ['RS256'],
-});
-const userId = decoded.sub; // Extract user ID
+})
+const userId = decoded.sub // Extract user ID
 ```
 
 #### Security Properties
@@ -330,10 +330,10 @@ const [wallet] = await this.db
       eq(schema.wallets.userId, userId), // User isolation
     ),
   )
-  .limit(1);
+  .limit(1)
 
 if (!wallet) {
-  throw new NotFoundException('Wallet not found');
+  throw new NotFoundException('Wallet not found')
 }
 ```
 

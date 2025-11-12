@@ -7,7 +7,7 @@ Shared UI component library built with Shadcn/ui and Tailwind CSS.
 Import components from the package:
 
 ```tsx
-import { Button } from "@workspace/ui/components/button";
+import { Button } from '@workspace/ui/components/button'
 ```
 
 ## Tech Stack

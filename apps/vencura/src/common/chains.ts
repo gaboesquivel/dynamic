@@ -1,4 +1,4 @@
-import type { Chain } from 'viem';
+import type { Chain } from 'viem'
 import {
   arbitrum,
   arbitrumSepolia,
@@ -11,7 +11,7 @@ import {
   polygon,
   polygonAmoy,
   // Add more chains as needed
-} from 'viem/chains';
+} from 'viem/chains'
 
 export type ChainType =
   | 'evm'
@@ -23,15 +23,15 @@ export type ChainType =
   | 'algorand'
   | 'sui'
   | 'spark'
-  | 'tron';
+  | 'tron'
 
 export interface ChainMetadata {
-  chainType: ChainType;
-  chainId: number | string;
-  dynamicNetworkId: string;
-  name: string;
-  viemChain?: Chain;
-  defaultRpcUrl?: string;
+  chainType: ChainType
+  chainId: number | string
+  dynamicNetworkId: string
+  name: string
+  viemChain?: Chain
+  defaultRpcUrl?: string
 }
 
 // EVM Chain ID to metadata mapping
@@ -112,7 +112,7 @@ const EVM_CHAINS: Record<number, ChainMetadata> = {
     name: 'Polygon Amoy',
     viemChain: polygonAmoy,
   },
-};
+}
 
 // Solana cluster mapping
 const SOLANA_CLUSTERS: Record<string, ChainMetadata> = {
@@ -137,74 +137,70 @@ const SOLANA_CLUSTERS: Record<string, ChainMetadata> = {
     name: 'Solana Testnet',
     defaultRpcUrl: 'https://api.testnet.solana.com',
   },
-};
+}
 
 // Combined chain registry (Dynamic Network ID -> Metadata)
-const CHAIN_REGISTRY = new Map<string, ChainMetadata>();
+const CHAIN_REGISTRY = new Map<string, ChainMetadata>()
 
 // Populate registry from EVM chains
-Object.values(EVM_CHAINS).forEach((chain) => {
-  CHAIN_REGISTRY.set(chain.dynamicNetworkId, chain);
-});
+Object.values(EVM_CHAINS).forEach(chain => {
+  CHAIN_REGISTRY.set(chain.dynamicNetworkId, chain)
+})
 
 // Populate registry from Solana clusters
-Object.values(SOLANA_CLUSTERS).forEach((chain) => {
-  CHAIN_REGISTRY.set(chain.dynamicNetworkId, chain);
-});
+Object.values(SOLANA_CLUSTERS).forEach(chain => {
+  CHAIN_REGISTRY.set(chain.dynamicNetworkId, chain)
+})
 
 /**
  * Get chain type from chain ID or Dynamic network ID
  */
 export function getChainType(chainId: number | string): ChainType | undefined {
-  const metadata = getChainMetadata(chainId);
-  return metadata?.chainType;
+  const metadata = getChainMetadata(chainId)
+  return metadata?.chainType
 }
 
 /**
  * Get chain metadata from chain ID or Dynamic network ID
  */
-export function getChainMetadata(
-  chainId: number | string,
-): ChainMetadata | undefined {
+export function getChainMetadata(chainId: number | string): ChainMetadata | undefined {
   // Try as Dynamic network ID (string)
   if (typeof chainId === 'string') {
-    const byDynamicId = CHAIN_REGISTRY.get(chainId);
-    if (byDynamicId) return byDynamicId;
+    const byDynamicId = CHAIN_REGISTRY.get(chainId)
+    if (byDynamicId) return byDynamicId
 
     // Try as Solana cluster name
-    const bySolanaCluster = SOLANA_CLUSTERS[chainId];
-    if (bySolanaCluster) return bySolanaCluster;
+    const bySolanaCluster = SOLANA_CLUSTERS[chainId]
+    if (bySolanaCluster) return bySolanaCluster
   }
 
   // Try as numeric chain ID (EVM)
   if (typeof chainId === 'number') {
-    return EVM_CHAINS[chainId];
+    return EVM_CHAINS[chainId]
   }
 
   // Try parsing as number
-  const numericId = Number(chainId);
+  const numericId = Number(chainId)
   if (!Number.isNaN(numericId)) {
-    return EVM_CHAINS[numericId];
+    return EVM_CHAINS[numericId]
   }
 
-  return undefined;
+  return undefined
 }
 
 /**
  * Get Dynamic network ID from chain ID
  */
-export function getDynamicNetworkId(
-  chainId: number | string,
-): string | undefined {
-  const metadata = getChainMetadata(chainId);
-  return metadata?.dynamicNetworkId;
+export function getDynamicNetworkId(chainId: number | string): string | undefined {
+  const metadata = getChainMetadata(chainId)
+  return metadata?.dynamicNetworkId
 }
 
 /**
  * Check if chain is supported
  */
 export function isSupportedChain(chainId: number | string): boolean {
-  return getChainMetadata(chainId) !== undefined;
+  return getChainMetadata(chainId) !== undefined
 }
 
 /**
@@ -216,45 +212,45 @@ export function getDefaultRpcUrl(
   customRpcUrl?: string,
 ): string | undefined {
   // Custom RPC URL takes priority
-  if (customRpcUrl) return customRpcUrl;
+  if (customRpcUrl) return customRpcUrl
 
-  const metadata = getChainMetadata(chainId);
-  if (!metadata) return undefined;
+  const metadata = getChainMetadata(chainId)
+  if (!metadata) return undefined
 
   // Use Dynamic's default RPC if available
   if (metadata.defaultRpcUrl) {
-    return metadata.defaultRpcUrl;
+    return metadata.defaultRpcUrl
   }
 
   // For EVM chains, use viem's default RPC
   if (metadata.chainType === 'evm' && metadata.viemChain) {
-    return metadata.viemChain.rpcUrls.default.http[0];
+    return metadata.viemChain.rpcUrls.default.http[0]
   }
 
-  return undefined;
+  return undefined
 }
 
 /**
  * Get viem chain object for EVM chains
  */
 export function getViemChain(chainId: number | string): Chain | undefined {
-  const metadata = getChainMetadata(chainId);
+  const metadata = getChainMetadata(chainId)
   if (metadata?.chainType === 'evm' && metadata.viemChain) {
-    return metadata.viemChain;
+    return metadata.viemChain
   }
-  return undefined;
+  return undefined
 }
 
 /**
  * Get all supported chains
  */
 export function getSupportedChains(): ChainMetadata[] {
-  return Array.from(CHAIN_REGISTRY.values());
+  return Array.from(CHAIN_REGISTRY.values())
 }
 
 /**
  * Get supported chains by type
  */
 export function getChainsByType(chainType: ChainType): ChainMetadata[] {
-  return getSupportedChains().filter((chain) => chain.chainType === chainType);
+  return getSupportedChains().filter(chain => chain.chainType === chainType)
 }
