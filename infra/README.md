@@ -654,10 +654,11 @@ Once setup is complete, infrastructure changes happen automatically:
   - `roles/cloudsql.client` (Cloud SQL connection only)
 
 - **CI/CD Service Account**:
-  - `roles/artifactregistry.writer` (push images)
-  - `roles/run.admin` (deploy services)
+  - `roles/artifactregistry.writer` (push Docker images)
+  - `roles/run.admin` (deploy Cloud Run services)
   - `roles/secretmanager.secretAccessor` (read secrets)
-  - `roles/iam.serviceAccountTokenCreator` (on itself - for Docker authentication)
+  - `roles/iam.serviceAccountTokenCreator` (on itself - for ephemeral deployments using gcloud commands)
+  - `roles/iam.workloadIdentityUser` (bound via WIF pool - allows GitHub Actions to impersonate this service account)
 
 - **No** project-level permissions
 - Separate service accounts per environment
@@ -723,6 +724,7 @@ The infrastructure is fully integrated with GitHub Actions workflows. See the [I
 - **What's Automated**: ✅ Runs `pulumi preview`, runs `pulumi up` (which builds Docker image, pushes to registry, and updates Cloud Run service), retrieves outputs
 - **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources including Docker builds)
 - **Docker Builds**: Handled automatically by Pulumi during `pulumi up` - no manual build/push steps needed
+- **Authentication**: Uses Application Default Credentials (ADC) from WIF via `google-auth-library` - no gcloud commands needed
 - **Manual Steps**: ❌ None - fully automated (after initial setup)
 
 **Production Deployments:**
@@ -731,6 +733,7 @@ The infrastructure is fully integrated with GitHub Actions workflows. See the [I
 - **What's Automated**: ✅ Validates confirmation, runs `pulumi preview`, runs `pulumi up` (which builds Docker image, pushes to registry, and updates Cloud Run service), runs health checks, retrieves outputs
 - **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources including Docker builds)
 - **Docker Builds**: Handled automatically by Pulumi during `pulumi up` - no manual build/push steps needed
+- **Authentication**: Uses Application Default Credentials (ADC) from WIF via `google-auth-library` - no gcloud commands needed
 - **Manual Steps**: ✅ Manual trigger only (safety measure) - everything else is automated
 
 ## Cloudflare Custom Domain Setup
@@ -938,18 +941,21 @@ pulumi stack output
 **Issue**: `Image 'us-central1-docker.pkg.dev/.../vencura:latest' not found` (when running `pulumi up` locally)
 
 - **Solution**: Pulumi automatically builds and pushes Docker images:
-  - **Local Development**: 
+  - **Local Development**:
     1. Docker is installed and running
     2. You're authenticated with GCP: `gcloud auth application-default login`
     3. Docker is configured for Artifact Registry: `gcloud auth configure-docker REGION-docker.pkg.dev` (replace REGION with your region, e.g., `us-central1`)
     4. The image will be built automatically during `pulumi up`
-  - **CI/CD (Persistent Deployments)**: 
+    5. Authentication uses `gcloud auth print-access-token` (local gcloud CLI)
+  - **CI/CD (Persistent Deployments)**:
     - Pulumi handles Docker builds automatically during `pulumi up`
     - Image tag is set from commit SHA via `GCP_IMAGE_TAG` environment variable
-    - No manual Docker build/push steps needed
-  - **CI/CD (Ephemeral PR Deployments)**: 
+    - Authentication uses Application Default Credentials (ADC) from WIF via `google-auth-library`
+    - The `google-github-actions/auth@v2` action sets up ADC automatically
+    - No manual Docker build/push steps or gcloud commands needed
+  - **CI/CD (Ephemeral PR Deployments)**:
     - Uses `gcloud` commands directly (no Pulumi)
-    - Docker authentication handled via `gcloud auth print-access-token`
+    - Docker authentication handled via `gcloud auth configure-docker` (uses WIF credentials)
 
 ## Architecture Diagrams
 

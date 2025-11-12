@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { GoogleAuth } from 'google-auth-library';
 import * as pulumi from '@pulumi/pulumi';
 
 export const isCi = (): boolean =>
@@ -26,17 +27,59 @@ export const shouldBuildInCi = (): boolean => {
 };
 
 export function getGcpAccessToken(): pulumi.Output<string> {
-  // Synchronously fetch once at synth time, outside of any .apply
-  try {
-    const token = execSync('gcloud auth print-access-token', {
-      encoding: 'utf-8',
-    })
-      .toString()
-      .trim();
-    return pulumi.output(token);
-  } catch {
-    throw new Error(
-      'Failed to get GCP access token. Make sure gcloud is installed and authenticated. Run: gcloud auth application-default login',
+  if (isCi()) {
+    // In CI: Use Application Default Credentials (ADC) from WIF
+    // The google-github-actions/auth@v2 action sets up ADC automatically
+    // getAccessToken() returns a Promise, which Pulumi can handle via Output
+    const auth = new GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+    });
+
+    // Return a Pulumi Output that resolves the async token
+    // Pulumi will handle the async nature when the token is actually needed
+    return pulumi.output(
+      auth.getAccessToken().then(
+        (token): string => {
+          // getAccessToken() returns string | null | AccessTokenResponse
+          if (typeof token === 'string') {
+            return token;
+          }
+          if (token === null) {
+            throw new Error(
+              'Failed to get GCP access token: received null token from Application Default Credentials.',
+            );
+          }
+          // Handle AccessTokenResponse type (has .token property)
+          if (typeof token === 'object' && token !== null && 'token' in token) {
+            const tokenValue = (token as { token: string }).token;
+            if (typeof tokenValue === 'string') {
+              return tokenValue;
+            }
+          }
+          // Fallback: convert to string
+          return String(token);
+        },
+        (error): never => {
+          throw new Error(
+            `Failed to get GCP access token from Application Default Credentials: ${error instanceof Error ? error.message : String(error)}. Ensure google-github-actions/auth@v2 is configured correctly.`,
+          );
+        },
+      ),
     );
+  } else {
+    // In local dev: Use gcloud CLI (requires gcloud auth application-default login)
+    // This is synchronous and works at synth time
+    try {
+      const token = execSync('gcloud auth print-access-token', {
+        encoding: 'utf-8',
+      })
+        .toString()
+        .trim();
+      return pulumi.output(token);
+    } catch {
+      throw new Error(
+        'Failed to get GCP access token. Make sure gcloud is installed and authenticated. Run: gcloud auth application-default login',
+      );
+    }
   }
 }
