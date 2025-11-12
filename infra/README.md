@@ -410,6 +410,12 @@ gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/attribute.repository_owner/${REPO_OWNER}/attribute.repository/${REPO_OWNER}/${REPO_NAME}" \
   --project="$PROJECT_ID"
+
+# Grant service account permission to create tokens for itself (required for Docker authentication)
+gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --member="serviceAccount:$SA_EMAIL" \
+  --project="$PROJECT_ID"
 ```
 
 #### Get WIF Provider Resource Name
@@ -651,6 +657,7 @@ Once setup is complete, infrastructure changes happen automatically:
   - `roles/artifactregistry.writer` (push images)
   - `roles/run.admin` (deploy services)
   - `roles/secretmanager.secretAccessor` (read secrets)
+  - `roles/iam.serviceAccountTokenCreator` (on itself - for Docker authentication)
 
 - **No** project-level permissions
 - Separate service accounts per environment

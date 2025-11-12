@@ -64,7 +64,7 @@ jobs:
       - name: Configure Docker for Artifact Registry (Ephemeral deployments)
         if: steps.deployment.outputs.type == 'ephemeral' || steps.deployment.outputs.type == ''
         run: |
-          gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin $REGION-docker.pkg.dev
+          gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
 
       - name: Install Pulumi
         uses: pulumi/actions@v4
