@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  getChainMetadata,
-  getChainType,
-} from '../../common/chains';
+import { getChainMetadata, getChainType } from '../../common/chains';
 import { BaseWalletClient } from './base-wallet-client';
 import { EvmWalletClient } from './evm-wallet-client';
 import { SolanaWalletClient } from './solana-wallet-client';

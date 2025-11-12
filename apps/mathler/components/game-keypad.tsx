@@ -1,17 +1,22 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
 interface GameKeypadProps {
-  onInput: (value: string) => void
-  onBackspace: () => void
-  onSubmit: () => void
-  currentInput: string
+  onInput: (value: string) => void;
+  onBackspace: () => void;
+  onSubmit: () => void;
+  currentInput: string;
 }
 
-export default function GameKeypad({ onInput, onBackspace, onSubmit, currentInput }: GameKeypadProps) {
-  const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-  const operators = ["+", "-", "×", "÷"]
+export default function GameKeypad({
+  onInput,
+  onBackspace,
+  onSubmit,
+  currentInput,
+}: GameKeypadProps) {
+  const numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  const operators = ["+", "-", "×", "÷"];
 
   return (
     <div className="space-y-3">
@@ -58,5 +63,5 @@ export default function GameKeypad({ onInput, onBackspace, onSubmit, currentInpu
         </button>
       </div>
     </div>
-  )
+  );
 }
