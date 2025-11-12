@@ -298,13 +298,38 @@ REPO_OWNER="gaboesquivel"  # Replace with your GitHub username or organization
 REPO_NAME="dynamic"        # Replace with your repository name
 
 # Create WIF provider for GitHub Actions
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+WIF_PROVIDER_AUDIENCE="https://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+
 gcloud iam workload-identity-pools providers create-oidc github \
   --location=global \
   --workload-identity-pool=vencura-github-pool \
   --issuer-uri="https://token.actions.githubusercontent.com" \
-  --allowed-audiences="https://github.com/${REPO_OWNER}" \
+  --allowed-audiences="https://token.actions.githubusercontent.com,${WIF_PROVIDER_AUDIENCE}" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="attribute.repository_owner=='${REPO_OWNER}' && attribute.repository=='${REPO_OWNER}/${REPO_NAME}'" \
+  --project="$PROJECT_ID"
+```
+
+**Important**: The `--allowed-audiences` must include both:
+
+1. `https://token.actions.githubusercontent.com` - The standard GitHub Actions OIDC token audience
+2. `https://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github` - The WIF provider resource name (used by `google-github-actions/auth@v2` when requesting tokens)
+
+This dual-audience configuration ensures compatibility with how `google-github-actions/auth@v2` requests OIDC tokens from GitHub Actions.
+
+**If you already created the WIF provider with the wrong audience**, update it using:
+
+```bash
+PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+WIF_PROVIDER_AUDIENCE="https://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+
+# Update existing WIF provider with correct audiences
+gcloud iam workload-identity-pools providers update-oidc github \
+  --workload-identity-pool=vencura-github-pool \
+  --location=global \
+  --allowed-audiences="https://token.actions.githubusercontent.com,${WIF_PROVIDER_AUDIENCE}" \
   --project="$PROJECT_ID"
 ```
 
@@ -385,6 +410,12 @@ gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/attribute.repository_owner/${REPO_OWNER}/attribute.repository/${REPO_OWNER}/${REPO_NAME}" \
   --project="$PROJECT_ID"
+
+# Grant service account permission to create tokens for itself (required for Docker authentication)
+gcloud iam service-accounts add-iam-policy-binding "$SA_EMAIL" \
+  --role="roles/iam.serviceAccountTokenCreator" \
+  --member="serviceAccount:$SA_EMAIL" \
+  --project="$PROJECT_ID"
 ```
 
 #### Get WIF Provider Resource Name
@@ -421,10 +452,8 @@ The GitHub workflows require these secrets to be configured in your repository. 
 - `PULUMI_ACCESS_TOKEN`: Pulumi access token (get from [Pulumi Cloud](https://app.pulumi.com/account/tokens))
 - `WIF_PROVIDER`: Workload Identity Federation provider resource name (from Step 5)
   - Format: `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`
-  - Example: `projects/189882714077/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`
 - `WIF_SERVICE_ACCOUNT`: Workload Identity Federation service account email (from Step 5)
   - Format: `vencura-dev-cicd-sa@PROJECT_ID.iam.gserviceaccount.com`
-  - Example: `vencura-dev-cicd-sa@bitcashbank.iam.gserviceaccount.com`
 
 **Application Secrets (for ephemeral PR deployments):**
 
@@ -625,9 +654,11 @@ Once setup is complete, infrastructure changes happen automatically:
   - `roles/cloudsql.client` (Cloud SQL connection only)
 
 - **CI/CD Service Account**:
-  - `roles/artifactregistry.writer` (push images)
-  - `roles/run.admin` (deploy services)
+  - `roles/artifactregistry.writer` (push Docker images)
+  - `roles/run.admin` (deploy Cloud Run services)
   - `roles/secretmanager.secretAccessor` (read secrets)
+  - `roles/iam.serviceAccountTokenCreator` (on itself - for ephemeral deployments using gcloud commands)
+  - `roles/iam.workloadIdentityUser` (bound via WIF pool - allows GitHub Actions to impersonate this service account)
 
 - **No** project-level permissions
 - Separate service accounts per environment
@@ -690,15 +721,19 @@ The infrastructure is fully integrated with GitHub Actions workflows. See the [I
 **Persistent Dev Deployments:**
 
 - **Trigger**: Push to `main` branch
-- **What's Automated**: ✅ Builds image, pushes to registry, runs `pulumi preview`, runs `pulumi up`, updates Cloud Run service, retrieves outputs
-- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources)
+- **What's Automated**: ✅ Runs `pulumi preview`, runs `pulumi up` (which builds Docker image, pushes to registry, and updates Cloud Run service), retrieves outputs
+- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources including Docker builds)
+- **Docker Builds**: Handled automatically by Pulumi during `pulumi up` - no manual build/push steps needed
+- **Authentication**: Uses Application Default Credentials (ADC) from WIF via `google-auth-library` - no gcloud commands needed
 - **Manual Steps**: ❌ None - fully automated (after initial setup)
 
 **Production Deployments:**
 
 - **Trigger**: Manual workflow dispatch (requires typing "deploy" to confirm)
-- **What's Automated**: ✅ Validates confirmation, builds image, pushes to registry, runs `pulumi preview`, runs `pulumi up`, updates Cloud Run service, runs health checks, retrieves outputs
-- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources)
+- **What's Automated**: ✅ Validates confirmation, runs `pulumi preview`, runs `pulumi up` (which builds Docker image, pushes to registry, and updates Cloud Run service), runs health checks, retrieves outputs
+- **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources including Docker builds)
+- **Docker Builds**: Handled automatically by Pulumi during `pulumi up` - no manual build/push steps needed
+- **Authentication**: Uses Application Default Credentials (ADC) from WIF via `google-auth-library` - no gcloud commands needed
 - **Manual Steps**: ✅ Manual trigger only (safety measure) - everything else is automated
 
 ## Cloudflare Custom Domain Setup
@@ -854,6 +889,47 @@ pulumi stack output
 
 - **Solution**: Verify Workload Identity Federation is configured correctly and `WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT` secrets are set in GitHub
 
+**Issue**: `Error: The audience in ID Token [https://iam.googleapis.com/***] does not match the expected audience https://token.actions.githubusercontent.com` (when using `google-github-actions/auth@v2`)
+
+- **Solution**: This error indicates that the GitHub Actions OIDC token has an audience that doesn't match what the WIF provider expects. The `google-github-actions/auth@v2` action may request tokens with the WIF provider resource name as the audience. Fix by adding both audiences to the allowed list:
+  1. **Update WIF provider configuration**: Add both the standard GitHub Actions audience and the WIF provider resource name:
+
+     ```bash
+     PROJECT_ID=$(gcloud config get-value project)
+     PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+     WIF_PROVIDER_AUDIENCE="https://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+
+     gcloud iam workload-identity-pools providers update-oidc github \
+       --workload-identity-pool=vencura-github-pool \
+       --location=global \
+       --allowed-audiences="https://token.actions.githubusercontent.com,${WIF_PROVIDER_AUDIENCE}" \
+       --project="$PROJECT_ID"
+     ```
+
+  2. **Verify workflow permissions**: Ensure your workflow has `id-token: write` permission (this is already set in the workflow ✅).
+  3. **Check GitHub secrets**: Verify that `WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT` secrets are correctly set in GitHub repository settings. The `WIF_PROVIDER` should be in the format:
+     ```
+     projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github
+     ```
+     Get the correct value using:
+     ```bash
+     PROJECT_ID=$(gcloud config get-value project)
+     PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+     echo "projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+     ```
+  4. **Verify attribute condition**: Ensure the WIF provider's attribute condition matches your repository. Check with:
+     ```bash
+     PROJECT_ID=$(gcloud config get-value project)
+     gcloud iam workload-identity-pools providers describe github \
+       --workload-identity-pool=vencura-github-pool \
+       --location=global \
+       --project="$PROJECT_ID" \
+       --format="value(attributeCondition)"
+     ```
+     The condition should match your repository owner and name (e.g., `attribute.repository_owner=='gaboesquivel' && attribute.repository=='gaboesquivel/dynamic'`).
+
+  See [Step 6: Set Up Workload Identity Federation](#step-6-set-up-workload-identity-federation-on-your-computer) for more details.
+
 **Issue**: Workflow runs but infrastructure doesn't update
 
 - **Solution**: Check workflow logs for `pulumi preview` output - it will show what changes (if any) will be applied. If no changes are shown, infrastructure is already in sync.
@@ -864,12 +940,22 @@ pulumi stack output
 
 **Issue**: `Image 'us-central1-docker.pkg.dev/.../vencura:latest' not found` (when running `pulumi up` locally)
 
-- **Solution**: Pulumi now automatically builds and pushes Docker images when running locally. Make sure:
-  1. Docker is installed and running
-  2. You're authenticated with GCP: `gcloud auth application-default login`
-  3. Docker is configured for Artifact Registry: `gcloud auth configure-docker REGION-docker.pkg.dev` (replace REGION with your region, e.g., `us-central1`)
-  4. The image will be built automatically before Cloud Run service creation
-  5. **Note**: In CI/CD, image building is skipped (GitHub workflows handle it), so this only applies to local development
+- **Solution**: Pulumi automatically builds and pushes Docker images:
+  - **Local Development**:
+    1. Docker is installed and running
+    2. You're authenticated with GCP: `gcloud auth application-default login`
+    3. Docker is configured for Artifact Registry: `gcloud auth configure-docker REGION-docker.pkg.dev` (replace REGION with your region, e.g., `us-central1`)
+    4. The image will be built automatically during `pulumi up`
+    5. Authentication uses `gcloud auth print-access-token` (local gcloud CLI)
+  - **CI/CD (Persistent Deployments)**:
+    - Pulumi handles Docker builds automatically during `pulumi up`
+    - Image tag is set from commit SHA via `GCP_IMAGE_TAG` environment variable
+    - Authentication uses Application Default Credentials (ADC) from WIF via `google-auth-library`
+    - The `google-github-actions/auth@v2` action sets up ADC automatically
+    - No manual Docker build/push steps or gcloud commands needed
+  - **CI/CD (Ephemeral PR Deployments)**:
+    - Uses `gcloud` commands directly (no Pulumi)
+    - Docker authentication handled via `gcloud auth configure-docker` (uses WIF credentials)
 
 ## Architecture Diagrams
 

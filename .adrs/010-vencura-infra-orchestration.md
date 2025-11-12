@@ -1,8 +1,14 @@
 # ADR 010: Vencura Infrastructure Orchestration
 
+## Current Status
+
+**Current Deployment**: The Vencura API is currently deployed to **Vercel** for all environments. Vercel provides excellent support for NestJS applications with reduced cold starts, automatic scaling, and seamless integration with our monorepo.
+
+**Google Cloud Option**: We're working on a Google Cloud deployment option using Pulumi and GitHub Actions for production workloads that require enhanced control, security, and extensibility. See [Google Cloud Deployment Option](../../docs/google-cloud-deployment.md) for details.
+
 ## Context
 
-We need to select an infrastructure-as-code (IaC) tool for managing Google Cloud Platform resources for the Vencura API deployment. The tool must support:
+We need to select an infrastructure-as-code (IaC) tool for managing Google Cloud Platform resources for the Vencura API deployment (as an alternative to Vercel). The tool must support:
 
 - Type-safe, declarative infrastructure definitions
 - Environment-based deployments (dev/prod)
@@ -139,7 +145,7 @@ Managed Kubernetes orchestration using Google Kubernetes Engine (GKE) Autopilot 
 
 ## Decision
 
-We will use **Pulumi with TypeScript** for infrastructure orchestration.
+We will use **Pulumi with TypeScript** for infrastructure orchestration of the Google Cloud deployment option.
 
 **Main reasons:**
 
@@ -151,6 +157,8 @@ We will use **Pulumi with TypeScript** for infrastructure orchestration.
 - Better developer experience than HCL or scripts with IDE support
 - Preview and rollback capabilities for safer deployments
 - Support for ephemeral PR deployments and environment-based configurations
+
+**Note**: This decision applies to the Google Cloud deployment option. The primary deployment platform is Vercel, which provides excellent developer experience and reduced cold starts for backend APIs. The Google Cloud option is intended for production workloads requiring enhanced security, control, and extensibility.
 
 ## Deployment Strategy
 
@@ -218,7 +226,8 @@ The production environment:
 
 ## Notes
 
-- Infrastructure code lives in `/infra/vencura` directory
+- **Current Deployment**: Vercel is used for all environments (development, production, and PR previews)
+- **Google Cloud Option**: Infrastructure code lives in `/infra/vencura` directory (work in progress)
 - Separate Pulumi stacks for dev and prod environments
 - All sensitive values stored in Secret Manager
 - Cloud SQL uses private IP only (no public access)
@@ -227,3 +236,21 @@ The production environment:
 - Ephemeral PR deployments use PGLite to avoid database setup complexity
 - Production deployments require manual approval for safety
 - Regular infrastructure reviews and updates as requirements evolve
+
+## When to Use Google Cloud vs Vercel
+
+**Use Vercel when:**
+
+- Fast iteration and deployment are priorities
+- Standard security and compliance requirements are sufficient
+- Cold starts are acceptable (Vercel has significantly reduced cold starts)
+- Simplicity and ease of use are important
+
+**Use Google Cloud when:**
+
+- Enhanced security and compliance features are required
+- Fine-grained control over infrastructure is needed
+- Avoiding cold starts is critical (persistent instances)
+- Integration with other GCP services is required
+- Custom networking or security policies are needed
+- Handling sensitive financial data (wallet API) requires additional controls

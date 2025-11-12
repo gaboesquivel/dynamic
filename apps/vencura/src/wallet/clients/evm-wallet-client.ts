@@ -35,16 +35,12 @@ export class EvmWalletClient extends BaseWalletClient {
   }
 
   private async getDynamicEvmClient(): Promise<DynamicEvmWalletClient> {
-    if (this.dynamicEvmClient) {
-      return this.dynamicEvmClient
-    }
+    if (this.dynamicEvmClient) return this.dynamicEvmClient
 
     const environmentId = this.configService.get<string>('dynamic.environmentId')
     const apiToken = this.configService.get<string>('dynamic.apiToken')
 
-    if (!environmentId || !apiToken) {
-      throw new Error('Dynamic configuration is not set')
-    }
+    if (!environmentId || !apiToken) throw new Error('Dynamic configuration is not set')
 
     const { DynamicEvmWalletClient: DynamicEvmWalletClientClass } = await import(
       '@dynamic-labs-wallet/node-evm'
@@ -73,9 +69,7 @@ export class EvmWalletClient extends BaseWalletClient {
 
   async getBalance(address: string): Promise<BalanceResult> {
     const viemChain = getViemChain(this.chainMetadata.chainId)
-    if (!viemChain) {
-      throw new Error(`Unsupported EVM chain: ${this.chainMetadata.chainId}`)
-    }
+    if (!viemChain) throw new Error(`Unsupported EVM chain: ${this.chainMetadata.chainId}`)
 
     // Get RPC URL with priority: custom env var > Dynamic default > viem default
     const customRpcUrl = this.configService.get<string>(
@@ -123,9 +117,7 @@ export class EvmWalletClient extends BaseWalletClient {
     params: SendTransactionParams,
   ): Promise<SendTransactionResult> {
     const viemChain = getViemChain(this.chainMetadata.chainId)
-    if (!viemChain) {
-      throw new Error(`Unsupported EVM chain: ${this.chainMetadata.chainId}`)
-    }
+    if (!viemChain) throw new Error(`Unsupported EVM chain: ${this.chainMetadata.chainId}`)
 
     const dynamicEvmClient = await this.getDynamicEvmClient()
 

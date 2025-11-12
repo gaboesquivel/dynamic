@@ -2,7 +2,7 @@ import * as docker from '@pulumi/docker';
 import * as pulumi from '@pulumi/pulumi';
 import type { Config } from './config';
 import type { ArtifactRegistryResources } from './artifact-registry';
-import { isCi, getGcpAccessToken } from './utils/docker';
+import { shouldBuildInCi, getGcpAccessToken } from './utils/docker';
 
 export interface DockerBuildResources {
   image: docker.Image | null;
@@ -19,12 +19,17 @@ export function createDockerBuild(
   const server = pulumi.interpolate`${config.region}-docker.pkg.dev`;
   const token = getGcpAccessToken();
 
+  // Enable Docker builds when:
+  // - Not in CI (local development), OR
+  // - In CI with imageTag set (persistent deployments via Pulumi)
+  // Disable builds for ephemeral PR deployments (they use gcloud directly)
+  const enableBuild = shouldBuildInCi();
+
   const image = new docker.Image(
     'vencura-image',
     {
       imageName,
-      // omit build entirely in CI so Pulumi won't rebuild/push
-      build: !isCi()
+      build: enableBuild
         ? {
             context: '../..', // Monorepo root (from infra/vencura/lib/)
             dockerfile: 'apps/vencura/Dockerfile',
@@ -42,7 +47,7 @@ export function createDockerBuild(
   );
 
   return {
-    image: isCi() ? null : image,
-    imageName: isCi() ? imageName : image.imageName,
+    image: enableBuild ? image : null,
+    imageName: enableBuild ? image.imageName : imageName,
   };
 }

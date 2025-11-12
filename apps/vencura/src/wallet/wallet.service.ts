@@ -31,25 +31,20 @@ export class WalletService {
 
     // Get chain metadata and Dynamic network ID
     const chainMetadata = getChainMetadata(chainId)
-    if (!chainMetadata) {
-      throw new BadRequestException(`Invalid chain: ${chainId}`)
-    }
+    if (!chainMetadata) throw new BadRequestException(`Invalid chain: ${chainId}`)
 
     const dynamicNetworkId = getDynamicNetworkId(chainId)
-    if (!dynamicNetworkId) {
+    if (!dynamicNetworkId)
       throw new BadRequestException(`Could not determine Dynamic network ID for chain: ${chainId}`)
-    }
 
     const chainType = getChainType(chainId)
-    if (!chainType) {
+    if (!chainType)
       throw new BadRequestException(`Could not determine chain type for chain: ${chainId}`)
-    }
 
     // Get appropriate wallet client
     const walletClient = this.walletClientFactory.createWalletClient(chainId)
-    if (!walletClient) {
+    if (!walletClient)
       throw new BadRequestException(`Wallet client not available for chain: ${chainId}`)
-    }
 
     // Create wallet using chain-specific client
     const wallet = await walletClient.createWallet()
@@ -99,15 +94,12 @@ export class WalletService {
       .where(and(eq(schema.wallets.id, walletId), eq(schema.wallets.userId, userId)))
       .limit(1)
 
-    if (!wallet) {
-      throw new NotFoundException('Wallet not found')
-    }
+    if (!wallet) throw new NotFoundException('Wallet not found')
 
     // Get appropriate wallet client based on stored network/chain type
     const walletClient = this.walletClientFactory.createWalletClient(wallet.network)
-    if (!walletClient) {
+    if (!walletClient)
       throw new BadRequestException(`Wallet client not available for network: ${wallet.network}`)
-    }
 
     // Get balance using chain-specific client
     return await walletClient.getBalance(wallet.address)

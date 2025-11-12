@@ -27,9 +27,8 @@ dynamic/
 - **UI**: Shadcn/ui, Tailwind CSS, Radix UI
 - **Authentication**: Dynamic SDK
 - **Linting**: ESLint + Prettier
-- **Vencura Deployment**: Google Cloud Run (Docker) + Cloudflare
-- **Infrastructure**: Pulumi (TypeScript) for GCP resources
-- **Frontend Deployment**: Vercel
+- **Deployment**: Vercel (frontend apps and Vencura backend API)
+- **Infrastructure**: Pulumi (TypeScript) for GCP resources (see [Google Cloud Deployment Option](./docs/google-cloud-deployment.md))
 
 ## Projects
 
@@ -116,5 +115,5 @@ See [ADRs](./.adrs/) for detailed architecture decision records:
 ### Shared
 
 - [x] Document security considerations (see [Vencura SECURITY.md](./apps/vencura/SECURITY.md))
-- [x] Add deployment configuration (Cloud Run + Cloudflare via Pulumi)
+- [x] Add deployment configuration (Vercel for all apps)
 - [x] Review architecture documentation

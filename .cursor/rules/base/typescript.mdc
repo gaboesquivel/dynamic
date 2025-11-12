@@ -5,6 +5,11 @@ alwaysApply: false
 ---
 # TypeScript Rules
 
+## Tooling
+- Use **pnpm** for package management (not bun, npm, or yarn)
+- Use **eslint + prettier** for linting and formatting (not biome)
+- Run `pnpm format` to format code, `pnpm run lint` to lint code
+
 ## Core Principles
 - Prefer interfaces over types for object definitions
 - Avoid enums; use maps or union types instead
@@ -13,7 +18,11 @@ alwaysApply: false
 - Use lowercase-with-dashes for directories (e.g., `components/auth-wizard`)
 - Favor named exports for components
 - Use functional & declarative programming patterns; avoid classes
-pn- Infer types and keep them inline unless you need to reuse them
+- Infer types and keep them inline unless you need to reuse them
+
+## Framework Exceptions
+- **NestJS**: Classes are required for decorators (@Injectable, @Controller, etc.), so the "avoid classes" rule doesn't apply to NestJS services/controllers
+- **RORO Pattern**: Applies to utility functions, not NestJS method signatures (which use decorators)
 
 ## Code Style
 - **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners

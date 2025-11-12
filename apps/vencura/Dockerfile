@@ -48,9 +48,9 @@ COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
 COPY packages/ui/package.json ./packages/ui/
 
-# Copy app package.json and built files
+# Copy app package.json and built files from builder stage
 COPY apps/vencura/package.json ./apps/vencura/
-COPY apps/vencura/dist ./apps/vencura/dist/
+COPY --from=builder /app/apps/vencura/dist ./apps/vencura/dist/
 
 # Install only production dependencies
 RUN pnpm install --frozen-lockfile --prod
