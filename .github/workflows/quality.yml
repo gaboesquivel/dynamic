@@ -10,7 +10,7 @@ on:
 
 jobs:
   quality:
-    name: Lint, Type Check, and Test
+    name: Lint
     runs-on: ubuntu-latest
 
     steps:
