@@ -43,12 +43,20 @@ export function createSecrets(
     { provider },
   );
 
-  // Create secret version with placeholder (to be updated manually or via CI/CD)
+  // Read secret value from environment variable (required)
+  const dynamicEnvironmentIdValue = process.env.DYNAMIC_ENVIRONMENT_ID;
+  if (!dynamicEnvironmentIdValue) {
+    throw new Error(
+      'DYNAMIC_ENVIRONMENT_ID environment variable is required. Set it in GitHub Secrets or .env file.',
+    );
+  }
+
+  // Create secret version with actual value
   new gcp.secretmanager.SecretVersion(
     secretName(config, 'dynamic-environment-id-version'),
     {
       secret: dynamicEnvironmentId.id,
-      secretData: 'PLACEHOLDER_UPDATE_ME',
+      secretData: dynamicEnvironmentIdValue,
     },
     { provider },
   );
@@ -66,11 +74,18 @@ export function createSecrets(
     { provider },
   );
 
+  const dynamicApiTokenValue = process.env.DYNAMIC_API_TOKEN;
+  if (!dynamicApiTokenValue) {
+    throw new Error(
+      'DYNAMIC_API_TOKEN environment variable is required. Set it in GitHub Secrets or .env file.',
+    );
+  }
+
   new gcp.secretmanager.SecretVersion(
     secretName(config, 'dynamic-api-token-version'),
     {
       secret: dynamicApiToken.id,
-      secretData: 'PLACEHOLDER_UPDATE_ME',
+      secretData: dynamicApiTokenValue,
     },
     { provider },
   );
@@ -88,11 +103,18 @@ export function createSecrets(
     { provider },
   );
 
+  const arbitrumSepoliaRpcUrlValue = process.env.ARBITRUM_SEPOLIA_RPC_URL;
+  if (!arbitrumSepoliaRpcUrlValue) {
+    throw new Error(
+      'ARBITRUM_SEPOLIA_RPC_URL environment variable is required. Set it in GitHub Secrets or .env file.',
+    );
+  }
+
   new gcp.secretmanager.SecretVersion(
     secretName(config, 'arbitrum-sepolia-rpc-url-version'),
     {
       secret: arbitrumSepoliaRpcUrl.id,
-      secretData: 'PLACEHOLDER_UPDATE_ME',
+      secretData: arbitrumSepoliaRpcUrlValue,
     },
     { provider },
   );
@@ -110,16 +132,23 @@ export function createSecrets(
     { provider },
   );
 
+  const encryptionKeyValue = process.env.ENCRYPTION_KEY;
+  if (!encryptionKeyValue) {
+    throw new Error(
+      'ENCRYPTION_KEY environment variable is required. Set it in GitHub Secrets or .env file.',
+    );
+  }
+
   new gcp.secretmanager.SecretVersion(
     secretName(config, 'encryption-key-version'),
     {
       secret: encryptionKey.id,
-      secretData: 'PLACEHOLDER_UPDATE_ME',
+      secretData: encryptionKeyValue,
     },
     { provider },
   );
 
-  // Database password secret
+  // Database password secret (auto-generated, no env var needed)
   const dbPasswordSecret = new gcp.secretmanager.Secret(
     secretName(config, 'db-password'),
     {

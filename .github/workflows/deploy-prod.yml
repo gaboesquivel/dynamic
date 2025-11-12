@@ -90,6 +90,10 @@ jobs:
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
           GCP_IMAGE_TAG: ${{ github.sha }}
+          DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
+          DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
+          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
         run: |
           pulumi stack select prod
           pulumi preview --non-interactive
@@ -101,6 +105,10 @@ jobs:
           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
           GCP_REGION: ${{ env.REGION }}
           GCP_IMAGE_TAG: ${{ github.sha }}
+          DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
+          DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
+          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
         run: |
           pulumi stack select prod
           pulumi up --yes --non-interactive
