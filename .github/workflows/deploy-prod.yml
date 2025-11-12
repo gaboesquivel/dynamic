@@ -1,167 +1,167 @@
-name: Deploy to Production
+# name: Deploy to Production
 
-on:
-  workflow_dispatch:
-    inputs:
-      confirm:
-        description: 'Type "deploy" to confirm production deployment'
-        required: true
-        type: string
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       confirm:
+#         description: 'Type "deploy" to confirm production deployment'
+#         required: true
+#         type: string
 
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-  SERVICE_NAME: vencura-prod
-  ARTIFACT_REGISTRY: ${{ secrets.GCP_ARTIFACT_REGISTRY || 'vencura' }}
+# env:
+#   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#   REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+#   SERVICE_NAME: vencura-prod
+#   ARTIFACT_REGISTRY: ${{ secrets.GCP_ARTIFACT_REGISTRY || 'vencura' }}
 
-jobs:
-  validate:
-    name: Validate Deployment Confirmation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check confirmation
-        run: |
-          if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
-            echo "❌ Deployment cancelled. You must type 'deploy' to confirm."
-            exit 1
-          fi
-          echo "✅ Deployment confirmed"
+# jobs:
+#   validate:
+#     name: Validate Deployment Confirmation
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Check confirmation
+#         run: |
+#           if [ "${{ github.event.inputs.confirm }}" != "deploy" ]; then
+#             echo "❌ Deployment cancelled. You must type 'deploy' to confirm."
+#             exit 1
+#           fi
+#           echo "✅ Deployment confirmed"
 
-  deploy:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: validate
-    environment:
-      name: production
-    permissions:
-      contents: read
-      id-token: write
+#   deploy:
+#     name: Deploy to Production
+#     runs-on: ubuntu-latest
+#     needs: validate
+#     environment:
+#       name: production
+#     permissions:
+#       contents: read
+#       id-token: write
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
+#       - name: Setup pnpm
+#         uses: pnpm/action-setup@v4
+#         with:
+#           version: 10.4.1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#           cache: 'pnpm'
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: 'access_token'
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          create_credentials_file: true
+#       - name: Authenticate to Google Cloud
+#         uses: google-github-actions/auth@v2
+#         with:
+#           token_format: 'access_token'
+#           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+#           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+#           create_credentials_file: true
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+#       - name: Set up Cloud SDK
+#         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Set Google credentials path
-        id: gcp-creds
-        run: |
-          echo "GOOGLE_GHA_CREDS_PATH=$GOOGLE_APPLICATION_CREDENTIALS" >> $GITHUB_ENV
+#       - name: Set Google credentials path
+#         id: gcp-creds
+#         run: |
+#           echo "GOOGLE_GHA_CREDS_PATH=$GOOGLE_APPLICATION_CREDENTIALS" >> $GITHUB_ENV
 
-      - name: Run database migrations
-        run: |
-          # Run migrations via Cloud Run job or Cloud Build
-          # This is a placeholder - actual migration strategy depends on setup
-          echo "Running database migrations..."
-          # gcloud run jobs execute vencura-migrations --region $REGION
+#       - name: Run database migrations
+#         run: |
+#           # Run migrations via Cloud Run job or Cloud Build
+#           # This is a placeholder - actual migration strategy depends on setup
+#           echo "Running database migrations..."
+#           # gcloud run jobs execute vencura-migrations --region $REGION
 
-      - name: Install infrastructure dependencies
-        working-directory: ./infra/vencura
-        run: |
-          pnpm install --frozen-lockfile
+#       - name: Install infrastructure dependencies
+#         working-directory: ./infra/vencura
+#         run: |
+#           pnpm install --frozen-lockfile
 
-      - name: Set Pulumi config from environment variables
-        working-directory: ./infra/vencura
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_IMAGE_TAG: ${{ github.sha }}
-        run: |
-          pulumi stack select prod
-          pulumi config set gcp:project ${{ env.PROJECT_ID }} --non-interactive
-          pulumi config set gcp:region ${{ env.REGION }} --non-interactive
+#       - name: Set Pulumi config from environment variables
+#         working-directory: ./infra/vencura
+#         env:
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_IMAGE_TAG: ${{ github.sha }}
+#         run: |
+#           pulumi stack select prod
+#           pulumi config set gcp:project ${{ env.PROJECT_ID }} --non-interactive
+#           pulumi config set gcp:region ${{ env.REGION }} --non-interactive
 
-      - name: Preview infrastructure changes
-        working-directory: ./infra/vencura
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
-          GCP_REGION: ${{ env.REGION }}
-          GCP_IMAGE_TAG: ${{ github.sha }}
-          DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
-          DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
-          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        run: |
-          pulumi stack select prod
-          pulumi preview --non-interactive
+#       - name: Preview infrastructure changes
+#         working-directory: ./infra/vencura
+#         env:
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
+#           GCP_REGION: ${{ env.REGION }}
+#           GCP_IMAGE_TAG: ${{ github.sha }}
+#           DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
+#           DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
+#           ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+#           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+#         run: |
+#           pulumi stack select prod
+#           pulumi preview --non-interactive
 
-      - name: Deploy with Pulumi
-        uses: pulumi/actions@v6
-        with:
-          command: up
-          stack-name: prod
-        env:
-          GOOGLE_CREDENTIALS: ${{ env.GOOGLE_GHA_CREDS_PATH }}
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
-          GCP_REGION: ${{ env.REGION }}
-          GCP_IMAGE_TAG: ${{ github.sha }}
-          DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
-          DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
-          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        working-directory: ./infra/vencura
+#       - name: Deploy with Pulumi
+#         uses: pulumi/actions@v6
+#         with:
+#           command: up
+#           stack-name: prod
+#         env:
+#           GOOGLE_CREDENTIALS: ${{ env.GOOGLE_GHA_CREDS_PATH }}
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
+#           GCP_REGION: ${{ env.REGION }}
+#           GCP_IMAGE_TAG: ${{ github.sha }}
+#           DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
+#           DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
+#           ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+#           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+#         working-directory: ./infra/vencura
 
-      - name: Get infrastructure outputs
-        working-directory: ./infra/vencura
-        id: pulumi-outputs
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
-          GCP_REGION: ${{ env.REGION }}
-          GCP_IMAGE_TAG: ${{ github.sha }}
-        run: |
-          pulumi stack select prod
-          CLOUD_RUN_URL=$(pulumi stack output cloudRunUrl)
-          DB_CONNECTION=$(pulumi stack output databaseConnectionName)
-          VPC_CONNECTOR=$(pulumi stack output vpcConnectorName)
-          SERVICE_ACCOUNT=$(pulumi stack output cloudRunServiceAccountEmail)
+#       - name: Get infrastructure outputs
+#         working-directory: ./infra/vencura
+#         id: pulumi-outputs
+#         env:
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
+#           GCP_REGION: ${{ env.REGION }}
+#           GCP_IMAGE_TAG: ${{ github.sha }}
+#         run: |
+#           pulumi stack select prod
+#           CLOUD_RUN_URL=$(pulumi stack output cloudRunUrl)
+#           DB_CONNECTION=$(pulumi stack output databaseConnectionName)
+#           VPC_CONNECTOR=$(pulumi stack output vpcConnectorName)
+#           SERVICE_ACCOUNT=$(pulumi stack output cloudRunServiceAccountEmail)
           
-          echo "cloud_run_url=$CLOUD_RUN_URL" >> $GITHUB_OUTPUT
-          echo "db_connection=$DB_CONNECTION" >> $GITHUB_OUTPUT
-          echo "vpc_connector=$VPC_CONNECTOR" >> $GITHUB_OUTPUT
-          echo "service_account=$SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
+#           echo "cloud_run_url=$CLOUD_RUN_URL" >> $GITHUB_OUTPUT
+#           echo "db_connection=$DB_CONNECTION" >> $GITHUB_OUTPUT
+#           echo "vpc_connector=$VPC_CONNECTOR" >> $GITHUB_OUTPUT
+#           echo "service_account=$SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
 
-      - name: Health check
-        run: |
-          URL="${{ steps.pulumi-outputs.outputs.cloud_run_url }}"
+#       - name: Health check
+#         run: |
+#           URL="${{ steps.pulumi-outputs.outputs.cloud_run_url }}"
           
-          echo "Waiting for service to be ready..."
-          sleep 10
+#           echo "Waiting for service to be ready..."
+#           sleep 10
           
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api" || echo "000")
+#           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL/api" || echo "000")
           
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
-            echo "✅ Health check passed (HTTP $HTTP_CODE)"
-          else
-            echo "⚠️ Health check returned HTTP $HTTP_CODE"
-            exit 1
-          fi
+#           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 400 ]; then
+#             echo "✅ Health check passed (HTTP $HTTP_CODE)"
+#           else
+#             echo "⚠️ Health check returned HTTP $HTTP_CODE"
+#             exit 1
+#           fi
 
-      - name: Get service URL
-        id: service-url
-        run: |
-          URL="${{ steps.pulumi-outputs.outputs.cloud_run_url }}"
-          echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "🚀 Production deployment complete!"
-          echo "Service URL: $URL"
+#       - name: Get service URL
+#         id: service-url
+#         run: |
+#           URL="${{ steps.pulumi-outputs.outputs.cloud_run_url }}"
+#           echo "url=$URL" >> $GITHUB_OUTPUT
+#           echo "🚀 Production deployment complete!"
+#           echo "Service URL: $URL"

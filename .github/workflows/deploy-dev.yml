@@ -1,228 +1,228 @@
-name: Deploy to Dev
+# name: Deploy to Dev
 
-on:
-  workflow_run:
-    workflows: ["Quality Checks"]
-    types:
-      - completed
-    branches:
-      - main
-  push:
-    branches:
-      - main
-    paths:
-      - 'apps/vencura/**'
-      - 'infra/**'
-      - '.github/workflows/deploy-dev.yml'
+# on:
+#   workflow_run:
+#     workflows: ["Quality Checks"]
+#     types:
+#       - completed
+#     branches:
+#       - main
+#   push:
+#     branches:
+#       - main
+#     paths:
+#       - 'apps/vencura/**'
+#       - 'infra/**'
+#       - '.github/workflows/deploy-dev.yml'
 
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
-  SERVICE_NAME_DEV: vencura-dev
-  ARTIFACT_REGISTRY: ${{ secrets.GCP_ARTIFACT_REGISTRY || 'vencura' }}
-  CLOUDFLARE_BASE_DOMAIN: ${{ secrets.CLOUDFLARE_BASE_DOMAIN || 'gaboesquivel.com' }}
+# env:
+#   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+#   REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+#   SERVICE_NAME_DEV: vencura-dev
+#   ARTIFACT_REGISTRY: ${{ secrets.GCP_ARTIFACT_REGISTRY || 'vencura' }}
+#   CLOUDFLARE_BASE_DOMAIN: ${{ secrets.CLOUDFLARE_BASE_DOMAIN || 'gaboesquivel.com' }}
 
-jobs:
-  deploy:
-    name: Deploy to Dev Environment
-    runs-on: ubuntu-latest
-    if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    permissions:
-      contents: read
-      id-token: write
+# jobs:
+#   deploy:
+#     name: Deploy to Dev Environment
+#     runs-on: ubuntu-latest
+#     if: (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+#     permissions:
+#       contents: read
+#       id-token: write
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+#         with:
+#           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+#           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.4.1
+#       - name: Setup pnpm
+#         uses: pnpm/action-setup@v4
+#         with:
+#           version: 10.4.1
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#           cache: 'pnpm'
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          token_format: 'access_token'
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
-          create_credentials_file: true
+#       - name: Authenticate to Google Cloud
+#         uses: google-github-actions/auth@v2
+#         with:
+#           token_format: 'access_token'
+#           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+#           service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+#           create_credentials_file: true
 
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+#       - name: Set up Cloud SDK
+#         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Set Google credentials path
-        id: gcp-creds
-        run: |
-          echo "GOOGLE_GHA_CREDS_PATH=$GOOGLE_APPLICATION_CREDENTIALS" >> $GITHUB_ENV
+#       - name: Set Google credentials path
+#         id: gcp-creds
+#         run: |
+#           echo "GOOGLE_GHA_CREDS_PATH=$GOOGLE_APPLICATION_CREDENTIALS" >> $GITHUB_ENV
 
-      - name: Install infrastructure dependencies
-        working-directory: ./infra/vencura
-        run: |
-          pnpm install --frozen-lockfile
+#       - name: Install infrastructure dependencies
+#         working-directory: ./infra/vencura
+#         run: |
+#           pnpm install --frozen-lockfile
 
-      - name: Set Pulumi config from environment variables
-        working-directory: ./infra/vencura
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
-        run: |
-          pulumi stack select dev
-          pulumi config set gcp:project ${{ env.PROJECT_ID }} --non-interactive
-          pulumi config set gcp:region ${{ env.REGION }} --non-interactive
+#       - name: Set Pulumi config from environment variables
+#         working-directory: ./infra/vencura
+#         env:
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+#         run: |
+#           pulumi stack select dev
+#           pulumi config set gcp:project ${{ env.PROJECT_ID }} --non-interactive
+#           pulumi config set gcp:region ${{ env.REGION }} --non-interactive
 
-      - name: Preview infrastructure changes
-        working-directory: ./infra/vencura
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
-          GCP_REGION: ${{ env.REGION }}
-          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
-          DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
-          DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
-          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        run: |
-          pulumi stack select dev
-          pulumi preview --non-interactive
+#       - name: Preview infrastructure changes
+#         working-directory: ./infra/vencura
+#         env:
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
+#           GCP_REGION: ${{ env.REGION }}
+#           GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+#           DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
+#           DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
+#           ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+#           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+#         run: |
+#           pulumi stack select dev
+#           pulumi preview --non-interactive
 
-      - name: Deploy with Pulumi
-        uses: pulumi/actions@v6
-        with:
-          command: up
-          stack-name: dev
-        env:
-          GOOGLE_CREDENTIALS: ${{ env.GOOGLE_GHA_CREDS_PATH }}
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
-          GCP_REGION: ${{ env.REGION }}
-          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
-          DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
-          DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
-          ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        working-directory: ./infra/vencura
+#       - name: Deploy with Pulumi
+#         uses: pulumi/actions@v6
+#         with:
+#           command: up
+#           stack-name: dev
+#         env:
+#           GOOGLE_CREDENTIALS: ${{ env.GOOGLE_GHA_CREDS_PATH }}
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
+#           GCP_REGION: ${{ env.REGION }}
+#           GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+#           DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
+#           DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
+#           ARBITRUM_SEPOLIA_RPC_URL: ${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}
+#           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+#         working-directory: ./infra/vencura
 
-      - name: Get infrastructure outputs
-        working-directory: ./infra/vencura
-        id: pulumi-outputs
-        env:
-          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
-          GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
-          GCP_REGION: ${{ env.REGION }}
-          GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
-        run: |
-          pulumi stack select dev
-          CLOUD_RUN_URL=$(pulumi stack output cloudRunUrl)
-          DB_CONNECTION=$(pulumi stack output databaseConnectionName)
-          VPC_CONNECTOR=$(pulumi stack output vpcConnectorName)
-          SERVICE_ACCOUNT=$(pulumi stack output cloudRunServiceAccountEmail)
+#       - name: Get infrastructure outputs
+#         working-directory: ./infra/vencura
+#         id: pulumi-outputs
+#         env:
+#           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+#           GCP_PROJECT_ID: ${{ env.PROJECT_ID }}
+#           GCP_REGION: ${{ env.REGION }}
+#           GCP_IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+#         run: |
+#           pulumi stack select dev
+#           CLOUD_RUN_URL=$(pulumi stack output cloudRunUrl)
+#           DB_CONNECTION=$(pulumi stack output databaseConnectionName)
+#           VPC_CONNECTOR=$(pulumi stack output vpcConnectorName)
+#           SERVICE_ACCOUNT=$(pulumi stack output cloudRunServiceAccountEmail)
           
-          echo "cloud_run_url=$CLOUD_RUN_URL" >> $GITHUB_OUTPUT
-          echo "db_connection=$DB_CONNECTION" >> $GITHUB_OUTPUT
-          echo "vpc_connector=$VPC_CONNECTOR" >> $GITHUB_OUTPUT
-          echo "service_account=$SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
+#           echo "cloud_run_url=$CLOUD_RUN_URL" >> $GITHUB_OUTPUT
+#           echo "db_connection=$DB_CONNECTION" >> $GITHUB_OUTPUT
+#           echo "vpc_connector=$VPC_CONNECTOR" >> $GITHUB_OUTPUT
+#           echo "service_account=$SERVICE_ACCOUNT" >> $GITHUB_OUTPUT
 
-      - name: Get service URL
-        id: service-url
-        run: |
-          URL="${{ steps.pulumi-outputs.outputs.cloud_run_url }}"
-          echo "url=$URL" >> $GITHUB_OUTPUT
+#       - name: Get service URL
+#         id: service-url
+#         run: |
+#           URL="${{ steps.pulumi-outputs.outputs.cloud_run_url }}"
+#           echo "url=$URL" >> $GITHUB_OUTPUT
           
-          # Extract hostname from URL (remove https://)
-          HOSTNAME=$(echo "$URL" | sed 's|https\?://||' | sed 's|/.*||')
-          echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
+#           # Extract hostname from URL (remove https://)
+#           HOSTNAME=$(echo "$URL" | sed 's|https\?://||' | sed 's|/.*||')
+#           echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
 
-      - name: Create/update Cloudflare DNS record
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-        run: |
-          BASE_DOMAIN="${{ env.CLOUDFLARE_BASE_DOMAIN }}"
-          DOMAIN="vencura.${BASE_DOMAIN}"
-          TARGET_HOSTNAME="${{ steps.service-url.outputs.hostname }}"
+#       - name: Create/update Cloudflare DNS record
+#         env:
+#           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+#           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+#         run: |
+#           BASE_DOMAIN="${{ env.CLOUDFLARE_BASE_DOMAIN }}"
+#           DOMAIN="vencura.${BASE_DOMAIN}"
+#           TARGET_HOSTNAME="${{ steps.service-url.outputs.hostname }}"
           
-          # Function to check Cloudflare API response
-          check_cloudflare_response() {
-            local response="$1"
-            local operation="$2"
-            local success=$(echo "$response" | jq -r '.success // false')
-            local errors=$(echo "$response" | jq -r '.errors[]?.message // empty' | head -1)
+#           # Function to check Cloudflare API response
+#           check_cloudflare_response() {
+#             local response="$1"
+#             local operation="$2"
+#             local success=$(echo "$response" | jq -r '.success // false')
+#             local errors=$(echo "$response" | jq -r '.errors[]?.message // empty' | head -1)
             
-            if [ "$success" != "true" ]; then
-              echo "Error: Cloudflare API $operation failed"
-              if [ -n "$errors" ]; then
-                echo "Error message: $errors"
-              fi
-              echo "Full response: $response"
-              exit 1
-            fi
-          }
+#             if [ "$success" != "true" ]; then
+#               echo "Error: Cloudflare API $operation failed"
+#               if [ -n "$errors" ]; then
+#                 echo "Error message: $errors"
+#               fi
+#               echo "Full response: $response"
+#               exit 1
+#             fi
+#           }
           
-          # Check if DNS record exists
-          echo "Checking for existing DNS record: ${DOMAIN}"
-          GET_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -H "Content-Type: application/json")
+#           # Check if DNS record exists
+#           echo "Checking for existing DNS record: ${DOMAIN}"
+#           GET_RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}" \
+#             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+#             -H "Content-Type: application/json")
           
-          HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
-          GET_BODY=$(echo "$GET_RESPONSE" | sed '$d')
+#           HTTP_CODE=$(echo "$GET_RESPONSE" | tail -n1)
+#           GET_BODY=$(echo "$GET_RESPONSE" | sed '$d')
           
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "Error: Failed to query DNS records (HTTP $HTTP_CODE)"
-            echo "Response: $GET_BODY"
-            exit 1
-          fi
+#           if [ "$HTTP_CODE" != "200" ]; then
+#             echo "Error: Failed to query DNS records (HTTP $HTTP_CODE)"
+#             echo "Response: $GET_BODY"
+#             exit 1
+#           fi
           
-          check_cloudflare_response "$GET_BODY" "query"
+#           check_cloudflare_response "$GET_BODY" "query"
           
-          EXISTING_RECORD=$(echo "$GET_BODY" | jq -r '.result[0].id // empty')
+#           EXISTING_RECORD=$(echo "$GET_BODY" | jq -r '.result[0].id // empty')
           
-          if [ -n "$EXISTING_RECORD" ]; then
-            # Update existing record
-            echo "Updating existing DNS record for ${DOMAIN}"
-            UPDATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${EXISTING_RECORD}" \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              -H "Content-Type: application/json" \
-              --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}")
+#           if [ -n "$EXISTING_RECORD" ]; then
+#             # Update existing record
+#             echo "Updating existing DNS record for ${DOMAIN}"
+#             UPDATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${EXISTING_RECORD}" \
+#               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+#               -H "Content-Type: application/json" \
+#               --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}")
             
-            HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
-            UPDATE_BODY=$(echo "$UPDATE_RESPONSE" | sed '$d')
+#             HTTP_CODE=$(echo "$UPDATE_RESPONSE" | tail -n1)
+#             UPDATE_BODY=$(echo "$UPDATE_RESPONSE" | sed '$d')
             
-            if [ "$HTTP_CODE" != "200" ]; then
-              echo "Error: Failed to update DNS record (HTTP $HTTP_CODE)"
-              echo "Response: $UPDATE_BODY"
-              exit 1
-            fi
+#             if [ "$HTTP_CODE" != "200" ]; then
+#               echo "Error: Failed to update DNS record (HTTP $HTTP_CODE)"
+#               echo "Response: $UPDATE_BODY"
+#               exit 1
+#             fi
             
-            check_cloudflare_response "$UPDATE_BODY" "update"
-            echo "Successfully updated DNS record for ${DOMAIN}"
-          else
-            # Create new record
-            echo "Creating DNS record for ${DOMAIN}"
-            CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
-              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-              -H "Content-Type: application/json" \
-              --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}")
+#             check_cloudflare_response "$UPDATE_BODY" "update"
+#             echo "Successfully updated DNS record for ${DOMAIN}"
+#           else
+#             # Create new record
+#             echo "Creating DNS record for ${DOMAIN}"
+#             CREATE_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+#               -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+#               -H "Content-Type: application/json" \
+#               --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}")
             
-            HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
-            CREATE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
+#             HTTP_CODE=$(echo "$CREATE_RESPONSE" | tail -n1)
+#             CREATE_BODY=$(echo "$CREATE_RESPONSE" | sed '$d')
             
-            if [ "$HTTP_CODE" != "200" ]; then
-              echo "Error: Failed to create DNS record (HTTP $HTTP_CODE)"
-              echo "Response: $CREATE_BODY"
-              exit 1
-            fi
+#             if [ "$HTTP_CODE" != "200" ]; then
+#               echo "Error: Failed to create DNS record (HTTP $HTTP_CODE)"
+#               echo "Response: $CREATE_BODY"
+#               exit 1
+#             fi
             
-            check_cloudflare_response "$CREATE_BODY" "create"
-            echo "Successfully created DNS record for ${DOMAIN}"
-          fi
+#             check_cloudflare_response "$CREATE_BODY" "create"
+#             echo "Successfully created DNS record for ${DOMAIN}"
+#           fi
