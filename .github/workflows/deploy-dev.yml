@@ -143,6 +143,15 @@ jobs:
           PR_NUMBER="${{ steps.deployment.outputs.pr_number }}"
           SECRET_PREFIX="vencura-pr-$PR_NUMBER"
           
+          # Ensure gcloud uses ADC directly (not impersonation)
+          # Clear any existing impersonation settings
+          gcloud config unset auth/impersonate_service_account 2>/dev/null || true
+          gcloud config set auth/impersonate_service_account ""
+          
+          # Verify we're using the correct account
+          echo "Current account: $(gcloud config get-value account || echo 'using ADC')"
+          echo "Impersonation: $(gcloud config get-value auth/impersonate_service_account || echo 'not set')"
+          
           # Create temporary secrets in Secret Manager
           # Note: CI/CD service account needs roles/secretmanager.admin or roles/secretmanager.secretAccessor + roles/secretmanager.secretVersionAdder
           
@@ -151,33 +160,41 @@ jobs:
             --data-file=- \
             --replication-policy="automatic" \
             --project=${{ env.PROJECT_ID }} \
+            --quiet \
             2>/dev/null || echo "${{ secrets.DYNAMIC_ENVIRONMENT_ID }}" | gcloud secrets versions add ${SECRET_PREFIX}-dynamic-environment-id \
             --data-file=- \
-            --project=${{ env.PROJECT_ID }}
+            --project=${{ env.PROJECT_ID }} \
+            --quiet
           
           echo "${{ secrets.DYNAMIC_API_TOKEN }}" | gcloud secrets create ${SECRET_PREFIX}-dynamic-api-token \
             --data-file=- \
             --replication-policy="automatic" \
             --project=${{ env.PROJECT_ID }} \
+            --quiet \
             2>/dev/null || echo "${{ secrets.DYNAMIC_API_TOKEN }}" | gcloud secrets versions add ${SECRET_PREFIX}-dynamic-api-token \
             --data-file=- \
-            --project=${{ env.PROJECT_ID }}
+            --project=${{ env.PROJECT_ID }} \
+            --quiet
           
           echo "${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}" | gcloud secrets create ${SECRET_PREFIX}-arbitrum-sepolia-rpc-url \
             --data-file=- \
             --replication-policy="automatic" \
             --project=${{ env.PROJECT_ID }} \
+            --quiet \
             2>/dev/null || echo "${{ secrets.ARBITRUM_SEPOLIA_RPC_URL }}" | gcloud secrets versions add ${SECRET_PREFIX}-arbitrum-sepolia-rpc-url \
             --data-file=- \
-            --project=${{ env.PROJECT_ID }}
+            --project=${{ env.PROJECT_ID }} \
+            --quiet
           
           echo "${{ secrets.ENCRYPTION_KEY }}" | gcloud secrets create ${SECRET_PREFIX}-encryption-key \
             --data-file=- \
             --replication-policy="automatic" \
             --project=${{ env.PROJECT_ID }} \
+            --quiet \
             2>/dev/null || echo "${{ secrets.ENCRYPTION_KEY }}" | gcloud secrets versions add ${SECRET_PREFIX}-encryption-key \
             --data-file=- \
-            --project=${{ env.PROJECT_ID }}
+            --project=${{ env.PROJECT_ID }} \
+            --quiet
           
           # Grant Cloud Run default compute service account access to these secrets
           # For ephemeral deployments, Cloud Run uses the default compute service account
@@ -189,22 +206,26 @@ jobs:
           gcloud secrets add-iam-policy-binding ${SECRET_PREFIX}-dynamic-environment-id \
             --member="serviceAccount:${DEFAULT_SA}" \
             --role="roles/secretmanager.secretAccessor" \
-            --project=${{ env.PROJECT_ID }} || true
+            --project=${{ env.PROJECT_ID }} \
+            --quiet || true
           
           gcloud secrets add-iam-policy-binding ${SECRET_PREFIX}-dynamic-api-token \
             --member="serviceAccount:${DEFAULT_SA}" \
             --role="roles/secretmanager.secretAccessor" \
-            --project=${{ env.PROJECT_ID }} || true
+            --project=${{ env.PROJECT_ID }} \
+            --quiet || true
           
           gcloud secrets add-iam-policy-binding ${SECRET_PREFIX}-arbitrum-sepolia-rpc-url \
             --member="serviceAccount:${DEFAULT_SA}" \
             --role="roles/secretmanager.secretAccessor" \
-            --project=${{ env.PROJECT_ID }} || true
+            --project=${{ env.PROJECT_ID }} \
+            --quiet || true
           
           gcloud secrets add-iam-policy-binding ${SECRET_PREFIX}-encryption-key \
             --member="serviceAccount:${DEFAULT_SA}" \
             --role="roles/secretmanager.secretAccessor" \
-            --project=${{ env.PROJECT_ID }} || true
+            --project=${{ env.PROJECT_ID }} \
+            --quiet || true
           
           echo "service_account=$DEFAULT_SA" >> $GITHUB_OUTPUT
           
