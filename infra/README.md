@@ -302,9 +302,23 @@ gcloud iam workload-identity-pools providers create-oidc github \
   --location=global \
   --workload-identity-pool=vencura-github-pool \
   --issuer-uri="https://token.actions.githubusercontent.com" \
-  --allowed-audiences="https://github.com/${REPO_OWNER}" \
+  --allowed-audiences="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="attribute.repository_owner=='${REPO_OWNER}' && attribute.repository=='${REPO_OWNER}/${REPO_NAME}'" \
+  --project="$PROJECT_ID"
+```
+
+**Important**: The `--allowed-audiences` must be set to `https://token.actions.githubusercontent.com` (the issuer URI itself) for `google-github-actions/auth@v2` to work correctly. This is the audience that GitHub Actions uses when requesting OIDC tokens.
+
+**If you already created the WIF provider with the wrong audience**, update it using:
+```bash
+PROJECT_ID=$(gcloud config get-value project)
+
+# Update existing WIF provider with correct audience
+gcloud iam workload-identity-pools providers update-oidc github \
+  --workload-identity-pool=vencura-github-pool \
+  --location=global \
+  --allowed-audiences="https://token.actions.githubusercontent.com" \
   --project="$PROJECT_ID"
 ```
 
@@ -853,6 +867,19 @@ pulumi stack output
 **Issue**: Workflow fails with authentication errors
 
 - **Solution**: Verify Workload Identity Federation is configured correctly and `WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT` secrets are set in GitHub
+
+**Issue**: `Error: The audience in ID Token [https://iam.googleapis.com/***] does not match the expected audience https://github.com/***` (when using `google-github-actions/auth@v2`)
+
+- **Solution**: The WIF provider's `--allowed-audiences` is incorrectly configured. Update it to use `https://token.actions.githubusercontent.com`:
+  ```bash
+  PROJECT_ID=$(gcloud config get-value project)
+  gcloud iam workload-identity-pools providers update-oidc github \
+    --workload-identity-pool=vencura-github-pool \
+    --location=global \
+    --allowed-audiences="https://token.actions.githubusercontent.com" \
+    --project="$PROJECT_ID"
+  ```
+  See [Step 6: Set Up Workload Identity Federation](#step-6-set-up-workload-identity-federation-on-your-computer) for more details.
 
 **Issue**: Workflow runs but infrastructure doesn't update
 
