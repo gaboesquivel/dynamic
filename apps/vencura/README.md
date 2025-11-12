@@ -412,7 +412,7 @@ For CI/CD to work, configure these secrets in GitHub:
   - See [infra/README.md](../../infra/README.md#step-5-set-up-workload-identity-federation-on-your-computer) for setup instructions
 - `WIF_SERVICE_ACCOUNT`: Workload Identity Federation service account email
   - Format: `vencura-dev-cicd-sa@PROJECT_ID.iam.gserviceaccount.com`
-  - Example: `vencura-dev-cicd-sa@bitcashbank.iam.gserviceaccount.com`
+  - Example: `vencura-dev-cicd-sa@{project_id}.iam.gserviceaccount.com`
   - See [infra/README.md](../../infra/README.md#step-5-set-up-workload-identity-federation-on-your-computer) for setup instructions
 
 **Application Secrets:**

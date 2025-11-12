@@ -298,27 +298,38 @@ REPO_OWNER="gaboesquivel"  # Replace with your GitHub username or organization
 REPO_NAME="dynamic"        # Replace with your repository name
 
 # Create WIF provider for GitHub Actions
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+WIF_PROVIDER_AUDIENCE="https://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+
 gcloud iam workload-identity-pools providers create-oidc github \
   --location=global \
   --workload-identity-pool=vencura-github-pool \
   --issuer-uri="https://token.actions.githubusercontent.com" \
-  --allowed-audiences="https://token.actions.githubusercontent.com" \
+  --allowed-audiences="https://token.actions.githubusercontent.com,${WIF_PROVIDER_AUDIENCE}" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="attribute.repository_owner=='${REPO_OWNER}' && attribute.repository=='${REPO_OWNER}/${REPO_NAME}'" \
   --project="$PROJECT_ID"
 ```
 
-**Important**: The `--allowed-audiences` must be set to `https://token.actions.githubusercontent.com` (the issuer URI itself) for `google-github-actions/auth@v2` to work correctly. This is the audience that GitHub Actions uses when requesting OIDC tokens.
+**Important**: The `--allowed-audiences` must include both:
+
+1. `https://token.actions.githubusercontent.com` - The standard GitHub Actions OIDC token audience
+2. `https://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github` - The WIF provider resource name (used by `google-github-actions/auth@v2` when requesting tokens)
+
+This dual-audience configuration ensures compatibility with how `google-github-actions/auth@v2` requests OIDC tokens from GitHub Actions.
 
 **If you already created the WIF provider with the wrong audience**, update it using:
+
 ```bash
 PROJECT_ID=$(gcloud config get-value project)
+PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+WIF_PROVIDER_AUDIENCE="https://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
 
-# Update existing WIF provider with correct audience
+# Update existing WIF provider with correct audiences
 gcloud iam workload-identity-pools providers update-oidc github \
   --workload-identity-pool=vencura-github-pool \
   --location=global \
-  --allowed-audiences="https://token.actions.githubusercontent.com" \
+  --allowed-audiences="https://token.actions.githubusercontent.com,${WIF_PROVIDER_AUDIENCE}" \
   --project="$PROJECT_ID"
 ```
 
@@ -435,10 +446,8 @@ The GitHub workflows require these secrets to be configured in your repository. 
 - `PULUMI_ACCESS_TOKEN`: Pulumi access token (get from [Pulumi Cloud](https://app.pulumi.com/account/tokens))
 - `WIF_PROVIDER`: Workload Identity Federation provider resource name (from Step 5)
   - Format: `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`
-  - Example: `projects/189882714077/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`
 - `WIF_SERVICE_ACCOUNT`: Workload Identity Federation service account email (from Step 5)
   - Format: `vencura-dev-cicd-sa@PROJECT_ID.iam.gserviceaccount.com`
-  - Example: `vencura-dev-cicd-sa@bitcashbank.iam.gserviceaccount.com`
 
 **Application Secrets (for ephemeral PR deployments):**
 
@@ -868,17 +877,45 @@ pulumi stack output
 
 - **Solution**: Verify Workload Identity Federation is configured correctly and `WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT` secrets are set in GitHub
 
-**Issue**: `Error: The audience in ID Token [https://iam.googleapis.com/***] does not match the expected audience https://github.com/***` (when using `google-github-actions/auth@v2`)
+**Issue**: `Error: The audience in ID Token [https://iam.googleapis.com/***] does not match the expected audience https://token.actions.githubusercontent.com` (when using `google-github-actions/auth@v2`)
 
-- **Solution**: The WIF provider's `--allowed-audiences` is incorrectly configured. Update it to use `https://token.actions.githubusercontent.com`:
-  ```bash
-  PROJECT_ID=$(gcloud config get-value project)
-  gcloud iam workload-identity-pools providers update-oidc github \
-    --workload-identity-pool=vencura-github-pool \
-    --location=global \
-    --allowed-audiences="https://token.actions.githubusercontent.com" \
-    --project="$PROJECT_ID"
-  ```
+- **Solution**: This error indicates that the GitHub Actions OIDC token has an audience that doesn't match what the WIF provider expects. The `google-github-actions/auth@v2` action may request tokens with the WIF provider resource name as the audience. Fix by adding both audiences to the allowed list:
+  1. **Update WIF provider configuration**: Add both the standard GitHub Actions audience and the WIF provider resource name:
+
+     ```bash
+     PROJECT_ID=$(gcloud config get-value project)
+     PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+     WIF_PROVIDER_AUDIENCE="https://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+
+     gcloud iam workload-identity-pools providers update-oidc github \
+       --workload-identity-pool=vencura-github-pool \
+       --location=global \
+       --allowed-audiences="https://token.actions.githubusercontent.com,${WIF_PROVIDER_AUDIENCE}" \
+       --project="$PROJECT_ID"
+     ```
+
+  2. **Verify workflow permissions**: Ensure your workflow has `id-token: write` permission (this is already set in the workflow ✅).
+  3. **Check GitHub secrets**: Verify that `WIF_PROVIDER` and `WIF_SERVICE_ACCOUNT` secrets are correctly set in GitHub repository settings. The `WIF_PROVIDER` should be in the format:
+     ```
+     projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github
+     ```
+     Get the correct value using:
+     ```bash
+     PROJECT_ID=$(gcloud config get-value project)
+     PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format="value(projectNumber)")
+     echo "projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/vencura-github-pool/providers/github"
+     ```
+  4. **Verify attribute condition**: Ensure the WIF provider's attribute condition matches your repository. Check with:
+     ```bash
+     PROJECT_ID=$(gcloud config get-value project)
+     gcloud iam workload-identity-pools providers describe github \
+       --workload-identity-pool=vencura-github-pool \
+       --location=global \
+       --project="$PROJECT_ID" \
+       --format="value(attributeCondition)"
+     ```
+     The condition should match your repository owner and name (e.g., `attribute.repository_owner=='gaboesquivel' && attribute.repository=='gaboesquivel/dynamic'`).
+
   See [Step 6: Set Up Workload Identity Federation](#step-6-set-up-workload-identity-federation-on-your-computer) for more details.
 
 **Issue**: Workflow runs but infrastructure doesn't update
