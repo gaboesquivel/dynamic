@@ -143,7 +143,55 @@ pulumi login
 
 This authenticates with Pulumi Cloud (or your self-hosted backend) to store infrastructure state.
 
-### Step 3: Create Pulumi Stacks (On Your Computer)
+### Step 3: Authenticate with Google Cloud (On Your Computer)
+
+Before running Pulumi commands, you need to authenticate with Google Cloud Platform using Application Default Credentials. This allows Pulumi to access your GCP project.
+
+**If you're using WSL (Windows Subsystem for Linux):**
+
+```bash
+gcloud auth application-default login
+```
+
+This command will:
+1. Open a browser window for authentication
+2. Store application default credentials that Pulumi can use
+3. Allow Pulumi to authenticate with GCP when running `pulumi up`, `pulumi preview`, etc.
+
+**If you haven't set up gcloud in WSL yet:**
+
+1. Install Google Cloud SDK (if not already installed):
+   ```bash
+   # For Ubuntu/Debian
+   curl https://sdk.cloud.google.com | bash
+   exec -l $SHELL
+   ```
+
+2. Initialize gcloud:
+   ```bash
+   gcloud init
+   ```
+
+3. Then run the authentication command:
+   ```bash
+   gcloud auth application-default login
+   ```
+
+**Alternative: Using a service account key (not recommended for local dev)**
+
+If you prefer using a service account key file instead:
+
+1. Create/download a service account key from GCP Console
+2. Set the environment variable:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/service-account-key.json"
+   ```
+
+However, `gcloud auth application-default login` is the recommended approach for local development.
+
+**Note**: The credentials are stored locally and will be reused for future Pulumi commands. You may need to re-authenticate periodically or if credentials expire.
+
+### Step 4: Create Pulumi Stacks (On Your Computer)
 
 Create the dev and prod stacks if they don't already exist:
 
@@ -155,7 +203,7 @@ pulumi stack init dev
 pulumi stack init prod
 ```
 
-### Step 4: Configure GCP Project Settings (On Your Computer)
+### Step 5: Configure GCP Project Settings (On Your Computer)
 
 Configure GCP project and region. The infrastructure code reads these values in this priority order:
 
@@ -199,7 +247,7 @@ pulumi config set gcp:region us-central1
 
 **For CI/CD**: GitHub workflows automatically set `GCP_PROJECT_ID` and `GCP_REGION` as environment variables from GitHub secrets, so no `.env` file is needed in CI/CD.
 
-### Step 5: Set Up Workload Identity Federation (On Your Computer)
+### Step 6: Set Up Workload Identity Federation (On Your Computer)
 
 Workload Identity Federation (WIF) allows GitHub Actions to authenticate to GCP without storing long-lived service account keys. This is a **one-time setup** that needs to be done before the workflows can run.
 
@@ -336,7 +384,7 @@ echo "WIF_SERVICE_ACCOUNT: $SA_EMAIL"
 
 **Note**: For production deployments, you may want to create a separate service account (`vencura-prod-cicd-sa`) with similar permissions. The setup process is the same, just use a different service account name.
 
-### Step 6: Configure GitHub Secrets (On GitHub Website)
+### Step 7: Configure GitHub Secrets (On GitHub Website)
 
 The GitHub workflows require these secrets to be configured in your repository. **Do this on GitHub, not your computer:**
 
@@ -364,7 +412,7 @@ The GitHub workflows require these secrets to be configured in your repository. 
 - `ARBITRUM_SEPOLIA_RPC_URL`: Arbitrum Sepolia RPC URL
 - `ENCRYPTION_KEY`: Encryption key
 
-### Step 7: Initial Infrastructure Creation
+### Step 8: Initial Infrastructure Creation
 
 You have two options:
 
@@ -395,7 +443,7 @@ pulumi preview
 pulumi up
 ```
 
-### Step 8: Configure Secrets in Secret Manager (On Your Computer)
+### Step 9: Configure Secrets in Secret Manager (On Your Computer)
 
 After infrastructure is created (either by workflow or locally), update secret values in Google Cloud Secret Manager. The infrastructure creates secrets with placeholder values that need to be updated:
 
@@ -415,7 +463,7 @@ gcloud secrets versions add vencura-prod-encryption-key --data-file=- <<< "your-
 
 **Note**: Database password is auto-generated and stored automatically by Pulumi - no manual step needed.
 
-### Step 9: Verify Setup
+### Step 10: Verify Setup
 
 1. **Check that stacks exist** (On Your Computer):
 
@@ -451,6 +499,10 @@ pulumi preview
 ```bash
 pulumi up
 ```
+
+When you run `pulumi up`, you'll see output showing the resources being created or updated:
+
+![Pulumi Dev Update Output](./pulumi-dev.png)
 
 #### Destroy Infrastructure
 
@@ -645,6 +697,10 @@ pulumi stack output
 
 ### Common Issues
 
+**Issue**: `Error: failed to load application credentials` or `Error: google: could not find default credentials` (when running `pulumi up` or `pulumi preview`)
+
+- **Solution**: You need to authenticate with GCP using Application Default Credentials. Run `gcloud auth application-default login` (see [Step 3: Authenticate with Google Cloud](#step-3-authenticate-with-google-cloud-on-your-computer) in the First-Time Setup section). This is required before running any Pulumi commands that interact with GCP.
+
 **Issue**: `Error: failed to create VPC connector`
 
 - **Solution**: Ensure the VPC has proper subnet configuration and private IP ranges
@@ -660,6 +716,16 @@ pulumi stack output
 **Issue**: `Error: service account lacks permissions`
 
 - **Solution**: Verify IAM bindings are correctly applied and service accounts have required roles
+
+**Issue**: `Error: Service account ... already exists` or `Error 409: alreadyExists` (when running `pulumi up`)
+
+- **Solution**: This means the resource exists in GCP but is not in Pulumi's state. You need to import the existing resource into Pulumi state. For example, to import an existing service account:
+  ```bash
+  cd infra/vencura
+  pulumi stack select dev
+  pulumi import gcp:serviceaccount/account:Account vencura-dev-cicd-sa projects/PROJECT_ID/serviceAccounts/vencura-dev-cicd-sa@PROJECT_ID.iam.gserviceaccount.com
+  ```
+  Replace `PROJECT_ID` with your actual GCP project ID. After importing, run `pulumi up` again. The resource will now be managed by Pulumi.
 
 **Issue**: `Error: PULUMI_ACCESS_TOKEN not set` (in GitHub workflow)
 

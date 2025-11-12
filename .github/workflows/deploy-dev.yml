@@ -186,12 +186,12 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --service-account="$SERVICE_ACCOUNT" \
-            --port 3000 \
+            --port 3077 \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
             --max-instances 2 \
-            --set-env-vars "PORT=3000,USE_PGLITE=true" \
+            --set-env-vars "USE_PGLITE=true" \
             --set-secrets "DYNAMIC_ENVIRONMENT_ID=${SECRET_PREFIX}-dynamic-environment-id:latest,DYNAMIC_API_TOKEN=${SECRET_PREFIX}-dynamic-api-token:latest,ARBITRUM_SEPOLIA_RPC_URL=${SECRET_PREFIX}-arbitrum-sepolia-rpc-url:latest,ENCRYPTION_KEY=${SECRET_PREFIX}-encryption-key:latest" \
             --timeout 300 \
             --quiet
