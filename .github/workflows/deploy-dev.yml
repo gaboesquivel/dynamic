@@ -11,6 +11,7 @@ env:
   REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
   SERVICE_NAME_DEV: vencura-dev
   ARTIFACT_REGISTRY: ${{ secrets.GCP_ARTIFACT_REGISTRY || 'vencura' }}
+  CLOUDFLARE_BASE_DOMAIN: ${{ secrets.CLOUDFLARE_BASE_DOMAIN || 'gaboesquivel.com' }}
 
 jobs:
   deploy:
@@ -58,22 +59,47 @@ jobs:
       - name: Determine deployment type
         id: deployment
         run: |
+          # Function to sanitize branch name for DNS
+          sanitize_branch_name() {
+            local branch="$1"
+            # Convert to lowercase
+            branch=$(echo "$branch" | tr '[:upper:]' '[:lower:]')
+            # Replace invalid DNS characters with hyphens
+            branch=$(echo "$branch" | sed 's/[^a-z0-9-]/-/g')
+            # Remove leading/trailing hyphens and multiple consecutive hyphens
+            branch=$(echo "$branch" | sed 's/^-\+//; s/-\+$//; s/-\+/-/g')
+            # Limit to 63 characters (DNS label limit)
+            branch=$(echo "$branch" | cut -c1-63)
+            # Ensure it's not empty
+            if [ -z "$branch" ]; then
+              branch="pr"
+            fi
+            echo "$branch"
+          }
+          
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             PR_NUMBER=${{ github.event.pull_request.number }}
+            BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+            SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
             echo "type=ephemeral" >> $GITHUB_OUTPUT
             echo "service_name=vencura-pr-$PR_NUMBER" >> $GITHUB_OUTPUT
             echo "use_pglite=true" >> $GITHUB_OUTPUT
             echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "sanitized_branch=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" == "workflow_run" ]; then
             # For workflow_run, check if it was triggered by a PR
             PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
             HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
             if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ] && [ "$PR_NUMBER" != "" ]; then
               # Workflow was triggered by a PR
+              SANITIZED_BRANCH=$(sanitize_branch_name "$HEAD_BRANCH")
               echo "type=ephemeral" >> $GITHUB_OUTPUT
               echo "service_name=vencura-pr-$PR_NUMBER" >> $GITHUB_OUTPUT
               echo "use_pglite=true" >> $GITHUB_OUTPUT
               echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+              echo "branch_name=$HEAD_BRANCH" >> $GITHUB_OUTPUT
+              echo "sanitized_branch=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
             elif [ "$HEAD_BRANCH" == "main" ]; then
               # Workflow was triggered by push to main
               echo "type=persistent" >> $GITHUB_OUTPUT
@@ -273,20 +299,100 @@ jobs:
               --format 'value(status.url)')
           fi
           echo "url=$URL" >> $GITHUB_OUTPUT
+          
+          # Extract hostname from URL (remove https://)
+          HOSTNAME=$(echo "$URL" | sed 's|https\?://||' | sed 's|/.*||')
+          echo "hostname=$HOSTNAME" >> $GITHUB_OUTPUT
+
+      - name: Create/update Cloudflare DNS record (Ephemeral PR)
+        if: steps.deployment.outputs.type == 'ephemeral'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          BASE_DOMAIN="${{ env.CLOUDFLARE_BASE_DOMAIN }}"
+          SUBDOMAIN="${{ steps.deployment.outputs.sanitized_branch }}"
+          DOMAIN="${SUBDOMAIN}.vencura.${BASE_DOMAIN}"
+          TARGET_HOSTNAME="${{ steps.service-url.outputs.hostname }}"
+          
+          # Check if DNS record exists
+          EXISTING_RECORD=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+          
+          if [ -n "$EXISTING_RECORD" ]; then
+            # Update existing record
+            echo "Updating existing DNS record for ${DOMAIN}"
+            curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${EXISTING_RECORD}" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}" > /dev/null
+          else
+            # Create new record
+            echo "Creating DNS record for ${DOMAIN}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}" > /dev/null
+          fi
+          
+          echo "custom_domain=https://${DOMAIN}" >> $GITHUB_ENV
+
+      - name: Create/update Cloudflare DNS record (Dev)
+        if: steps.deployment.outputs.type == 'persistent'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: |
+          BASE_DOMAIN="${{ env.CLOUDFLARE_BASE_DOMAIN }}"
+          DOMAIN="vencura.${BASE_DOMAIN}"
+          TARGET_HOSTNAME="${{ steps.service-url.outputs.hostname }}"
+          
+          # Check if DNS record exists
+          EXISTING_RECORD=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+          
+          if [ -n "$EXISTING_RECORD" ]; then
+            # Update existing record
+            echo "Updating existing DNS record for ${DOMAIN}"
+            curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${EXISTING_RECORD}" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}" > /dev/null
+          else
+            # Create new record
+            echo "Creating DNS record for ${DOMAIN}"
+            curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "{\"type\":\"CNAME\",\"name\":\"${DOMAIN}\",\"content\":\"${TARGET_HOSTNAME}\",\"ttl\":300,\"proxied\":true}" > /dev/null
+          fi
+          
+          echo "custom_domain=https://${DOMAIN}" >> $GITHUB_ENV
 
       - name: Comment PR with deployment URL
         if: steps.deployment.outputs.type == 'ephemeral' && steps.deployment.outputs.pr_number != ''
         uses: actions/github-script@v7
+        env:
+          CUSTOM_DOMAIN: ${{ env.custom_domain }}
         with:
           script: |
             const url = '${{ steps.service-url.outputs.url }}';
+            const customDomain = process.env.CUSTOM_DOMAIN || '';
             const prNumber = '${{ steps.deployment.outputs.pr_number }}';
             const commitSha = '${{ github.event.workflow_run.head_sha || github.sha }}';
             const commitShortSha = commitSha.substring(0, 7);
-            const body = `🚀 **Ephemeral deployment ready!**
             
-            Preview URL: ${url}
-            Commit: \`${commitShortSha}\`
+            let body = `🚀 **Ephemeral deployment ready!**
+            
+            Preview URL: ${url}`;
+            
+            if (customDomain) {
+              body += `\nCustom Domain: ${customDomain}`;
+            }
+            
+            body += `\nCommit: \`${commitShortSha}\`
             
             This deployment uses PGLite (embedded database) and will be automatically cleaned up when the PR is closed or merged.`;
 
@@ -322,10 +428,47 @@ jobs:
 
       - name: Cleanup ephemeral deployment on PR close
         if: github.event_name == 'pull_request' && github.event.action == 'closed'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           SERVICE_NAME="vencura-pr-$PR_NUMBER"
           SECRET_PREFIX="vencura-pr-$PR_NUMBER"
+          
+          # Function to sanitize branch name for DNS (same as deployment step)
+          sanitize_branch_name() {
+            local branch="$1"
+            branch=$(echo "$branch" | tr '[:upper:]' '[:lower:]')
+            branch=$(echo "$branch" | sed 's/[^a-z0-9-]/-/g')
+            branch=$(echo "$branch" | sed 's/^-\+//; s/-\+$//; s/-\+/-/g')
+            branch=$(echo "$branch" | cut -c1-63)
+            if [ -z "$branch" ]; then
+              branch="pr"
+            fi
+            echo "$branch"
+          }
+          
+          # Extract and sanitize branch name
+          BASE_DOMAIN="${{ env.CLOUDFLARE_BASE_DOMAIN }}"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          SANITIZED_BRANCH=$(sanitize_branch_name "$BRANCH_NAME")
+          DOMAIN="${SANITIZED_BRANCH}.vencura.${BASE_DOMAIN}"
+          
+          # Delete Cloudflare DNS record
+          echo "Deleting Cloudflare DNS record for ${DOMAIN}..."
+          DNS_RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records?type=CNAME&name=${DOMAIN}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
+          
+          if [ -n "$DNS_RECORD_ID" ]; then
+            curl -s -X DELETE "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/dns_records/${DNS_RECORD_ID}" \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" > /dev/null
+            echo "Deleted DNS record for ${DOMAIN}"
+          else
+            echo "DNS record for ${DOMAIN} not found or already deleted"
+          fi
           
           # Delete Cloud Run service
           gcloud run services delete $SERVICE_NAME \

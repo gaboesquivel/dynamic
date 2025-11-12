@@ -283,6 +283,9 @@ The Vencura API is deployed to **Google Cloud Run** with infrastructure managed 
 - **Database**: Cloud SQL Postgres (dev instance)
 - **Service**: Persistent Cloud Run service
 - **URL**: Managed via Pulumi outputs
+- **Custom Domain**: `vencura.{base_domain}` (default: `vencura.gaboesquivel.com`)
+  - Base domain configurable via `CLOUDFLARE_BASE_DOMAIN` environment variable
+  - Accessible via Cloudflare proxy (DDoS protection, SSL/TLS)
 
 #### Production Environment (`vencura-prod`)
 
@@ -299,6 +302,11 @@ The Vencura API is deployed to **Google Cloud Run** with infrastructure managed 
 - **Service**: Ephemeral Cloud Run service
 - **Lifetime**: Auto-deleted on PR close/merge
 - **Purpose**: Preview deployments for PR review
+- **Custom Domain**: `{branch-name}.vencura.{base_domain}` (default: `{branch-name}.vencura.gaboesquivel.com`)
+  - Base domain configurable via `CLOUDFLARE_BASE_DOMAIN` GitHub secret
+  - Branch names are automatically sanitized for DNS compatibility
+  - Example: Branch `feature/auth` → `feature-auth.vencura.{base_domain}`
+  - Accessible via Cloudflare proxy (DDoS protection, SSL/TLS)
 
 ### Docker Build
 
@@ -356,8 +364,9 @@ Runs on all PRs and pushes to `main`:
 
 - Automatic Docker image build and push to Artifact Registry
 - Ephemeral PR deployments with unique service names
-- PR comments with deployment URLs
-- Auto-cleanup of ephemeral deployments
+- PR comments with deployment URLs (includes custom domain)
+- Auto-cleanup of ephemeral deployments (including DNS records)
+- Automatic Cloudflare DNS record management for custom domains
 
 ### Prod Deployment Workflow
 
@@ -381,6 +390,22 @@ For CI/CD to work, configure these secrets in GitHub:
 - `GCP_PROJECT_ID`: Google Cloud project ID
 - `GCP_REGION`: Deployment region (default: `us-central1`)
 - `GCP_ARTIFACT_REGISTRY`: Artifact Registry repository name (default: `vencura`)
+
+**Cloudflare (for custom domain management):**
+
+- `CLOUDFLARE_API_TOKEN`: Cloudflare API token with Zone DNS Edit permissions
+  - Create at [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+  - Permissions: Zone → DNS → Edit
+- `CLOUDFLARE_ZONE_ID`: Zone ID for your base domain
+  - **How to find:** Go to Cloudflare Dashboard → Select your domain → Overview page → Right sidebar → API section
+  - **Alternative:** Check the URL when viewing your domain: `https://dash.cloudflare.com/{zone_id}/{domain_name}`
+    - The hexadecimal string in the URL path is your Zone ID
+    - Example: `https://dash.cloudflare.com/f790d8fe6f11efefca4760eca1eee5b0/gaboesquivel.com`
+    - Zone ID = `f790d8fe6f11efefca4760eca1eee5b0`
+- `CLOUDFLARE_BASE_DOMAIN`: Base domain (default: `gaboesquivel.com`, optional)
+  - This is your domain name (e.g., `gaboesquivel.com`)
+  - The domain you've added to Cloudflare
+- See [infra/README.md](../../infra/README.md#cloudflare-custom-domain-setup) for detailed setup instructions
 - `WIF_PROVIDER`: Workload Identity Federation provider resource name
   - Format: `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`
   - Example: `projects/8888888888/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`

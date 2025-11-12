@@ -48,6 +48,9 @@ function getConfig() {
     const zone = gcpConfig.get('zone') || `${region}-a`;
     const environment = config.get('environment') || 'dev';
     const appName = 'vencura';
+    const cloudflareBaseDomain = process.env.CLOUDFLARE_BASE_DOMAIN ||
+        config.get('cloudflareBaseDomain') ||
+        'gaboesquivel.com';
     return {
         projectId,
         region,
@@ -62,6 +65,7 @@ function getConfig() {
         cloudSqlBackupEnabled: config.getBoolean('cloudSqlBackupEnabled') || false,
         cloudSqlHaEnabled: config.getBoolean('cloudSqlHaEnabled') || false,
         imageTag: config.get('imageTag') || 'latest',
+        cloudflareBaseDomain,
     };
 }
 function resourceName(config, resource) {

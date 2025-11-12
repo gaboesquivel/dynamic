@@ -222,7 +222,16 @@ cd infra/vencura
 cat > .env << EOF
 GCP_PROJECT_ID=your-gcp-project-id
 GCP_REGION=us-central1
+CLOUDFLARE_BASE_DOMAIN=gaboesquivel.com
 EOF
+```
+
+Or copy the sample file:
+
+```bash
+cd infra/vencura
+cp .env-sample .env
+# Then edit .env with your actual values
 ```
 
 **How it works:**
@@ -414,6 +423,28 @@ The GitHub workflows require these secrets to be configured in your repository. 
 - `DYNAMIC_API_TOKEN`: Dynamic API token
 - `ARBITRUM_SEPOLIA_RPC_URL`: Arbitrum Sepolia RPC URL
 - `ENCRYPTION_KEY`: Encryption key
+
+**Cloudflare Secrets (for custom domain management):**
+
+- `CLOUDFLARE_API_TOKEN`: Cloudflare API token with Zone DNS Edit permissions
+  - Create at [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens)
+  - Permissions needed: Zone → DNS → Edit
+  - Zone Resources: Include → Specific zone → your base domain
+- `CLOUDFLARE_ZONE_ID`: Zone ID for your base domain
+  - **How to find it:**
+    1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com) and select your domain
+    2. On the domain overview page, scroll to the right sidebar
+    3. Look for "API" section - the Zone ID is displayed there
+    4. **Alternative**: Check the URL when viewing your domain - format is `https://dash.cloudflare.com/{zone_id}/{domain_name}`
+       - Example: `https://dash.cloudflare.com/f790d8fe6f11efefca4760eca1eee5b0/gaboesquivel.com`
+       - The hexadecimal string (`f790d8fe6f11efefca4760eca1eee5b0`) is your Zone ID
+- `CLOUDFLARE_BASE_DOMAIN`: Base domain for custom subdomains (default: `gaboesquivel.com`)
+  - **How to find it:**
+    1. This is simply your domain name (e.g., `gaboesquivel.com`)
+    2. It's the domain you've added to Cloudflare
+    3. You can see it in the Cloudflare dashboard domain list
+    4. **Optional** - defaults to `gaboesquivel.com` if not set
+    5. Used to construct subdomains like `vencura.{base_domain}` and `{branch-name}.vencura.{base_domain}`
 
 ### Step 8: Initial Infrastructure Creation
 
@@ -652,6 +683,70 @@ The infrastructure is fully integrated with GitHub Actions workflows. See the [I
 - **What's Automated**: ✅ Validates confirmation, builds image, pushes to registry, runs `pulumi preview`, runs `pulumi up`, updates Cloud Run service, runs health checks, retrieves outputs
 - **Infrastructure**: Fully managed by Pulumi (provisions/updates all resources)
 - **Manual Steps**: ✅ Manual trigger only (safety measure) - everything else is automated
+
+## Cloudflare Custom Domain Setup
+
+The infrastructure uses Cloudflare in front of Google Cloud Run to provide DDoS protection, SSL/TLS termination, and custom domain management.
+
+### Domain Configuration
+
+- **Base Domain**: Configurable via `CLOUDFLARE_BASE_DOMAIN` environment variable (default: `gaboesquivel.com`)
+  - Set in GitHub secrets for CI/CD
+  - Set in `.env` file for local development
+  - Can also be set in Pulumi config as `cloudflareBaseDomain`
+- **Dev Environment**: `vencura.{base_domain}` → Cloud Run dev service
+- **PR Deployments**: `{branch-name}.vencura.{base_domain}` → Ephemeral Cloud Run services
+  - Branch names are automatically sanitized for DNS compatibility (lowercase, hyphens only, max 63 chars)
+  - Example: Branch `feature/auth` becomes `feature-auth.vencura.{base_domain}`
+
+### Cloudflare Proxy Mode
+
+All DNS records are configured with Cloudflare proxy enabled (orange cloud), which provides:
+
+- DDoS protection
+- SSL/TLS termination
+- Global CDN distribution
+- Web Application Firewall (WAF) capabilities
+
+### SSL/TLS Configuration
+
+Cloudflare SSL/TLS mode should be set to **"Full"** (not "Flexible") in the Cloudflare dashboard:
+
+- Cloud Run provides valid SSL certificates
+- Cloudflare terminates SSL and forwards to Cloud Run over HTTPS
+- This ensures end-to-end encryption
+
+### DNS Record Management
+
+DNS records are automatically managed by GitHub Actions workflows:
+
+- **Dev deployments**: DNS record `vencura.gaboesquivel.com` is created/updated automatically
+- **PR deployments**: DNS records `{branch-name}.vencura.gaboesquivel.com` are created on PR open/update
+- **PR cleanup**: DNS records are automatically deleted when PRs are closed or merged
+
+### Manual Cloudflare Configuration
+
+One-time setup in Cloudflare dashboard:
+
+1. Verify your base domain (default: `gaboesquivel.com`) is added to Cloudflare
+2. Ensure SSL/TLS mode is set to "Full" (not "Flexible")
+   - Go to SSL/TLS → Overview → Set mode to "Full"
+3. Configure caching rules if needed (APIs typically should not cache)
+   - Go to Rules → Page Rules or Cache Rules
+
+**Note**: If using a different base domain, set `CLOUDFLARE_BASE_DOMAIN` in your GitHub secrets and `.env` file.
+
+### Required GitHub Secrets
+
+See [Step 7: Configure GitHub Secrets](#step-7-configure-github-secrets-on-github-website) for details on:
+
+- `CLOUDFLARE_API_TOKEN`: API token with Zone DNS Edit permissions
+- `CLOUDFLARE_ZONE_ID`: Zone ID for your base domain
+  - Find in Cloudflare dashboard: Select domain → Overview → Right sidebar → API section
+  - Or check the URL: `https://dash.cloudflare.com/{zone_id}/{domain_name}` - the hexadecimal string is your Zone ID
+- `CLOUDFLARE_BASE_DOMAIN`: Base domain (default: `gaboesquivel.com`, optional)
+  - This is your domain name (e.g., `gaboesquivel.com`)
+  - The domain you've added to Cloudflare
 
 ## Resource Naming
 
