@@ -75,7 +75,7 @@ jobs:
       - name: Build Docker image
         working-directory: ./apps/vencura
         run: |
-          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:${{ github.sha }}"
+          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:prod"
           docker build -t $IMAGE_TAG .
           docker push $IMAGE_TAG
           echo "image=$IMAGE_TAG" >> $GITHUB_ENV
