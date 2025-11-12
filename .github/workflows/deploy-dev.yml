@@ -1,16 +1,10 @@
 name: Deploy to Dev
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Quality Checks"]
     types:
-      - opened
-      - synchronize
-      - reopened
-  push:
-    branches:
-      - main
+      - completed
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -22,13 +16,17 @@ jobs:
   deploy:
     name: Deploy to Dev Environment
     runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: read
       pull-requests: write
+      id-token: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -65,6 +63,28 @@ jobs:
             echo "type=ephemeral" >> $GITHUB_OUTPUT
             echo "service_name=vencura-pr-$PR_NUMBER" >> $GITHUB_OUTPUT
             echo "use_pglite=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "workflow_run" ]; then
+            # For workflow_run, check if it was triggered by a PR
+            PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+            HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ] && [ "$PR_NUMBER" != "" ]; then
+              # Workflow was triggered by a PR
+              echo "type=ephemeral" >> $GITHUB_OUTPUT
+              echo "service_name=vencura-pr-$PR_NUMBER" >> $GITHUB_OUTPUT
+              echo "use_pglite=true" >> $GITHUB_OUTPUT
+              echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            elif [ "$HEAD_BRANCH" == "main" ]; then
+              # Workflow was triggered by push to main
+              echo "type=persistent" >> $GITHUB_OUTPUT
+              echo "service_name=$SERVICE_NAME_DEV" >> $GITHUB_OUTPUT
+              echo "use_pglite=false" >> $GITHUB_OUTPUT
+            else
+              # Unknown branch, default to persistent
+              echo "type=persistent" >> $GITHUB_OUTPUT
+              echo "service_name=$SERVICE_NAME_DEV" >> $GITHUB_OUTPUT
+              echo "use_pglite=false" >> $GITHUB_OUTPUT
+            fi
           else
             echo "type=persistent" >> $GITHUB_OUTPUT
             echo "service_name=$SERVICE_NAME_DEV" >> $GITHUB_OUTPUT
@@ -74,7 +94,8 @@ jobs:
       - name: Build Docker image
         working-directory: ./apps/vencura
         run: |
-          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:${{ github.sha }}"
+          COMMIT_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          IMAGE_TAG="$REGION-docker.pkg.dev/$PROJECT_ID/$ARTIFACT_REGISTRY/vencura:$COMMIT_SHA"
           docker build -t $IMAGE_TAG .
           docker push $IMAGE_TAG
           echo "image=$IMAGE_TAG" >> $GITHUB_ENV
@@ -83,7 +104,7 @@ jobs:
         if: steps.deployment.outputs.type == 'ephemeral'
         id: create-secrets
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_NUMBER="${{ steps.deployment.outputs.pr_number }}"
           SECRET_PREFIX="vencura-pr-$PR_NUMBER"
           
           # Create temporary secrets in Secret Manager
@@ -254,11 +275,12 @@ jobs:
           echo "url=$URL" >> $GITHUB_OUTPUT
 
       - name: Comment PR with deployment URL
-        if: steps.deployment.outputs.type == 'ephemeral' && github.event_name == 'pull_request'
+        if: steps.deployment.outputs.type == 'ephemeral' && steps.deployment.outputs.pr_number != ''
         uses: actions/github-script@v7
         with:
           script: |
             const url = '${{ steps.service-url.outputs.url }}';
+            const prNumber = '${{ steps.deployment.outputs.pr_number }}';
             const body = `🚀 **Ephemeral deployment ready!**
             
             Preview URL: ${url}
@@ -266,7 +288,7 @@ jobs:
             This deployment uses PGLite (embedded database) and will be automatically cleaned up when the PR is closed or merged.`;
 
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: parseInt(prNumber),
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: body
