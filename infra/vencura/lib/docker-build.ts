@@ -1,5 +1,6 @@
 import * as docker from '@pulumi/docker';
 import * as pulumi from '@pulumi/pulumi';
+import { execSync } from 'child_process';
 import type { Config } from './config';
 import type { ArtifactRegistryResources } from './artifact-registry';
 
@@ -13,7 +14,8 @@ export function createDockerBuild(
   artifactRegistry: ArtifactRegistryResources,
 ): DockerBuildResources {
   // Check if we're in CI/CD - if so, skip building (workflow already built it)
-  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+  const isCI =
+    process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
   // Construct the image name
   const imageName = pulumi.interpolate`${config.region}-docker.pkg.dev/${config.projectId}/${artifactRegistry.repository.repositoryId}/vencura:${config.imageTag}`;
@@ -42,22 +44,20 @@ export function createDockerBuild(
       registry: {
         server: pulumi.interpolate`${config.region}-docker.pkg.dev`,
         username: 'oauth2accesstoken',
-        password: pulumi
-          .all([config.projectId])
-          .apply(() => {
-            // Use gcloud to get access token for Artifact Registry
-            // This requires gcloud to be installed and authenticated
-            const { execSync } = require('child_process');
-            try {
-              return execSync('gcloud auth print-access-token', {
-                encoding: 'utf-8',
-              }).trim();
-            } catch (error) {
-              throw new Error(
-                'Failed to get GCP access token. Make sure gcloud is installed and authenticated. Run: gcloud auth application-default login',
-              );
-            }
-          }),
+        password: pulumi.all([config.projectId]).apply(() => {
+          // Use gcloud to get access token for Artifact Registry
+          // This requires gcloud to be installed and authenticated
+          try {
+            const token = execSync('gcloud auth print-access-token', {
+              encoding: 'utf-8',
+            });
+            return token.trim();
+          } catch {
+            throw new Error(
+              'Failed to get GCP access token. Make sure gcloud is installed and authenticated. Run: gcloud auth application-default login',
+            );
+          }
+        }),
       },
     },
     {
@@ -71,4 +71,3 @@ export function createDockerBuild(
     imageName: image.imageName,
   };
 }
-

@@ -1,5 +1,4 @@
 import * as gcp from '@pulumi/gcp';
-import * as pulumi from '@pulumi/pulumi';
 import type { Config } from './config';
 import { resourceName } from './config';
 import type { NetworkResources } from './network';

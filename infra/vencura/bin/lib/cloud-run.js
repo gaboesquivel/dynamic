@@ -35,9 +35,8 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createCloudRun = createCloudRun;
 const gcp = __importStar(require("@pulumi/gcp"));
-const pulumi = __importStar(require("@pulumi/pulumi"));
 const config_1 = require("./config");
-function createCloudRun(config, network, database, secrets, serviceAccounts, artifactRegistry, provider) {
+function createCloudRun(config, network, database, secrets, serviceAccounts, artifactRegistry, dockerBuild, provider) {
     const serviceName = (0, config_1.resourceName)(config, 'api');
     // Cloud Run service
     const service = new gcp.cloudrun.Service(serviceName, {
@@ -61,7 +60,7 @@ function createCloudRun(config, network, database, secrets, serviceAccounts, art
                 serviceAccountName: serviceAccounts.cloudRunServiceAccount.email,
                 containers: [
                     {
-                        image: pulumi.interpolate `${config.region}-docker.pkg.dev/${config.projectId}/${artifactRegistry.repository.repositoryId}/vencura:${config.imageTag}`,
+                        image: dockerBuild.imageName,
                         ports: [
                             {
                                 containerPort: 3077,
@@ -170,6 +169,7 @@ function createCloudRun(config, network, database, secrets, serviceAccounts, art
             database.instance,
             serviceAccounts.cloudRunServiceAccount,
             artifactRegistry.repository,
+            ...(dockerBuild.image ? [dockerBuild.image] : []),
         ],
     });
     // Allow unauthenticated access (can be restricted later with IAM)

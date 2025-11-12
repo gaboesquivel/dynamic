@@ -46,12 +46,9 @@ export function getConfig(): Config {
     cloudRunCpu: config.get('cloudRunCpu') || '1',
     cloudRunMemory: config.get('cloudRunMemory') || '512Mi',
     cloudRunMinInstances:
-      config.getNumber('cloudRunMinInstances') !== undefined
-        ? config.getNumber('cloudRunMinInstances')
-        : environment === 'dev'
-          ? 1
-          : 0,
-    cloudRunMaxInstances: config.getNumber('cloudRunMaxInstances') || 2,
+      config.getNumber('cloudRunMinInstances') ??
+      (environment === 'dev' ? 1 : 0),
+    cloudRunMaxInstances: config.getNumber('cloudRunMaxInstances') ?? 2,
     cloudSqlBackupEnabled: config.getBoolean('cloudSqlBackupEnabled') || false,
     cloudSqlHaEnabled: config.getBoolean('cloudSqlHaEnabled') || false,
     imageTag: config.get('imageTag') || 'latest',

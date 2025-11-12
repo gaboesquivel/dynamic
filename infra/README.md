@@ -544,6 +544,7 @@ pulumi up
 ```
 
 When you run `pulumi up` locally, Pulumi will:
+
 1. **Automatically build and push the Docker image** to Artifact Registry (if not in CI/CD)
 2. Create or update all infrastructure resources
 3. Deploy the Cloud Run service with the built image

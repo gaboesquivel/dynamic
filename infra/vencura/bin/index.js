@@ -82,6 +82,7 @@ const database_1 = require("./lib/database");
 const secrets_1 = require("./lib/secrets");
 const service_accounts_1 = require("./lib/service-accounts");
 const artifact_registry_1 = require("./lib/artifact-registry");
+const docker_build_1 = require("./lib/docker-build");
 const cloud_run_1 = require("./lib/cloud-run");
 const outputs_1 = require("./lib/outputs");
 // Create network resources
@@ -92,6 +93,8 @@ const secrets = (0, secrets_1.createSecrets)(config, gcpProvider);
 const serviceAccounts = (0, service_accounts_1.createServiceAccounts)(config, secrets, gcpProvider);
 // Create Artifact Registry
 const artifactRegistry = (0, artifact_registry_1.createArtifactRegistry)(config, serviceAccounts, gcpProvider);
+// Build Docker image (conditionally - skips in CI/CD)
+const dockerBuild = (0, docker_build_1.createDockerBuild)(config, artifactRegistry);
 // Create database (depends on network and secrets)
 const database = (0, database_1.createDatabase)(config, network, secrets.dbPassword, gcpProvider);
 // Grant service accounts access to database connection string secret
@@ -121,8 +124,8 @@ new gcp.secretmanager.SecretIamMember(`${cicdSaName}-db-conn-secret-access`, {
         database.dbConnectionStringSecret,
     ],
 });
-// Create Cloud Run service (depends on all other resources)
-const cloudRun = (0, cloud_run_1.createCloudRun)(config, network, database, secrets, serviceAccounts, artifactRegistry, gcpProvider);
+// Create Cloud Run service (depends on all other resources and Docker image)
+const cloudRun = (0, cloud_run_1.createCloudRun)(config, network, database, secrets, serviceAccounts, artifactRegistry, dockerBuild, gcpProvider);
 // Export outputs
 const outputs = (0, outputs_1.createOutputs)(config, cloudRun, database, serviceAccounts, secrets, network, artifactRegistry);
 exports.cloudRunUrl = outputs.cloudRunUrl;
