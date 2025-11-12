@@ -45,7 +45,12 @@ export function getConfig(): Config {
     cloudSqlTier: config.get('cloudSqlTier') || 'db-f1-micro',
     cloudRunCpu: config.get('cloudRunCpu') || '1',
     cloudRunMemory: config.get('cloudRunMemory') || '512Mi',
-    cloudRunMinInstances: config.getNumber('cloudRunMinInstances') || 0,
+    cloudRunMinInstances:
+      config.getNumber('cloudRunMinInstances') !== undefined
+        ? config.getNumber('cloudRunMinInstances')
+        : environment === 'dev'
+          ? 1
+          : 0,
     cloudRunMaxInstances: config.getNumber('cloudRunMaxInstances') || 2,
     cloudSqlBackupEnabled: config.getBoolean('cloudSqlBackupEnabled') || false,
     cloudSqlHaEnabled: config.getBoolean('cloudSqlHaEnabled') || false,

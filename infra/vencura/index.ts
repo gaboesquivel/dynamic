@@ -59,6 +59,10 @@ import {
   createArtifactRegistry,
   type ArtifactRegistryResources,
 } from './lib/artifact-registry';
+import {
+  createDockerBuild,
+  type DockerBuildResources,
+} from './lib/docker-build';
 import { createCloudRun, type CloudRunResources } from './lib/cloud-run';
 import { createOutputs } from './lib/outputs';
 
@@ -80,6 +84,12 @@ const artifactRegistry: ArtifactRegistryResources = createArtifactRegistry(
   config,
   serviceAccounts,
   gcpProvider,
+);
+
+// Build Docker image (conditionally - skips in CI/CD)
+const dockerBuild: DockerBuildResources = createDockerBuild(
+  config,
+  artifactRegistry,
 );
 
 // Create database (depends on network and secrets)
@@ -132,7 +142,7 @@ new gcp.secretmanager.SecretIamMember(
   },
 );
 
-// Create Cloud Run service (depends on all other resources)
+// Create Cloud Run service (depends on all other resources and Docker image)
 const cloudRun: CloudRunResources = createCloudRun(
   config,
   network,
@@ -140,6 +150,7 @@ const cloudRun: CloudRunResources = createCloudRun(
   secrets,
   serviceAccounts,
   artifactRegistry,
+  dockerBuild,
   gcpProvider,
 );
 

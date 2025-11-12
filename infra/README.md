@@ -29,6 +29,7 @@ This directory contains Pulumi TypeScript infrastructure code for deploying the 
       secrets.ts                   # Secret Manager
       service-accounts.ts         # IAM with least privilege
       artifact-registry.ts         # Artifact Registry repository
+      docker-build.ts              # Docker image building and pushing
       cloud-run.ts                 # Cloud Run service
       outputs.ts                   # Stack outputs
     /utils
@@ -193,6 +194,14 @@ If you prefer using a service account key file instead:
 However, `gcloud auth application-default login` is the recommended approach for local development.
 
 **Note**: The credentials are stored locally and will be reused for future Pulumi commands. You may need to re-authenticate periodically or if credentials expire.
+
+**Also configure Docker for Artifact Registry** (required for local image building):
+
+```bash
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
+
+Replace `us-central1` with your actual GCP region. This allows Docker to push images to Artifact Registry when Pulumi builds images locally.
 
 ### Step 4: Create Pulumi Stacks (On Your Computer)
 
@@ -534,6 +543,13 @@ pulumi preview
 pulumi up
 ```
 
+When you run `pulumi up` locally, Pulumi will:
+1. **Automatically build and push the Docker image** to Artifact Registry (if not in CI/CD)
+2. Create or update all infrastructure resources
+3. Deploy the Cloud Run service with the built image
+
+**Note**: Docker image building is automatically skipped in CI/CD environments (GitHub Actions) since workflows handle image building separately. This only applies to local development.
+
 When you run `pulumi up`, you'll see output showing the resources being created or updated:
 
 ![Pulumi Dev Update Output](./pulumi-dev.png)
@@ -576,7 +592,7 @@ Once setup is complete, infrastructure changes happen automatically:
 ### Development (`dev`)
 
 - **Cloud SQL**: `db-f1-micro` (minimal resources)
-- **Cloud Run**: 1 CPU, 512Mi memory, 0-2 instances
+- **Cloud Run**: 1 CPU, 512Mi memory, 1-1 instances (always running)
 - **Backups**: Disabled
 - **HA**: Disabled
 - **Deletion Protection**: Disabled
@@ -844,6 +860,15 @@ pulumi stack output
 **Issue**: Workflow succeeds but Cloud Run service not accessible
 
 - **Solution**: Check that secrets in Secret Manager have actual values (not placeholders), and verify service account has proper IAM permissions
+
+**Issue**: `Image 'us-central1-docker.pkg.dev/.../vencura:latest' not found` (when running `pulumi up` locally)
+
+- **Solution**: Pulumi now automatically builds and pushes Docker images when running locally. Make sure:
+  1. Docker is installed and running
+  2. You're authenticated with GCP: `gcloud auth application-default login`
+  3. Docker is configured for Artifact Registry: `gcloud auth configure-docker REGION-docker.pkg.dev` (replace REGION with your region, e.g., `us-central1`)
+  4. The image will be built automatically before Cloud Run service creation
+  5. **Note**: In CI/CD, image building is skipped (GitHub workflows handle it), so this only applies to local development
 
 ## Architecture Diagrams
 

@@ -7,6 +7,7 @@ import type { DatabaseResources } from './database';
 import type { SecretResources } from './secrets';
 import type { ServiceAccountResources } from './service-accounts';
 import type { ArtifactRegistryResources } from './artifact-registry';
+import type { DockerBuildResources } from './docker-build';
 
 export interface CloudRunResources {
   service: gcp.cloudrun.Service;
@@ -19,6 +20,7 @@ export function createCloudRun(
   secrets: SecretResources,
   serviceAccounts: ServiceAccountResources,
   artifactRegistry: ArtifactRegistryResources,
+  dockerBuild: DockerBuildResources,
   provider: gcp.Provider,
 ): CloudRunResources {
   const serviceName = resourceName(config, 'api');
@@ -50,7 +52,7 @@ export function createCloudRun(
           serviceAccountName: serviceAccounts.cloudRunServiceAccount.email,
           containers: [
             {
-              image: pulumi.interpolate`${config.region}-docker.pkg.dev/${config.projectId}/${artifactRegistry.repository.repositoryId}/vencura:${config.imageTag}`,
+              image: dockerBuild.imageName,
               ports: [
                 {
                   containerPort: 3077,
@@ -161,6 +163,7 @@ export function createCloudRun(
         database.instance,
         serviceAccounts.cloudRunServiceAccount,
         artifactRegistry.repository,
+        ...(dockerBuild.image ? [dockerBuild.image] : []),
       ],
     },
   );
