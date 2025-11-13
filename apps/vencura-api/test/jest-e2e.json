@@ -4,6 +4,13 @@
   "testEnvironment": "node",
   "testRegex": "\\.e2e-spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": ["ts-jest", {
+      "useESM": false
+    }]
+  },
+  "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
+  "testTimeout": 60000,
+  "moduleNameMapper": {
+    "^@/(.*)$": "<rootDir>/../src/$1"
   }
 }

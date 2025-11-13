@@ -7,7 +7,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "hooks:pre-commit": "pnpm lint && pnpm format"
+    "hooks:pre-commit": "pnpm lint && pnpm format",
+    "qa": "pnpm i && pnpm run format && turbo run lint && turbo build && turbo run test --continue"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
