@@ -7,10 +7,29 @@ export const Wallet = z.object({
   id: z.string().uuid(),
   address: z.string(),
   network: z.string().describe('Dynamic network ID'),
-  chainType: z.enum(['evm', 'solana', 'cosmos']).describe('Chain type'),
+  chainType: z
+    .enum([
+      'evm',
+      'solana',
+      'cosmos',
+      'bitcoin',
+      'flow',
+      'starknet',
+      'algorand',
+      'sui',
+      'spark',
+      'tron',
+    ])
+    .describe('Chain type - aligned with Dynamic SDK supported chains'),
 })
 
 export type Wallet = z.infer<typeof Wallet>
+
+/**
+ * Chain type union type extracted from Wallet schema.
+ * Aligned with Dynamic SDK supported chain types.
+ */
+export type ChainType = Wallet['chainType']
 
 /**
  * Input schema for creating a new wallet.
@@ -54,9 +73,10 @@ export type SignMessageResult = z.infer<typeof SignMessageResult>
 
 /**
  * Input schema for sending a transaction.
+ * Address format is validated server-side based on wallet's chain type.
  */
 export const SendTransactionInput = z.object({
-  to: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format'),
+  to: z.string().min(1).describe('Recipient address - format validated based on wallet chain type'),
   amount: z.number().min(0).describe('Amount in native token units'),
 })
 

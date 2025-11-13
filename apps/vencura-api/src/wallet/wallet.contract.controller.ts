@@ -36,8 +36,9 @@ export class WalletContractController {
       },
       getBalance: async ({ req, params }) => {
         const user = (req as AuthenticatedRequest).user
+        const { id } = params
 
-        const balance = await this.walletService.getBalance(params.id, user.id)
+        const balance = await this.walletService.getBalance(id, user.id)
         return {
           status: 200 as const,
           body: balance,
@@ -45,12 +46,10 @@ export class WalletContractController {
       },
       signMessage: async ({ req, params, body }) => {
         const user = (req as AuthenticatedRequest).user
-        const result = await this.walletService.signMessage(
-          params.id,
-          user.id,
+        const { id } = params
+        const { message } = body
 
-          body.message,
-        )
+        const result = await this.walletService.signMessage(id, user.id, message)
         return {
           status: 200 as const,
           body: result,
@@ -58,14 +57,10 @@ export class WalletContractController {
       },
       sendTransaction: async ({ req, params, body }) => {
         const user = (req as AuthenticatedRequest).user
-        const result = await this.walletService.sendTransaction(
-          params.id,
-          user.id,
+        const { id } = params
+        const { to, amount } = body
 
-          body.to,
-
-          body.amount,
-        )
+        const result = await this.walletService.sendTransaction(id, user.id, to, amount)
         return {
           status: 200 as const,
           body: result,
