@@ -24,6 +24,7 @@ Vencura is a backend API that enables users to create and manage custodial walle
 - **RPC Configuration**: Uses Dynamic's default RPC URLs with optional per-chain overrides
 - **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production)
 - **API Documentation**: Interactive Swagger UI at `/api`
+- **TypeScript SDK**: Auto-generated `@vencura/core` SDK from Swagger/OpenAPI specification (see [@vencura/core README](../../packages/vencura-core/README.md))
 - **Security**:
   - AES-256-GCM encryption for private key storage
   - Rate limiting on all endpoints
@@ -40,7 +41,7 @@ Vencura is a backend API that enables users to create and manage custodial walle
   - @solana/web3.js for Solana
   - Dynamic SDK for wallet operations
 - **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production)
-- **API Documentation**: Swagger/OpenAPI
+- **API Documentation**: Swagger/OpenAPI (generates `@vencura/core` TypeScript SDK)
 
 ## Getting Started
 

@@ -112,6 +112,12 @@ vencura-ui/
 
 The frontend communicates with the Vencura API backend. See [Vencura API README](../vencura/README.md) for backend documentation.
 
+### TypeScript SDK
+
+A fully typed TypeScript SDK (`@vencura/core`) is available for interacting with the Vencura API. The SDK is auto-generated from the Swagger/OpenAPI specification. See [@vencura/core README](../../packages/vencura-core/README.md) for usage details.
+
+**Note**: This UI currently uses a custom API client, but you can use `@vencura/core` for type-safe API interactions.
+
 ### API Endpoints Used
 
 - `GET /wallets` - Get all user wallets

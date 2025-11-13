@@ -9,5 +9,7 @@ alwaysApply: true
 - Organize code logically with related functionality grouped together, aka "collocation"
 
 ## Agent Behavior
-- Provide executive summaries when finishing tasks
+- Provide concise executive summaries when finishing tasks
 - Suggest improvements proactively when spotting issues
+- Always read readme files before coding
+- Always update readme files after making code changes

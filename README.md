@@ -11,6 +11,7 @@ dynamic/
 │   ├── vencura-ui/       # Next.js frontend for Vencura API (multichain support)
 │   └── mathler/          # Next.js Mathler game (Wordle with numbers)
 ├── packages/
+│   ├── vencura-core/     # TypeScript SDK for Vencura API (auto-generated)
 │   ├── ui/               # Shared Shadcn/ui component library
 │   ├── eslint-config/    # Shared ESLint configuration
 │   └── typescript-config/ # Shared TypeScript configuration
@@ -35,6 +36,7 @@ dynamic/
 - **[Vencura API](./apps/vencura/README.md)** - NestJS backend for multichain custodial wallet management (EVM chains + Solana)
 - **[Vencura UI](./apps/vencura-ui/README.md)** - Next.js frontend for Vencura API with multichain support
 - **[Mathler](./apps/mathler/README.md)** - Next.js Mathler game with Dynamic SDK
+- **[@vencura/core](./packages/vencura-core/README.md)** - TypeScript SDK for Vencura API (auto-generated from Swagger/OpenAPI)
 - **[UI Package](./packages/ui/README.md)** - Shared Shadcn/ui component library
 
 ## Getting Started
