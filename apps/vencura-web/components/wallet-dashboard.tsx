@@ -5,6 +5,7 @@ import { Button } from '@workspace/ui/components/button'
 import { useWallets, useCreateWallet } from '@vencura/react'
 import { WalletCard } from './wallet-card'
 import { SUPPORTED_CHAINS } from '@/lib/chains'
+import { getErrorMessage } from '@/lib/error-utils'
 
 export function WalletDashboard() {
   const [chainId, setChainId] = useState<number | string>(421614) // Default to Arbitrum Sepolia
@@ -17,15 +18,6 @@ export function WalletDashboard() {
 
   const handleCreateWallet = () => {
     createWallet.mutate({ chainId })
-  }
-
-  const getErrorMessage = (err: unknown): string | null => {
-    if (!err) return null
-    if (err instanceof Error) return err.message
-    if (typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
-      return err.message
-    }
-    return String(err)
   }
 
   const error = getErrorMessage(walletsError) || getErrorMessage(createWallet.error) || null

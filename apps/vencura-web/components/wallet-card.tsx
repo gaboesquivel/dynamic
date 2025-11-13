@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@workspace/ui/components/button'
 import { useWalletBalance, useSignMessage, useSendTransaction, type Wallet } from '@vencura/react'
 import { getChainByNetworkId, isValidAddress } from '@/lib/chains'
+import { getErrorMessage } from '@/lib/error-utils'
 
 export function WalletCard({ wallet }: { wallet: Wallet }) {
   const [message, setMessage] = useState('')
@@ -49,17 +50,13 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
   }
 
   const handleSendTransaction = () => {
-    if (!txTo.trim() || !txAmount.trim()) {
-      return
-    }
+    if (!txTo.trim() || !txAmount.trim()) return
     if (!isValidAddress(txTo.trim(), wallet.chainType)) {
       sendTransaction.reset()
       return
     }
     const amount = parseFloat(txAmount)
-    if (isNaN(amount) || amount <= 0) {
-      return
-    }
+    if (isNaN(amount) || amount <= 0) return
 
     sendTransaction.mutate({
       to: txTo.trim(),
@@ -68,16 +65,6 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
   }
 
   const isLoading = balanceLoading || signMessage.isPending || sendTransaction.isPending
-
-  const getErrorMessage = (err: unknown): string | null => {
-    if (!err) return null
-    if (err instanceof Error) return err.message
-    if (typeof err === 'object' && 'message' in err && typeof err.message === 'string') {
-      return err.message
-    }
-    return String(err)
-  }
-
   const error =
     getErrorMessage(signMessage.error) ||
     getErrorMessage(sendTransaction.error) ||
