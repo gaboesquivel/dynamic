@@ -1,6 +1,6 @@
-# Dynamic Take Home Assignment
+# Vencura
 
-Full-stack monorepo project for Dynamic.xyz take-home assignment featuring custodial wallet API and Mathler game.
+Vencura is a custodial wallet platform - the Venmo of wallets. A full-stack monorepo featuring a multichain custodial wallet API and Mathler game.
 
 ## Structure
 
