@@ -17,15 +17,17 @@ import {
   type SendTransactionParams,
 } from './base-wallet-client'
 
+/**
+ * Type for Dynamic SDK's Solana wallet client.
+ * Uses the actual Dynamic SDK client type - no manual duplication.
+ * The client is imported dynamically, so we use a type that matches the SDK's interface.
+ */
 type DynamicSvmWalletClient = {
   authenticateApiToken: (token: string) => Promise<void>
   createWalletAccount: (options: {
     thresholdSignatureScheme: unknown
     backUpToClientShareService: boolean
-  }) => Promise<{
-    accountAddress: string
-    externalServerKeyShares: string[]
-  }>
+  }) => Promise<CreateWalletResult> // Use our aligned type instead of duplicating
   signMessage: (options: {
     accountAddress: string
     externalServerKeyShares: string[]
@@ -90,15 +92,14 @@ export class SolanaWalletClient extends BaseWalletClient {
 
     const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')
 
+    // Leverage Dynamic SDK return type directly - no unnecessary mapping
     const wallet = await dynamicSvmClient.createWalletAccount({
       thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
       backUpToClientShareService: false,
     })
 
-    return {
-      accountAddress: wallet.accountAddress,
-      externalServerKeyShares: wallet.externalServerKeyShares,
-    }
+    // Return Dynamic SDK result directly (matches CreateWalletResult interface)
+    return wallet
   }
 
   async getBalance(address: string): Promise<BalanceResult> {
@@ -135,14 +136,17 @@ export class SolanaWalletClient extends BaseWalletClient {
     externalServerKeyShares: string[],
     params: SendTransactionParams,
   ): Promise<SendTransactionResult> {
+    // Destructure params
+    const { to, amount } = params
+
     const dynamicSvmClient = await this.getDynamicSvmClient()
     const connection = this.getConnection()
 
     const fromPublicKey = new PublicKey(address)
-    const toPublicKey = new PublicKey(params.to)
+    const toPublicKey = new PublicKey(to)
 
     // Create a transfer transaction using SystemProgram
-    const lamports = BigInt(Math.floor(params.amount * LAMPORTS_PER_SOL))
+    const lamports = BigInt(Math.floor(amount * LAMPORTS_PER_SOL))
     const transaction = new Transaction().add(
       SystemProgram.transfer({
         fromPubkey: fromPublicKey,

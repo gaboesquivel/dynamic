@@ -33,4 +33,12 @@ export * from './hooks'
 export * from './context'
 
 // Re-export types from @vencura/core for convenience
-export type { CreateWalletDto, SignMessageDto, SendTransactionDto } from '@vencura/core'
+export type {
+  Wallet,
+  CreateWalletInput,
+  WalletBalance,
+  SignMessageInput,
+  SignMessageResult,
+  SendTransactionInput,
+  SendTransactionResult,
+} from '@vencura/core'

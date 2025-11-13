@@ -1,3 +1,8 @@
+/**
+ * Result type from Dynamic SDK's createWalletAccount().
+ * Aligned with Dynamic SDK return type: { accountAddress: string, externalServerKeyShares: string[] }
+ * This matches the return type from both DynamicEvmWalletClient and DynamicSvmWalletClient.
+ */
 export interface CreateWalletResult {
   accountAddress: string
   externalServerKeyShares: string[]

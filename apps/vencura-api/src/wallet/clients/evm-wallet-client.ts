@@ -56,28 +56,26 @@ export class EvmWalletClient extends BaseWalletClient {
 
     const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')
 
+    // Leverage Dynamic SDK return type directly - no unnecessary mapping
     const wallet = await dynamicEvmClient.createWalletAccount({
       thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
       backUpToClientShareService: false,
     })
 
-    return {
-      accountAddress: wallet.accountAddress,
-      externalServerKeyShares: wallet.externalServerKeyShares,
-    }
+    // Return Dynamic SDK result directly (matches CreateWalletResult interface)
+    return wallet
   }
 
   async getBalance(address: string): Promise<BalanceResult> {
-    const viemChain = getViemChain(this.chainMetadata.chainId)
-    if (!viemChain) throw new Error(`Unsupported EVM chain: ${this.chainMetadata.chainId}`)
+    // Destructure chainMetadata
+    const { chainId, dynamicNetworkId } = this.chainMetadata
+
+    const viemChain = getViemChain(chainId)
+    if (!viemChain) throw new Error(`Unsupported EVM chain: ${chainId}`)
 
     // Get RPC URL with priority: custom env var > Dynamic default > viem default
-    const customRpcUrl = this.configService.get<string>(
-      `rpc.${this.chainMetadata.dynamicNetworkId}`,
-    )
-    const rpcUrl =
-      getDefaultRpcUrl(this.chainMetadata.chainId, customRpcUrl) ||
-      viemChain.rpcUrls.default.http[0]
+    const customRpcUrl = this.configService.get<string>(`rpc.${dynamicNetworkId}`)
+    const rpcUrl = getDefaultRpcUrl(chainId, customRpcUrl) || viemChain.rpcUrls.default.http[0]
 
     const client = createPublicClient({
       chain: viemChain,
@@ -116,18 +114,18 @@ export class EvmWalletClient extends BaseWalletClient {
     externalServerKeyShares: string[],
     params: SendTransactionParams,
   ): Promise<SendTransactionResult> {
-    const viemChain = getViemChain(this.chainMetadata.chainId)
-    if (!viemChain) throw new Error(`Unsupported EVM chain: ${this.chainMetadata.chainId}`)
+    // Destructure chainMetadata and params
+    const { chainId, dynamicNetworkId } = this.chainMetadata
+    const { to, amount, data } = params
+
+    const viemChain = getViemChain(chainId)
+    if (!viemChain) throw new Error(`Unsupported EVM chain: ${chainId}`)
 
     const dynamicEvmClient = await this.getDynamicEvmClient()
 
     // Get RPC URL with priority: custom env var > Dynamic default > viem default
-    const customRpcUrl = this.configService.get<string>(
-      `rpc.${this.chainMetadata.dynamicNetworkId}`,
-    )
-    const rpcUrl =
-      getDefaultRpcUrl(this.chainMetadata.chainId, customRpcUrl) ||
-      viemChain.rpcUrls.default.http[0]
+    const customRpcUrl = this.configService.get<string>(`rpc.${dynamicNetworkId}`)
+    const rpcUrl = getDefaultRpcUrl(chainId, customRpcUrl) || viemChain.rpcUrls.default.http[0]
 
     // Helper to convert SignableMessage to string for Dynamic SDK
     const messageToString = (message: SignableMessage): string => {
@@ -183,9 +181,9 @@ export class EvmWalletClient extends BaseWalletClient {
     })
 
     const hash = await walletClient.sendTransaction({
-      to: params.to as `0x${string}`,
-      value: parseEther(params.amount.toString()),
-      ...(params.data && { data: params.data as Hex }),
+      to: to as `0x${string}`,
+      value: parseEther(amount.toString()),
+      ...(data && { data: data as Hex }),
     })
 
     return {

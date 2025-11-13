@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useMemo, type ReactNode } from 'react'
-import { Api, type ApiConfig } from '@vencura/core'
+import { createVencuraClient } from '@vencura/core'
 import { VencuraContext } from './context'
 
 export interface VencuraProviderProps {
@@ -16,11 +16,6 @@ export interface VencuraProviderProps {
    * @example { Authorization: "Bearer token" }
    */
   headers?: Record<string, string>
-  /**
-   * Security worker function to handle authentication.
-   * Called for each request marked as secure.
-   */
-  securityWorker?: ApiConfig<unknown>['securityWorker']
   /**
    * Optional QueryClient instance. If not provided, a default one will be created.
    */
@@ -54,7 +49,6 @@ export interface VencuraProviderProps {
 export function VencuraProvider({
   baseUrl,
   headers,
-  securityWorker,
   queryClient: providedQueryClient,
   children,
 }: VencuraProviderProps) {
@@ -76,14 +70,11 @@ export function VencuraProvider({
 
   const apiClient = useMemo(
     () =>
-      new Api({
+      createVencuraClient({
         baseUrl,
-        baseApiParams: {
-          headers,
-        },
-        securityWorker,
+        headers,
       }),
-    [baseUrl, headers, securityWorker],
+    [baseUrl, headers],
   )
 
   return (

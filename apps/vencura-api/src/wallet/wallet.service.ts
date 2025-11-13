@@ -7,6 +7,8 @@ import {
   isSupportedChain,
   getChainType,
 } from '../common/chains'
+import { validateAddress } from '../common/address-validation'
+import type { ChainType } from '@vencura/types'
 import { WalletClientFactory } from './clients/wallet-client-factory'
 import * as schema from '../database/schema'
 import { eq, and } from 'drizzle-orm'
@@ -84,7 +86,22 @@ export class WalletService {
       .from(schema.wallets)
       .where(eq(schema.wallets.userId, userId))
 
-    return wallets
+    // Type assertion to ensure chainType matches schema union type
+    // Database returns string, but schema expects union of specific chain types
+    return wallets.map(wallet => ({
+      ...wallet,
+      chainType: wallet.chainType as
+        | 'evm'
+        | 'solana'
+        | 'cosmos'
+        | 'bitcoin'
+        | 'flow'
+        | 'starknet'
+        | 'algorand'
+        | 'sui'
+        | 'spark'
+        | 'tron',
+    }))
   }
 
   async getBalance(walletId: string, userId: string) {
@@ -135,16 +152,26 @@ export class WalletService {
 
     if (!wallet) throw new NotFoundException('Wallet not found')
 
-    const keySharesEncrypted = await this.encryptionService.decrypt(wallet.privateKeyEncrypted)
+    // Destructure wallet properties
+    const { network, address, privateKeyEncrypted, chainType } = wallet
+
+    // Validate recipient address based on wallet's chain type
+    if (!validateAddress({ address: to, chainType: chainType as ChainType })) {
+      throw new BadRequestException(
+        `Invalid address format for chain type ${chainType}. Please provide a valid ${chainType} address.`,
+      )
+    }
+
+    const keySharesEncrypted = await this.encryptionService.decrypt(privateKeyEncrypted)
     const externalServerKeyShares = JSON.parse(keySharesEncrypted) as string[]
 
     // Get appropriate wallet client based on stored network/chain type
-    const walletClient = this.walletClientFactory.createWalletClient(wallet.network)
+    const walletClient = this.walletClientFactory.createWalletClient(network)
     if (!walletClient)
-      throw new BadRequestException(`Wallet client not available for network: ${wallet.network}`)
+      throw new BadRequestException(`Wallet client not available for network: ${network}`)
 
     // Send transaction using chain-specific client
-    return await walletClient.sendTransaction(wallet.address, externalServerKeyShares, {
+    return await walletClient.sendTransaction(address, externalServerKeyShares, {
       to,
       amount,
     })

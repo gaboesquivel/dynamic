@@ -17,6 +17,7 @@
     "@lukemorales/query-key-factory": "^1.3.4",
     "@tanstack/react-query": "^5.90.8",
     "@vencura/core": "workspace:*",
+    "@vencura/types": "workspace:*",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

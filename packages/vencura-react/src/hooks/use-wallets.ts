@@ -6,19 +6,19 @@ import {
   type UseMutationOptions,
 } from '@tanstack/react-query'
 import { useVencuraClient } from '../context'
-import type { CreateWalletDto, SignMessageDto, SendTransactionDto, Wallets } from '@vencura/core'
+import type {
+  Wallet,
+  CreateWalletInput,
+  WalletBalance,
+  SignMessageInput,
+  SignMessageResult,
+  SendTransactionInput,
+  SendTransactionResult,
+} from '@vencura/core'
 import { walletsKeys } from './keys'
-import { fetchWallets, fetchBalance, createWallet, signMessage, sendTransaction } from './fetchers'
 
 // Re-export query keys for convenience
 export const wallets = walletsKeys
-
-// Type aliases for cleaner hook signatures
-type Wallet = Wallets.WalletControllerGetWallets.ResponseBody[number]
-type WalletBalance = Wallets.WalletControllerGetBalance.ResponseBody
-type CreateWalletResponse = Wallets.WalletControllerCreateWallet.ResponseBody
-type SignMessageResponse = Wallets.WalletControllerSignMessage.ResponseBody
-type SendTransactionResponse = Wallets.WalletControllerSendTransaction.ResponseBody
 
 /**
  * Hook to fetch all wallets for the authenticated user.
@@ -61,7 +61,11 @@ export function useWallets(
   const client = useVencuraClient()
   return useQuery({
     ...walletsKeys.all,
-    queryFn: () => fetchWallets(client),
+    queryFn: async () => {
+      const result = await client.wallet.list({})
+      if (result.status === 200) return result.body
+      throw new Error('Failed to fetch wallets')
+    },
     ...options,
   })
 }
@@ -95,14 +99,16 @@ export function useWallets(
  * }
  * ```
  */
-export function useCreateWallet(
-  options?: UseMutationOptions<CreateWalletResponse, void, CreateWalletDto>,
-) {
+export function useCreateWallet(options?: UseMutationOptions<Wallet, void, CreateWalletInput>) {
   const client = useVencuraClient()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateWalletDto) => createWallet(client, data),
+    mutationFn: async (data: CreateWalletInput) => {
+      const result = await client.wallet.create({ body: data })
+      if (result.status === 201) return result.body
+      throw new Error('Failed to create wallet')
+    },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: walletsKeys._def })
       options?.onSuccess?.(data, variables, context)
@@ -147,7 +153,11 @@ export function useWalletBalance(
   const client = useVencuraClient()
   return useQuery({
     ...walletsKeys.balance(id),
-    queryFn: () => fetchBalance(client, id),
+    queryFn: async () => {
+      const result = await client.wallet.getBalance({ params: { id } })
+      if (result.status === 200) return result.body
+      throw new Error('Failed to fetch wallet balance')
+    },
     ...options,
   })
 }
@@ -184,12 +194,16 @@ export function useWalletBalance(
  */
 export function useSignMessage(
   id: string,
-  options?: UseMutationOptions<SignMessageResponse, void, SignMessageDto>,
+  options?: UseMutationOptions<SignMessageResult, void, SignMessageInput>,
 ) {
   const client = useVencuraClient()
 
   return useMutation({
-    mutationFn: (data: SignMessageDto) => signMessage(client, id, data),
+    mutationFn: async (data: SignMessageInput) => {
+      const result = await client.wallet.signMessage({ params: { id }, body: data })
+      if (result.status === 200) return result.body
+      throw new Error('Failed to sign message')
+    },
     ...options,
   })
 }
@@ -229,12 +243,16 @@ export function useSignMessage(
  */
 export function useSendTransaction(
   id: string,
-  options?: UseMutationOptions<SendTransactionResponse, void, SendTransactionDto>,
+  options?: UseMutationOptions<SendTransactionResult, void, SendTransactionInput>,
 ) {
   const client = useVencuraClient()
 
   return useMutation({
-    mutationFn: (data: SendTransactionDto) => sendTransaction(client, id, data),
+    mutationFn: async (data: SendTransactionInput) => {
+      const result = await client.wallet.sendTransaction({ params: { id }, body: data })
+      if (result.status === 200) return result.body
+      throw new Error('Failed to send transaction')
+    },
     ...options,
   })
 }

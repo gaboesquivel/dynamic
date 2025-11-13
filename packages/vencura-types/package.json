@@ -1,20 +1,20 @@
 {
-  "name": "@vencura/core",
+  "name": "@vencura/types",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
-  "description": "TypeScript SDK for Vencura API",
+  "description": "Shared API contracts and types for Vencura",
   "license": "PROPRIETARY",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas/index.ts",
+    "./contracts": "./src/contracts/index.ts"
+  },
   "scripts": {
     "lint": "eslint . --max-warnings 0"
   },
-  "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*"
-  },
   "dependencies": {
     "@ts-rest/core": "^3.40.0",
-    "@vencura/types": "workspace:*"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

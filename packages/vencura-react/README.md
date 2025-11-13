@@ -1,6 +1,6 @@
 # @vencura/react
 
-React hooks for Vencura API using TanStack Query. Provides type-safe hooks for interacting with the Vencura custodial wallet API.
+React hooks for Vencura API using TanStack Query. Provides type-safe hooks for interacting with the Vencura custodial wallet API. Built on top of `@vencura/core` using a contract-first approach with ts-rest for end-to-end type safety.
 
 ## Installation
 
@@ -57,13 +57,12 @@ function WalletsList() {
 
 ### VencuraProvider Props
 
-| Prop             | Type                     | Description                        | Required |
-| ---------------- | ------------------------ | ---------------------------------- | -------- |
-| `baseUrl`        | `string`                 | Base URL for the Vencura API       | No       |
-| `headers`        | `Record<string, string>` | Default headers for all requests   | No       |
-| `securityWorker` | `Function`               | Security worker for authentication | No       |
-| `queryClient`    | `QueryClient`            | Custom QueryClient instance        | No       |
-| `children`       | `ReactNode`              | React children                     | Yes      |
+| Prop          | Type                     | Description                      | Required |
+| ------------- | ------------------------ | -------------------------------- | -------- |
+| `baseUrl`     | `string`                 | Base URL for the Vencura API     | No       |
+| `headers`     | `Record<string, string>` | Default headers for all requests | No       |
+| `queryClient` | `QueryClient`            | Custom QueryClient instance      | No       |
+| `children`    | `ReactNode`              | React children                   | Yes      |
 
 ### Example with Custom QueryClient
 
@@ -108,7 +107,9 @@ function WalletsList() {
 }
 ```
 
-**Returns:** `UseQueryResult<Wallet[], void>`
+**Returns:** `UseQueryResult<Wallet[], Error>`
+
+**Types:** All types are inferred from `@vencura/types` - no manual type definitions needed!
 
 ### useCreateWallet
 
@@ -138,7 +139,9 @@ function CreateWalletButton() {
 }
 ```
 
-**Returns:** `UseMutationResult<CreateWalletResponse, void, CreateWalletDto>`
+**Returns:** `UseMutationResult<Wallet, Error, CreateWalletInput>`
+
+**Types:** Types are automatically inferred from the contract - `CreateWalletInput` and `Wallet` come from `@vencura/types`.
 
 ### useWalletBalance
 
@@ -164,7 +167,7 @@ function WalletBalance({ walletId }: { walletId: string }) {
 - `id: string` - Wallet ID
 - `options?: UseQueryOptions` - Optional React Query options
 
-**Returns:** `UseQueryResult<WalletBalance, void>`
+**Returns:** `UseQueryResult<WalletBalance, Error>`
 
 ### useSignMessage
 
@@ -196,7 +199,7 @@ function SignButton({ walletId }: { walletId: string }) {
 - `id: string` - Wallet ID
 - `options?: UseMutationOptions` - Optional React Query mutation options
 
-**Returns:** `UseMutationResult<SignMessageResponse, void, SignMessageDto>`
+**Returns:** `UseMutationResult<SignMessageResult, Error, SignMessageInput>`
 
 ### useSendTransaction
 
@@ -233,7 +236,7 @@ function SendButton({ walletId }: { walletId: string }) {
 - `id: string` - Wallet ID
 - `options?: UseMutationOptions` - Optional React Query mutation options
 
-**Returns:** `UseMutationResult<SendTransactionResponse, void, SendTransactionDto>`
+**Returns:** `UseMutationResult<SendTransactionResult, Error, SendTransactionInput>`
 
 ## Query Key Factory
 
@@ -288,13 +291,35 @@ function InvalidateWallets() {
 
 ## Type Exports
 
-All types from `@vencura/core` are re-exported for convenience:
+All types from `@vencura/types` are re-exported for convenience:
 
 ```tsx
-import type { CreateWalletDto, SignMessageDto, SendTransactionDto } from '@vencura/react'
+import type {
+  Wallet,
+  CreateWalletInput,
+  WalletBalance,
+  SignMessageInput,
+  SignMessageResult,
+  SendTransactionInput,
+  SendTransactionResult,
+} from '@vencura/react'
 ```
 
-For complete type definitions, see [@vencura/core](../vencura-core/README.md).
+For complete type definitions, see [@vencura/types](../vencura-types/README.md) and [@vencura/core](../vencura-core/README.md).
+
+## Architecture
+
+This package uses a contract-first approach:
+
+1. **Contracts** (`@vencura/types`) define API endpoints with Zod schemas
+2. **Core Client** (`@vencura/core`) provides type-safe client using ts-rest
+3. **React Hooks** (`@vencura/react`) wrap the client with TanStack Query
+
+This ensures:
+
+- **Full type inference** - No manual type definitions needed
+- **End-to-end type safety** - Types shared across backend, SDK, and frontend
+- **Clean API** - `client.wallet.list()` instead of `client.wallets.walletControllerGetWallets()`
 
 ## Advanced Usage
 

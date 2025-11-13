@@ -1,60 +1,83 @@
 # @vencura/core
 
-TypeScript SDK for the Vencura API, automatically generated from the Swagger/OpenAPI specification.
+TypeScript SDK for the Vencura API using a contract-first approach with ts-rest.
 
 ## Overview
 
-This package provides a fully typed TypeScript client for interacting with the Vencura API. The SDK is automatically generated from the Swagger JSON specification exported by the `apps/vencura` NestJS backend.
+This package provides a fully typed TypeScript client for interacting with the Vencura API. The SDK uses shared contracts from `@vencura/types` to ensure end-to-end type safety across backend, SDK, and frontend.
 
 ## Usage
 
-```typescript
-import { Api } from '@vencura/core'
+### Basic Client
 
-const api = new Api({
-  baseURL: 'https://api.vencura.com',
+```typescript
+import { createVencuraClient } from '@vencura/core'
+
+const client = createVencuraClient({
+  baseUrl: 'https://api.vencura.com',
   headers: {
     Authorization: 'Bearer YOUR_JWT_TOKEN',
   },
 })
 
-// Use the generated API methods
-const wallets = await api.wallets.getWallets()
+// Use the type-safe client methods
+const wallets = await client.wallet.list({})
+if (wallets.status === 200) {
+  console.log(wallets.body) // Fully typed Wallet[]
+}
+
+const newWallet = await client.wallet.create({
+  body: { chainId: 421614 },
+})
+if (newWallet.status === 201) {
+  console.log(newWallet.body) // Fully typed Wallet
+}
 ```
+
+### Type Exports
+
+All types are exported from `@vencura/types`:
+
+```typescript
+import type {
+  Wallet,
+  CreateWalletInput,
+  WalletBalance,
+  SignMessageInput,
+  SignMessageResult,
+  SendTransactionInput,
+  SendTransactionResult,
+} from '@vencura/core'
+```
+
+## Architecture
+
+The SDK uses a contract-first approach:
+
+1. **Contracts** (`@vencura/types`) define API endpoints using ts-rest with Zod schemas
+2. **Client** (`@vencura/core`) provides a type-safe client using `@ts-rest/core`
+3. **Backend** (`apps/vencura-api`) implements the contracts using `@ts-rest/nest`
+4. **Frontend** (`@vencura/react`) uses React hooks with full type inference
+
+This ensures:
+
+- **End-to-end type safety** - Types are shared across the entire stack
+- **No code generation** - Types are inferred directly from contracts
+- **Runtime validation** - Zod schemas provide runtime type checking
+- **Clean API** - Methods like `client.wallet.list()` instead of `client.wallets.walletControllerGetWallets()`
 
 ## Development
 
-### Building the SDK
+### Building
 
-The SDK is generated during the build process:
-
-```bash
-pnpm build
-```
-
-This will:
-
-1. Build the `apps/vencura` backend (which exports Swagger JSON)
-2. Generate the TypeScript SDK from the Swagger JSON
-3. Output the generated SDK to `src/`
-
-### Manual Generation
-
-To manually regenerate the SDK:
-
-```bash
-pnpm generate-sdk
-```
+This package has no build step - it exports TypeScript source files directly. The package is consumed as-is by other packages in the monorepo.
 
 ## Dependencies
 
-- `swagger-typescript-api` - SDK generation tool
-- Generated SDK uses native `fetch` API for HTTP requests
-
-## Type Safety
-
-All API endpoints, request parameters, and response types are fully typed based on the Swagger specification, providing full TypeScript type safety and IntelliSense support.
+- `@ts-rest/core` - Type-safe REST client
+- `@vencura/types` - Shared API contracts and types
 
 ## Related Packages
 
-- **[@vencura/react](../vencura-react/README.md)** - React hooks for Vencura API using TanStack Query. Provides a higher-level React API with caching, automatic refetching, and optimistic updates.
+- **[@vencura/types](../vencura-types/README.md)** - Shared API contracts and types
+- **[@vencura/react](../vencura-react/README.md)** - React hooks for Vencura API using TanStack Query
