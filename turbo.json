@@ -5,7 +5,16 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "bin/**", "src/**/*.ts"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "bin/**", "src/**/*.ts"],
+      "env": [
+        "DYNAMIC_ENVIRONMENT_ID",
+        "DYNAMIC_API_TOKEN",
+        "SEPOLIA_RPC_URL",
+        "ENCRYPTION_KEY",
+        "RPC_URL_*",
+        "ARBITRUM_SEPOLIA_RPC_URL",
+        "SOLANA_RPC_URL"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
