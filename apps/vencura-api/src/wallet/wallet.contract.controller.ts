@@ -1,4 +1,4 @@
-import { Controller, UseGuards } from '@nestjs/common'
+import { Controller, UseGuards, Req } from '@nestjs/common'
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest'
 import { walletContract } from '@vencura/types'
 import { WalletService } from './wallet.service'
@@ -15,18 +15,18 @@ export class WalletContractController {
   constructor(private readonly walletService: WalletService) {}
 
   @TsRestHandler(walletContract)
-  handler() {
+  handler(@Req() req: AuthenticatedRequest) {
     return tsRestHandler(walletContract, {
-      list: async ({ req }) => {
-        const user = (req as AuthenticatedRequest).user
+      list: async () => {
+        const user = req.user
         const wallets = await this.walletService.getUserWallets(user.id)
         return {
           status: 200 as const,
           body: wallets,
         }
       },
-      create: async ({ req, body }) => {
-        const user = (req as AuthenticatedRequest).user
+      create: async ({ body }) => {
+        const user = req.user
 
         const wallet = await this.walletService.createWallet(user.id, body.chainId)
         return {
@@ -34,8 +34,8 @@ export class WalletContractController {
           body: wallet,
         }
       },
-      getBalance: async ({ req, params }) => {
-        const user = (req as AuthenticatedRequest).user
+      getBalance: async ({ params }) => {
+        const user = req.user
         const { id } = params
 
         const balance = await this.walletService.getBalance(id, user.id)
@@ -44,8 +44,8 @@ export class WalletContractController {
           body: balance,
         }
       },
-      signMessage: async ({ req, params, body }) => {
-        const user = (req as AuthenticatedRequest).user
+      signMessage: async ({ params, body }) => {
+        const user = req.user
         const { id } = params
         const { message } = body
 
@@ -55,8 +55,8 @@ export class WalletContractController {
           body: result,
         }
       },
-      sendTransaction: async ({ req, params, body }) => {
-        const user = (req as AuthenticatedRequest).user
+      sendTransaction: async ({ params, body }) => {
+        const user = req.user
         const { id } = params
         const { to, amount } = body
 
