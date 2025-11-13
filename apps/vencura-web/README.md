@@ -121,6 +121,7 @@ A fully typed TypeScript SDK (`@vencura/core`) is available for interacting with
 ### React Hooks
 
 For React applications, **[@vencura/react](../../packages/vencura-react/README.md)** provides React hooks built on TanStack Query, offering:
+
 - Automatic caching and refetching
 - Optimistic updates
 - Type-safe hooks for all API operations

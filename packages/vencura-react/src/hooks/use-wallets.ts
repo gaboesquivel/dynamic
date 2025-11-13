@@ -5,76 +5,20 @@ import {
   type UseQueryOptions,
   type UseMutationOptions,
 } from '@tanstack/react-query'
-import { createQueryKeys } from '@lukemorales/query-key-factory'
 import { useVencuraClient } from '../context'
-import type { CreateWalletDto, SignMessageDto, SendTransactionDto } from '@vencura/core'
+import type { CreateWalletDto, SignMessageDto, SendTransactionDto, Wallets } from '@vencura/core'
+import { walletsKeys } from './keys'
+import { fetchWallets, fetchBalance, createWallet, signMessage, sendTransaction } from './fetchers'
 
-type Wallet = {
-  id?: string
-  address?: string
-  network?: string
-  chainType?: string
-}
+// Re-export query keys for convenience
+export const wallets = walletsKeys
 
-type WalletBalance = {
-  balance?: number
-}
-
-type CreateWalletResponse = {
-  id?: string
-  address?: string
-  network?: string
-  chainType?: string
-}
-
-type SignMessageResponse = {
-  signedMessage?: string
-}
-
-type SendTransactionResponse = {
-  transactionHash?: string
-}
-
-/**
- * Query key factory for wallet-related queries.
- * Provides centralized, type-safe query keys for cache management.
- *
- * Note: Query functions are created in hooks using the client from context.
- * This factory provides the query keys for cache invalidation and prefetching.
- *
- * @example
- * ```tsx
- * import { wallets } from '@vencura/react/hooks/use-wallets'
- * import { useQueryClient } from '@tanstack/react-query'
- *
- * const queryClient = useQueryClient()
- *
- * // Invalidate all wallet queries
- * queryClient.invalidateQueries({ queryKey: wallets._def })
- *
- * // Invalidate specific wallet balance
- * queryClient.invalidateQueries({ queryKey: wallets.balance(walletId).queryKey })
- * ```
- */
-export const wallets = createQueryKeys('wallets', {
-  /**
-   * Query key factory for fetching all wallets.
-   * Note: queryFn is provided in the hook using client from context.
-   * @returns Query key for listing all wallets
-   */
-  all: {
-    queryKey: null,
-  },
-  /**
-   * Query key factory for fetching wallet balance.
-   * Note: queryFn is provided in the hook using client from context.
-   * @param id - Wallet ID
-   * @returns Query key for wallet balance
-   */
-  balance: (id: string) => ({
-    queryKey: [id, 'balance'] as const,
-  }),
-})
+// Type aliases for cleaner hook signatures
+type Wallet = Wallets.WalletControllerGetWallets.ResponseBody[number]
+type WalletBalance = Wallets.WalletControllerGetBalance.ResponseBody
+type CreateWalletResponse = Wallets.WalletControllerCreateWallet.ResponseBody
+type SignMessageResponse = Wallets.WalletControllerSignMessage.ResponseBody
+type SendTransactionResponse = Wallets.WalletControllerSendTransaction.ResponseBody
 
 /**
  * Hook to fetch all wallets for the authenticated user.
@@ -116,11 +60,8 @@ export function useWallets(
 ) {
   const client = useVencuraClient()
   return useQuery({
-    ...wallets.all,
-    queryFn: async () => {
-      const response = await client.wallets.walletControllerGetWallets()
-      return response.data
-    },
+    ...walletsKeys.all,
+    queryFn: () => fetchWallets(client),
     ...options,
   })
 }
@@ -161,12 +102,10 @@ export function useCreateWallet(
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (data: CreateWalletDto) => {
-      const response = await client.wallets.walletControllerCreateWallet(data)
-      return response.data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: wallets._def })
+    mutationFn: (data: CreateWalletDto) => createWallet(client, data),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: walletsKeys._def })
+      options?.onSuccess?.(data, variables, context)
     },
     ...options,
   })
@@ -207,11 +146,8 @@ export function useWalletBalance(
 ) {
   const client = useVencuraClient()
   return useQuery({
-    ...wallets.balance(id),
-    queryFn: async () => {
-      const response = await client.wallets.walletControllerGetBalance({ id })
-      return response.data
-    },
+    ...walletsKeys.balance(id),
+    queryFn: () => fetchBalance(client, id),
     ...options,
   })
 }
@@ -253,10 +189,7 @@ export function useSignMessage(
   const client = useVencuraClient()
 
   return useMutation({
-    mutationFn: async (data: SignMessageDto) => {
-      const response = await client.wallets.walletControllerSignMessage({ id }, data)
-      return response.data
-    },
+    mutationFn: (data: SignMessageDto) => signMessage(client, id, data),
     ...options,
   })
 }
@@ -301,10 +234,7 @@ export function useSendTransaction(
   const client = useVencuraClient()
 
   return useMutation({
-    mutationFn: async (data: SendTransactionDto) => {
-      const response = await client.wallets.walletControllerSendTransaction({ id }, data)
-      return response.data
-    },
+    mutationFn: (data: SendTransactionDto) => sendTransaction(client, id, data),
     ...options,
   })
 }

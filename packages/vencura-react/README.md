@@ -242,26 +242,28 @@ The `wallets` query key factory provides centralized, type-safe query keys for c
 ### Usage
 
 ```tsx
-import { wallets } from '@vencura/react/hooks/use-wallets'
+import { walletsKeys } from '@vencura/react/hooks/keys'
+// Or use the re-exported 'wallets' for backward compatibility
+import { wallets } from '@vencura/react'
 import { useQueryClient } from '@tanstack/react-query'
-
+npm
 function InvalidateWallets() {
   const queryClient = useQueryClient()
 
   // Invalidate all wallet queries
   const invalidateAll = () => {
-    queryClient.invalidateQueries({ queryKey: wallets._def })
+    queryClient.invalidateQueries({ queryKey: walletsKeys._def })
   }
 
   // Invalidate specific wallet balance
   const invalidateBalance = (walletId: string) => {
-    queryClient.invalidateQueries({ queryKey: wallets.balance(walletId).queryKey })
+    queryClient.invalidateQueries({ queryKey: walletsKeys.balance(walletId).queryKey })
   }
 
   // Prefetch wallet balance
   const prefetchBalance = (walletId: string) => {
     queryClient.prefetchQuery({
-      queryKey: wallets.balance(walletId).queryKey,
+      queryKey: walletsKeys.balance(walletId).queryKey,
       queryFn: async () => {
         // Your prefetch logic
       },
@@ -279,8 +281,10 @@ function InvalidateWallets() {
 
 ### Available Query Keys
 
-- `wallets.all` - Query key for all wallets
-- `wallets.balance(id)` - Query key for wallet balance
+- `walletsKeys.all` - Query key for all wallets
+- `walletsKeys.balance(id)` - Query key for wallet balance
+
+**Note**: For backward compatibility, `wallets` is also exported as an alias to `walletsKeys`.
 
 ## Type Exports
 
@@ -325,16 +329,18 @@ function WalletDetails({ walletId }: { walletId: string }) {
 ### Optimistic Updates
 
 ```tsx
+import { walletsKeys } from '@vencura/react/hooks/keys'
+
 const createWallet = useCreateWallet({
   onMutate: async newWallet => {
     // Cancel outgoing refetches
-    await queryClient.cancelQueries({ queryKey: wallets._def })
+    await queryClient.cancelQueries({ queryKey: walletsKeys._def })
 
     // Snapshot previous value
-    const previous = queryClient.getQueryData(wallets.all.queryKey)
+    const previous = queryClient.getQueryData(walletsKeys.all.queryKey)
 
     // Optimistically update
-    queryClient.setQueryData(wallets.all.queryKey, old => [
+    queryClient.setQueryData(walletsKeys.all.queryKey, old => [
       ...(old || []),
       { id: 'temp', ...newWallet },
     ])
@@ -344,12 +350,12 @@ const createWallet = useCreateWallet({
   onError: (err, newWallet, context) => {
     // Rollback on error
     if (context?.previous) {
-      queryClient.setQueryData(wallets.all.queryKey, context.previous)
+      queryClient.setQueryData(walletsKeys.all.queryKey, context.previous)
     }
   },
   onSettled: () => {
     // Refetch after mutation
-    queryClient.invalidateQueries({ queryKey: wallets._def })
+    queryClient.invalidateQueries({ queryKey: walletsKeys._def })
   },
 })
 ```
