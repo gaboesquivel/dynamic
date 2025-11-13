@@ -86,6 +86,39 @@ function seededRandom(seed: number) {
 }
 
 /**
+ * Operator definition for equation generation
+ * @property sym - The operator symbol (+, -, *, /)
+ * @property fn - Function that performs the operation, returns undefined for invalid operations
+ * @property guard - Predicate that checks if operation is valid (e.g., no division by zero, positive subtraction)
+ * @property prec - Precedence level (1 = addition/subtraction, 2 = multiplication/division)
+ */
+type Op = {
+  sym: '+' | '-' | '*' | '/'
+  fn: (x: number, y: number) => number | undefined
+  guard: (x: number, y: number) => boolean
+  prec: 1 | 2
+}
+
+/**
+ * Available operators for equation generation
+ * - Addition: Always valid, precedence 1
+ * - Subtraction: Only valid when x > y (to avoid negative results), precedence 1
+ * - Multiplication: Always valid, precedence 2 (higher than add/sub)
+ * - Division: Only valid when y !== 0 and x is divisible by y (integer results), precedence 2
+ */
+const OPS: Op[] = [
+  { sym: '+', fn: (x, y) => x + y, guard: () => true, prec: 1 },
+  { sym: '-', fn: (x, y) => x - y, guard: (x, y) => x > y, prec: 1 },
+  { sym: '*', fn: (x, y) => x * y, guard: () => true, prec: 2 },
+  {
+    sym: '/',
+    fn: (x, y) => (y !== 0 && x % y === 0 ? x / y : undefined),
+    guard: (x, y) => y !== 0,
+    prec: 2,
+  },
+]
+
+/**
  * Generates a solution equation for a given target number
  * Uses seeded random based on date for daily consistency
  * Ensures equation length ≤ 9 characters and supports order of operations
@@ -94,93 +127,83 @@ export function generateSolutionEquation(target: number, seed?: number): string 
   const today = new Date()
   const dateSeed = seed ?? today.getFullYear() * 10000 + today.getMonth() * 100 + today.getDate()
 
-  // Generate candidate equations
-  const candidates: string[] = []
+  const MAX = 9
+  const candidates = new Set<string>()
 
-  // Simple two-number operations
+  // Generate two-number equations: a op b = target
+  // Iterate through all combinations of numbers and operators
+  // Example: 5+10=15, 20-5=15, 3*5=15, 30/2=15
   for (let a = 1; a <= 99; a++) {
     for (let b = 1; b <= 99; b++) {
-      // Addition
-      if (a + b === target) {
-        const eq = `${a}+${b}`
-        if (eq.length <= 9) candidates.push(eq)
-      }
-      // Subtraction
-      if (a - b === target && a > b) {
-        const eq = `${a}-${b}`
-        if (eq.length <= 9) candidates.push(eq)
-      }
-      // Multiplication
-      if (a * b === target) {
-        const eq = `${a}*${b}`
-        if (eq.length <= 9) candidates.push(eq)
-      }
-      // Division
-      if (b !== 0 && a % b === 0 && a / b === target) {
-        const eq = `${a}/${b}`
-        if (eq.length <= 9) candidates.push(eq)
+      for (const { sym, fn, guard } of OPS) {
+        // Skip if operation is invalid (e.g., division by zero, negative subtraction)
+        if (!guard(a, b)) continue
+        const v = fn(a, b)
+        // If result matches target and equation fits length constraint, add to candidates
+        if (v === target) {
+          const eq = `${a}${sym}${b}`
+          if (eq.length <= MAX) candidates.add(eq)
+        }
       }
     }
   }
 
-  // Three-number operations with order of operations
+  // Generate three-number equations with order of operations support
+  // We need to consider both left-associative and right-associative groupings
+  // Example: (2+3)*4=20 vs 2+(3*4)=14
   for (let a = 1; a <= 50; a++) {
     for (let b = 1; b <= 50; b++) {
       for (let c = 1; c <= 50; c++) {
-        // a + b * c (multiplication first)
-        if (a + b * c === target) {
-          const eq = `${a}+${b}*${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a * b + c (multiplication first)
-        if (a * b + c === target) {
-          const eq = `${a}*${b}+${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a * b - c (multiplication first)
-        if (a * b - c === target && a * b > c) {
-          const eq = `${a}*${b}-${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a - b * c (multiplication first)
-        if (a - b * c === target && a > b * c) {
-          const eq = `${a}-${b}*${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a / b + c (division first)
-        if (b !== 0 && a % b === 0 && a / b + c === target) {
-          const eq = `${a}/${b}+${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a / b - c (division first)
-        if (b !== 0 && a % b === 0 && a / b - c === target && a / b > c) {
-          const eq = `${a}/${b}-${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a + b / c (division first)
-        if (c !== 0 && b % c === 0 && a + b / c === target) {
-          const eq = `${a}+${b}/${c}`
-          if (eq.length <= 9) candidates.push(eq)
-        }
-        // a - b / c (division first)
-        if (c !== 0 && b % c === 0 && a - b / c === target && a > b / c) {
-          const eq = `${a}-${b}/${c}`
-          if (eq.length <= 9) candidates.push(eq)
+        for (const op1 of OPS) {
+          // First operation: a op1 b
+          if (!op1.guard(a, b)) continue
+          const v1 = op1.fn(a, b)
+          if (v1 === undefined) continue
+
+          for (const op2 of OPS) {
+            // Left-associative: (a op1 b) op2 c
+            // Example: (2+3)*4 evaluates as (5)*4 = 20
+            // No parentheses needed in output since we evaluate left-to-right
+            if (op2.guard(v1, c)) {
+              const v2 = op2.fn(v1, c)
+              if (v2 === target) {
+                const expr = `${a}${op1.sym}${b}${op2.sym}${c}`
+                if (expr.length <= MAX) candidates.add(expr)
+              }
+            }
+
+            // Right-associative: a op1 (b op2 c)
+            // Example: 2+(3*4) evaluates as 2+(12) = 14
+            // Parentheses are needed when op2 has lower precedence than op1
+            // (e.g., 2+(3*4) needs parens, but 2*(3+4) doesn't due to precedence)
+            if (op2.guard(b, c)) {
+              const v3 = op2.fn(b, c)
+              if (v3 === undefined) continue
+              if (op1.guard(a, v3)) {
+                const v4 = op1.fn(a, v3)
+                if (v4 === target) {
+                  // Add parentheses only when necessary for correct evaluation
+                  // If op2 has lower precedence than op1, we need parens
+                  // Example: 2+(3*4) needs parens, but 2*(3+4) doesn't
+                  const mid = op2.prec < op1.prec ? `(${b}${op2.sym}${c})` : `${b}${op2.sym}${c}`
+                  const expr = `${a}${op1.sym}${mid}`
+                  if (expr.length <= MAX) candidates.add(expr)
+                }
+              }
+            }
+          }
         }
       }
     }
   }
 
-  // Remove duplicates
-  const uniqueCandidates = [...new Set(candidates)]
+  // Convert Set to array for random selection
+  const arr = Array.from(candidates)
+  // Fallback if no valid equations found (shouldn't happen in practice)
+  if (!arr.length) return `${target}+0`
 
-  if (uniqueCandidates.length === 0) {
-    // Fallback: simple equation
-    return `${target}+0`
-  }
-
-  // Use seeded random to pick a consistent equation for the day
-  const randomIndex = Math.floor(seededRandom(dateSeed) * uniqueCandidates.length)
-  const selected = uniqueCandidates[randomIndex]
-  return selected ?? uniqueCandidates[0] ?? `${target}+0`
+  // Use seeded random to ensure same puzzle for same date
+  // This makes puzzles consistent across sessions for the same day
+  const randomIndex = Math.floor(seededRandom(dateSeed) * arr.length)
+  return arr[randomIndex] ?? arr[0] ?? `${target}+0`
 }
