@@ -12,4 +12,6 @@ alwaysApply: true
 - Provide concise executive summaries when finishing tasks
 - Suggest improvements proactively when spotting issues
 - Always read readme files before coding
+- Always run `pnpm run qa` at the root of the monorepo to verify it all works
 - Always update readme files after making code changes
+

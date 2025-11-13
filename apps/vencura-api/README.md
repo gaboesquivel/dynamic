@@ -232,19 +232,56 @@ Content-Type: application/json
 
 ## Testing
 
+The API includes comprehensive blackbox E2E tests that use the real Dynamic SDK.
+
+### Running Tests
+
 ```bash
+# E2E tests (blackbox API tests)
+pnpm run test:e2e
+
+# E2E tests in watch mode
+pnpm run test:e2e:watch
+
+# E2E tests for CI (with coverage)
+pnpm run test:e2e:ci
+
 # Unit tests
 pnpm run test
-
-# Watch mode
-pnpm run test:watch
-
-# E2E tests
-pnpm run test:e2e
 
 # Test coverage
 pnpm run test:cov
 ```
+
+### Test Setup
+
+E2E tests require the following environment variables in `.env`:
+
+- `DYNAMIC_ENVIRONMENT_ID` - Your Dynamic environment ID
+- `DYNAMIC_API_TOKEN` - Your Dynamic API token
+- `ENCRYPTION_KEY` - Encryption key (32+ characters)
+- `TEST_AUTH_TOKEN` (optional) - Pre-configured JWT token for testing. If not provided, tests will attempt to create a test user and session automatically.
+
+### Test Structure
+
+- **Blackbox Testing**: Tests only interact with HTTP endpoints, not internal implementation
+- **Real Dynamic SDK**: All tests use real Dynamic SDK endpoints (no mocks)
+- **Automated**: Tests run without manual intervention
+- **Comprehensive Coverage**: Tests cover all wallet endpoints, error cases, and multichain scenarios
+
+### Test Files
+
+- `test/wallet.e2e-spec.ts` - Main wallet endpoint tests
+- `test/wallet-edge-cases.e2e-spec.ts` - Edge case and error handling tests
+- `test/wallet-multichain.e2e-spec.ts` - Multichain wallet creation tests
+- `test/app.e2e-spec.ts` - Basic health check tests
+
+### Getting a Test Auth Token
+
+For automated testing, you can either:
+
+1. **Set TEST_AUTH_TOKEN**: Get a JWT token from Dynamic's UI (after logging in) and set it as `TEST_AUTH_TOKEN` in your `.env` file
+2. **Automatic Token Generation**: Tests will attempt to create a test user and get a token automatically (requires Dynamic API access)
 
 ## Database
 

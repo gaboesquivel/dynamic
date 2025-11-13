@@ -114,14 +114,22 @@ describe('WalletService', () => {
   })
 
   it('should get user wallets', async () => {
-    mockDb.limit.mockResolvedValueOnce([
-      {
-        id: 'wallet-1',
-        address: '0x123',
-        network: '421614',
-        chainType: 'evm',
-      },
-    ])
+    mockDb.where.mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      from: jest.fn().mockReturnThis(),
+    })
+    mockDb.select.mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        where: jest.fn().mockResolvedValue([
+          {
+            id: 'wallet-1',
+            address: '0x123',
+            network: '421614',
+            chainType: 'evm',
+          },
+        ]),
+      }),
+    })
 
     const result = await service.getUserWallets('user-123')
 
@@ -181,7 +189,12 @@ describe('WalletService', () => {
       },
     ])
 
-    const result = await service.sendTransaction('wallet-123', 'user-123', '0xrecipient', 0.1)
+    const result = await service.sendTransaction(
+      'wallet-123',
+      'user-123',
+      '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+      0.1,
+    )
 
     expect(result).toHaveProperty('transactionHash', '0xtxhash')
     expect(mockWalletClient.sendTransaction).toHaveBeenCalled()

@@ -22,6 +22,20 @@
     "check-types": {
       "dependsOn": ["^check-types"]
     },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "DYNAMIC_ENVIRONMENT_ID",
+        "DYNAMIC_API_TOKEN",
+        "ENCRYPTION_KEY",
+        "TEST_AUTH_TOKEN"
+      ]
+    },
     "dev": {
       "cache": false,
       "persistent": true
