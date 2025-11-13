@@ -11,41 +11,325 @@ alwaysApply: false
 - Follow hooks naming conventions (use-kebab-case.ts)
 
 ## Code Style
-- **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
-- Multi-line if statements must use brackets
-- Prefer one-liners for simple conditional logic
+- See [TypeScript Rules](../base/typescript.mdc) for code style guidelines
 
 ## TanStack Query Patterns
-```tsx
-import { useQuery, useMutation } from '@tanstack/react-query'
 
-// Data fetching with proper types
-export function useUserData(userId: string) {
-  return useQuery({
+### Query Key Factory Pattern
+
+TanStack Query makes data caching efficient and predictable through its queryKey system. However, we often run into challenges:
+
+1. Queries and mutations are often defined in different files, making it hard to maintain consistent cache keys
+2. Multiple components may trigger the same query or mutation, which can lead to confusion over which key to use
+3. Inconsistent keys make cache invalidation unreliable and error-prone
+
+To address these challenges, use a Query Key Factory to centralize and standardize all query keys in one place across the app.
+
+#### When to Use Query Key Factory
+
+**Always use Query Key Factory when:**
+- Building features with multiple related queries/mutations
+- Need to invalidate multiple queries together
+- Working in a team (ensures consistency)
+- Building reusable query logic
+
+**Basic pattern is acceptable for:**
+- One-off queries in isolated components
+- Prototyping or temporary code
+- Simple queries that won't scale
+
+#### Query Key Factory Package
+
+Use `@lukemorales/query-key-factory` to generate namespaced, reusable, and type-safe query keys from a single source of truth.
+
+#### File Organization
+
+Structure query keys in dedicated files:
+- `src/queries/articles.ts` - Query key factory for articles
+- `src/queries/users.ts` - Query key factory for users
+- `src/queries/index.ts` - Re-export all query keys
+
+This keeps all query-related logic centralized and discoverable.
+
+#### Create Query Key Factory
+
+```tsx
+import { createQueryKeys } from '@lukemorales/query-key-factory'
+
+export const articles = createQueryKeys('articles', {
+  all: {
+    queryKey: null,
+    queryFn: fetchArticles,
+  },
+})
+```
+
+This generates a namespaced key under `articles.all` which makes it easy to reuse across the app with full type safety.
+
+#### Passing Params
+
+Define keys that accept dynamic parameters:
+
+```tsx
+export const articles = createQueryKeys('articles', {
+  all: {
+    queryKey: null,
+    queryFn: fetchArticles,
+  },
+  detail: (id: string) => ({
+    queryKey: [id],
+    queryFn: () => fetchArticleById(id),
+  }),
+  byUser: (userId: string) => ({
     queryKey: ['user', userId],
-    queryFn: async () => {
-      const data = await fetchUser(userId)
-      return data as User
-    }
-  })
+    queryFn: () => fetchArticlesByUser(userId),
+  }),
+})
+```
+
+This lets us pass params directly into the factory.
+
+#### Using in Queries
+
+Once the key factory is set up, using it in a query is simple:
+
+```tsx
+import { useQuery } from '@tanstack/react-query'
+import { articles } from './query-keys'
+
+const { data, isLoading, error } = useQuery(articles.all)
+```
+
+This pulls in the `queryKey` and `queryFn` from the factory, so no need to manually define them each time.
+
+#### Query Options
+
+Always configure appropriate defaults:
+- `staleTime`: How long data is considered fresh (default: 0)
+- `gcTime`: How long unused data stays in cache (default: 5 minutes)
+- `retry`: Number of retry attempts for failed queries
+- `refetchOnWindowFocus`: Whether to refetch when window regains focus
+
+```tsx
+const { data } = useQuery({
+  ...articles.all,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  gcTime: 10 * 60 * 1000, // 10 minutes
+  retry: 3,
+  retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+})
+```
+
+#### Error Handling
+
+Handle errors with proper retry logic:
+
+```tsx
+const { data, error, isError } = useQuery({
+  ...articles.detail(id),
+  retry: 3,
+  retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+})
+
+if (isError) {
+  return <div>Error: {error.message}</div>
 }
 ```
 
+#### Dependent Queries
+
+Use `enabled` option for queries that depend on other data:
+
+```tsx
+const { data: user } = useQuery(users.detail(userId))
+const { data: posts } = useQuery({
+  ...posts.byUser(userId),
+  enabled: !!user, // Only fetch when user exists
+})
+```
+
+#### Infinite Queries
+
+For paginated data, use infinite queries:
+
+```tsx
+export const articles = createQueryKeys('articles', {
+  infinite: (filters: ArticleFilters) => ({
+    queryKey: ['infinite', filters],
+    queryFn: ({ pageParam = 0 }) => fetchArticlesPage({ ...filters, page: pageParam }),
+  }),
+})
+
+const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
+  articles.infinite(filters)
+)
+```
+
+#### Using in Mutations
+
+Trigger mutations and ensure relevant queries are invalidated using the key factory:
+
+```tsx
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { articles } from './query-keys'
+
+const queryClient = useQueryClient()
+
+const mutation = useMutation({
+  mutationFn: createArticle,
+  onSuccess: () => {
+    queryClient.invalidateQueries({
+      queryKey: articles._def,
+    })
+  },
+})
+```
+
+Using `articles._def` ensures we invalidate all keys under the `articles` namespace without hardcoding any queryKey strings.
+
+#### Optimistic Updates
+
+Update the cache optimistically for better UX:
+
+```tsx
+const mutation = useMutation({
+  mutationFn: updateArticle,
+  onMutate: async (newArticle) => {
+    await queryClient.cancelQueries({ queryKey: articles.detail(newArticle.id).queryKey })
+    const previous = queryClient.getQueryData(articles.detail(newArticle.id).queryKey)
+    queryClient.setQueryData(articles.detail(newArticle.id).queryKey, newArticle)
+    return { previous }
+  },
+  onError: (err, newArticle, context) => {
+    if (context?.previous) {
+      queryClient.setQueryData(articles.detail(newArticle.id).queryKey, context.previous)
+    }
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: articles._def })
+  },
+})
+```
+
+#### Prefetching
+
+Prefetch queries for better UX (e.g., on link hover or route loader):
+
+```tsx
+// In a link hover handler or route loader
+queryClient.prefetchQuery(articles.detail(id))
+```
+
+#### Suspense Integration
+
+When using Suspense with TanStack Query:
+
+```tsx
+import { Suspense } from 'react'
+import { useSuspenseQuery } from '@tanstack/react-query'
+
+function Article({ id }: { id: string }) {
+  const { data } = useSuspenseQuery(articles.detail(id))
+  return <div>{data.title}</div>
+}
+
+function ArticlePage() {
+  return (
+    <Suspense fallback={<ArticleSkeleton />}>
+      <Article id="123" />
+    </Suspense>
+  )
+}
+```
+
+#### Benefits
+
+- Less boilerplate
+- Centralized key logic
+- Full type safety
+- Easy to scale
+
+### Anti-Patterns to Avoid
+
+❌ **Don't**: Manually construct query keys in components
+```tsx
+// Bad
+useQuery({ queryKey: ['articles', id] })
+```
+
+✅ **Do**: Use query key factory
+```tsx
+// Good
+useQuery(articles.detail(id))
+```
+
+❌ **Don't**: Hardcode query keys in invalidations
+```tsx
+// Bad
+queryClient.invalidateQueries({ queryKey: ['articles'] })
+```
+
+✅ **Do**: Use namespace invalidation
+```tsx
+// Good
+queryClient.invalidateQueries({ queryKey: articles._def })
+```
+
+❌ **Don't**: Create new query functions inline
+```tsx
+// Bad
+useQuery({
+  queryKey: ['articles'],
+  queryFn: async () => {
+    const res = await fetch('/api/articles')
+    return res.json()
+  },
+})
+```
+
+✅ **Do**: Define queryFn in the factory
+```tsx
+// Good
+useQuery(articles.all)
+```
+
 ## Async Operations
+
+### When to Use Each Pattern
+
+**Use TanStack Query for:**
+- Server data fetching (API calls)
+- Data that needs caching
+- Data that needs refetching/background updates
+- Mutations and optimistic updates
+
+**Use `useAsync`/`useAsyncFn` from `react-use` for:**
+- One-off async operations (file uploads, form submissions that don't need caching)
+- Non-data-fetching async operations
+- Operations that don't benefit from caching
+
 ```tsx
 import { useAsync, useAsyncFn } from 'react-use'
 
-// For values that load once and remain static
-export function useStaticData() {
-  const state = useAsync(async () => {
-    const data = await fetchStaticData()
-    return data
+// For one-off async operations that don't need caching
+export function useFileUpload() {
+  const [state, execute] = useAsyncFn(async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return await uploadFile(formData)
   }, [])
 
-  return state
+  return { ...state, upload: execute }
 }
 ```
 
 ## Custom Hooks Best Practices
 - Combine multiple queries into single, cohesive hooks
 - Avoid over-fetching data; optimize query dependencies
+- Extract query logic into custom hooks for reusability
+- Use query key factory for all TanStack Query hooks
+
+## Related Rules
+- See [React Rules](./react.mdc) for component patterns
+- See [Frontend Stack](./stack.mdc) for library usage patterns
+- See [TypeScript Rules](../base/typescript.mdc) for type safety patterns

@@ -1,0 +1,36 @@
+{
+  "name": "@vencura/react",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "description": "React hooks for Vencura API using TanStack Query",
+  "license": "PROPRIETARY",
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./provider": "./src/provider.tsx",
+    "./hooks/*": "./src/hooks/*.ts"
+  },
+  "dependencies": {
+    "@lukemorales/query-key-factory": "^1.3.4",
+    "@tanstack/react-query": "^5.90.8",
+    "@vencura/core": "workspace:*",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "eslint": "^9.32.0",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
+

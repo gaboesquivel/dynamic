@@ -11,9 +11,11 @@ alwaysApply: false
 - Use `nuqs` for URL search parameter state management
 
 ## Code Style
-- **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
-- Multi-line if statements must use brackets
-- Prefer one-liners for simple conditional logic
+- See [TypeScript Rules](../base/typescript.mdc) for code style guidelines
+
+## Related Rules
+- See [React Hooks Rules](./react-hooks.mdc) for TanStack Query patterns
+- See [React Rules](./react.mdc) for component patterns
 
 ## Server vs Client Components
 - Favor Server Components and Next.js SSR

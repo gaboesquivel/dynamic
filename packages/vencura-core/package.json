@@ -20,7 +20,8 @@
     "eslint": "^9.32.0",
     "swagger-typescript-api": "^13.2.16",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vencura-api": "workspace:*"
   }
 }
 

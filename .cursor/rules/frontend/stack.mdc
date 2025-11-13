@@ -11,8 +11,10 @@ alwaysApply: false
 ### Data Fetching & State Management
 - **@tanstack/react-query**: Primary data fetching and caching solution
   - Use for all server data fetching
+  - Use `@lukemorales/query-key-factory` for centralized, type-safe query keys
   - Implement proper query keys and invalidation strategies
   - Combine multiple queries into cohesive custom hooks
+  - See [React Hooks Rules](./react-hooks.mdc) for detailed patterns
 - **nuqs**: URL-based state management
   - Use for shareable, bookmarkable state
   - Decouples components from internal state logic
@@ -55,17 +57,26 @@ alwaysApply: false
 ## Usage Patterns
 
 ### Data Fetching with TanStack Query
+
+Use Query Key Factory pattern for all TanStack Query usage. See [React Hooks Rules](./react-hooks.mdc) for complete patterns.
+
 ```tsx
-import { useQuery, useMutation } from '@tanstack/react-query'
+// Query key factory (src/queries/users.ts)
+import { createQueryKeys } from '@lukemorales/query-key-factory'
+
+export const users = createQueryKeys('users', {
+  detail: (id: string) => ({
+    queryKey: [id],
+    queryFn: () => fetchUser(id),
+  }),
+})
+
+// Usage in component
+import { useQuery } from '@tanstack/react-query'
+import { users } from '@/queries/users'
 
 export function useUserData(userId: string) {
-  return useQuery({
-    queryKey: ['user', userId],
-    queryFn: async () => {
-      const data = await fetchUser(userId)
-      return data
-    }
-  })
+  return useQuery(users.detail(userId))
 }
 ```
 
@@ -112,9 +123,16 @@ type User = z.infer<typeof userSchema>
 ## Best Practices
 
 - **Prefer TanStack Query** over react-use for data fetching
+- **Use Query Key Factory** (`@lukemorales/query-key-factory`) for all TanStack Query keys
 - **Use nuqs** for state that should be shareable via URL
 - **Validate all external data** with zod schemas
 - **Type-safe server actions** with next-safe-action
 - **Import utilities selectively** to reduce bundle size
 - **Combine related queries** into cohesive custom hooks
 - **Follow fractal component patterns** for consistent structure
+
+## Related Rules
+- See [React Hooks Rules](./react-hooks.mdc) for detailed TanStack Query patterns
+- See [React Rules](./react.mdc) for component patterns
+- See [Next.js Rules](./nextjs.mdc) for Next.js-specific patterns
+- See [TypeScript Rules](../base/typescript.mdc) for type safety and code style

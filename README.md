@@ -12,6 +12,7 @@ dynamic/
 │   └── mathler/          # Next.js Mathler game (Wordle with numbers)
 ├── packages/
 │   ├── vencura-core/     # TypeScript SDK for Vencura API (auto-generated)
+│   ├── vencura-react/    # React hooks for Vencura API using TanStack Query
 │   ├── ui/               # Shared Shadcn/ui component library
 │   ├── eslint-config/    # Shared ESLint configuration
 │   └── typescript-config/ # Shared TypeScript configuration
@@ -37,6 +38,7 @@ dynamic/
 - **[Vencura UI](./apps/vencura-ui/README.md)** - Next.js frontend for Vencura API with multichain support
 - **[Mathler](./apps/mathler/README.md)** - Next.js Mathler game with Dynamic SDK
 - **[@vencura/core](./packages/vencura-core/README.md)** - TypeScript SDK for Vencura API (auto-generated from Swagger/OpenAPI)
+- **[@vencura/react](./packages/vencura-react/README.md)** - React hooks for Vencura API using TanStack Query
 - **[UI Package](./packages/ui/README.md)** - Shared Shadcn/ui component library
 
 ## Getting Started

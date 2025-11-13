@@ -54,3 +54,7 @@ pnpm generate-sdk
 ## Type Safety
 
 All API endpoints, request parameters, and response types are fully typed based on the Swagger specification, providing full TypeScript type safety and IntelliSense support.
+
+## Related Packages
+
+- **[@vencura/react](../vencura-react/README.md)** - React hooks for Vencura API using TanStack Query. Provides a higher-level React API with caching, automatic refetching, and optimistic updates.

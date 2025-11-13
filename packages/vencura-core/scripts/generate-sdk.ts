@@ -55,7 +55,7 @@ const generateSdk = async ({
   console.log(`SDK generated successfully to: ${outputPath}`)
 }
 
-const swaggerJsonPath = join(__dirname, '../../../apps/vencura/dist/swagger.json')
+const swaggerJsonPath = join(__dirname, '../../../apps/vencura-api/dist/swagger.json')
 const outputPath = join(__dirname, '../src')
 
 void generateSdk({ swaggerJsonPath, outputPath })

@@ -43,3 +43,8 @@ Maintain a structured and logical order when organizing files:
 3. Helpers & Utilities – Functions or modules that provide reusable logic and utilities
 4. Static Content – Non-code assets such as constants, images, or localization files
 5. Types & Interfaces – Type definitions for TypeScript to ensure type safety and maintain consistency
+
+## Related Rules
+- See [React Rules](../frontend/react.mdc) for React-specific patterns
+- See [React Hooks Rules](../frontend/react-hooks.mdc) for hooks and data fetching patterns
+- See [Next.js Rules](../frontend/nextjs.mdc) for Next.js-specific patterns

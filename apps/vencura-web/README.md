@@ -118,6 +118,17 @@ A fully typed TypeScript SDK (`@vencura/core`) is available for interacting with
 
 **Note**: This UI currently uses a custom API client, but you can use `@vencura/core` for type-safe API interactions.
 
+### React Hooks
+
+For React applications, **[@vencura/react](../../packages/vencura-react/README.md)** provides React hooks built on TanStack Query, offering:
+
+- Automatic caching and refetching
+- Optimistic updates
+- Type-safe hooks for all API operations
+- Query key factory for cache management
+
+This is the recommended approach for new React applications.
+
 ### API Endpoints Used
 
 - `GET /wallets` - Get all user wallets
