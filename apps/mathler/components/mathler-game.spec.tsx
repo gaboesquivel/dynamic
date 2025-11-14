@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import MathlerGame from './mathler-game'
+import { MathlerGame } from './mathler-game'
 import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@/lib/math-utils'
 import { calculateFeedback } from '@/lib/feedback-utils'
 
@@ -34,9 +34,8 @@ jest.mock('@/hooks/use-game-history', () => ({
 }))
 
 // Mock child components to simplify testing
-// eslint-disable-next-line arrow-body-style
-jest.mock('./guess-row', () => {
-  return function GuessRow({
+jest.mock('./guess-row', () => ({
+  GuessRow: function GuessRow({
     guess,
     currentInput,
     isCurrentRow,
@@ -57,12 +56,11 @@ jest.mock('./guess-row', () => {
         )}
       </div>
     )
-  }
-})
+  },
+}))
 
-// eslint-disable-next-line arrow-body-style
-jest.mock('./game-keypad', () => {
-  return function GameKeypad({ onInput, onBackspace, onSubmit, currentInput }: any) {
+jest.mock('./game-keypad', () => ({
+  GameKeypad: function GameKeypad({ onInput, onBackspace, onSubmit, currentInput }: any) {
     const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     const operators = ['+', '-', '×', '÷']
     return (
@@ -83,44 +81,41 @@ jest.mock('./game-keypad', () => {
         </button>
       </div>
     )
-  }
-})
+  },
+}))
 
-// eslint-disable-next-line arrow-body-style
-jest.mock('./game-status', () => {
-  return function GameStatus({ status, onReset }: any) {
+jest.mock('./game-status', () => ({
+  GameStatus: function GameStatus({ status, onReset }: any) {
     return (
       <div data-testid="game-status">
         <div>{status}</div>
         <button onClick={onReset}>Reset</button>
       </div>
     )
-  }
-})
+  },
+}))
 
-// eslint-disable-next-line arrow-body-style
-jest.mock('./success-modal', () => {
-  return function SuccessModal({ open, onPlayAgain }: any) {
+jest.mock('./success-modal', () => ({
+  SuccessModal: function SuccessModal({ open, onPlayAgain }: any) {
     if (!open) return null
     return (
       <div data-testid="success-modal">
         <button onClick={onPlayAgain}>Play Again</button>
       </div>
     )
-  }
-})
+  },
+}))
 
-// eslint-disable-next-line arrow-body-style
-jest.mock('./voice-control', () => {
-  return function VoiceControl({ onResult, onCommand }: any) {
+jest.mock('./voice-control', () => ({
+  VoiceControl: function VoiceControl({ onResult, onCommand }: any) {
     return (
       <div data-testid="voice-control">
         <button onClick={() => onResult('1+2')}>Test Voice Input</button>
         <button onClick={() => onCommand('enter')}>Test Voice Command</button>
       </div>
     )
-  }
-})
+  },
+}))
 
 describe('MathlerGame', () => {
   const mockEvaluateExpression = evaluateExpression as jest.MockedFunction<

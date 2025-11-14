@@ -1,5 +1,6 @@
 import js from "@eslint/js"
 import eslintConfigPrettier from "eslint-config-prettier"
+import pluginImport from "eslint-plugin-import"
 import pluginReact from "eslint-plugin-react"
 import pluginReactHooks from "eslint-plugin-react-hooks"
 import globals from "globals"
@@ -29,6 +30,7 @@ export const config = [
   {
     plugins: {
       "react-hooks": pluginReactHooks,
+      import: pluginImport,
     },
     settings: { react: { version: "detect" } },
     rules: {
@@ -36,6 +38,17 @@ export const config = [
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
+      // Prefer ternaries over && in JSX
+      "react/jsx-no-leaked-render": ["error", { validStrategies: ["ternary"] }],
+      // Enforce named exports for React components
+      "import/no-default-export": "error",
+    },
+  },
+  // Allow default exports for config files
+  {
+    files: ["**/*.config.{js,mjs,ts}", "**/eslint.config.{js,mjs}", "**/postcss.config.{js,mjs}"],
+    rules: {
+      "import/no-default-export": "off",
     },
   },
 ]

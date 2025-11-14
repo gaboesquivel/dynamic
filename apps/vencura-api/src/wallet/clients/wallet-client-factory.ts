@@ -14,14 +14,10 @@ export class WalletClientFactory {
    */
   createWalletClient(chainId: number | string): BaseWalletClient | null {
     const chainMetadata = getChainMetadata(chainId)
-    if (!chainMetadata) {
-      return null
-    }
+    if (!chainMetadata) return null
 
     const chainType = getChainType(chainId)
-    if (!chainType) {
-      return null
-    }
+    if (!chainType) return null
 
     switch (chainType) {
       case 'evm':

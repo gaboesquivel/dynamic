@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import type { Request } from 'express'
 import { AuthService } from './auth.service'
 
-type User = {
+interface User {
   id: string
   email: string
 }

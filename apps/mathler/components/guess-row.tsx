@@ -9,7 +9,7 @@ interface GuessRowProps {
   onTileClick?: (position: number) => void
 }
 
-export default function GuessRow({
+export function GuessRow({
   guess,
   feedback,
   isCurrentRow,
@@ -57,7 +57,7 @@ export default function GuessRow({
             <span className={hasFeedback && feedbackType ? 'text-white' : 'text-foreground'}>
               {char}
             </span>
-            {isCursorHere && <span className="absolute w-0.5 h-6 bg-primary animate-pulse" />}
+            {isCursorHere ? <span className="absolute w-0.5 h-6 bg-primary animate-pulse" /> : null}
           </div>
         )
       })}

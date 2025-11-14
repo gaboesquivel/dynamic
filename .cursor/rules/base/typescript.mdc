@@ -12,25 +12,43 @@ alwaysApply: false
 
 ## Core Principles
 - Prefer interfaces over types for object definitions
+  - **Exception**: Union types, utility types (e.g., `z.infer<typeof schema>`), and mapped types should use `type`
+  - **Example**: `interface User { id: string }` ✅ vs `type User = { id: string }` ❌
+  - **Example**: `type ChainType = 'evm' | 'solana'` ✅ (union type)
+  - **Example**: `type EnvSchema = z.infer<typeof envSchema>` ✅ (utility type)
 - Avoid enums; use maps or union types instead
 - Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`)
 - Follow the RORO (Receive an Object, Return an Object) pattern for function arguments and return values
 - Use lowercase-with-dashes for directories (e.g., `components/auth-wizard`)
 - Favor named exports for components
+  - **Exception**: Next.js pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`) require default exports
 - Use functional & declarative programming patterns; avoid classes
 - Infer types and keep them inline unless you need to reuse them
 
 ## Framework Exceptions
 - **NestJS**: Classes are required for decorators (@Injectable, @Controller, etc.), so the "avoid classes" rule doesn't apply to NestJS services/controllers
 - **RORO Pattern**: Applies to utility functions, not NestJS method signatures (which use decorators)
+- **Next.js**: Pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`) require default exports for framework routing
 
 ## Code Style
 - **Enforce single-line if statements without brackets**: Use `if(cond) do()` or `cond && do()` for one-liners
+  - **Example**: `if (!value) return null` ✅ vs `if (!value) { return null }` ❌
+  - **Example**: `if (isLoading) return <Spinner />` ✅
+  - Multi-line if statements must use brackets
 - **Enforce single-line arrow functions without brackets**: Use `() => expr` for one-liners
+  - **Example**: `const double = (x: number) => x * 2` ✅ vs `const double = (x: number) => { return x * 2 }` ❌
 - Always use the less amount chars possible when writing code, while maintaining simplicity
-- Multi-line if statements must use brackets
 - Prefer one-liners for simple conditional logic
 - Avoid unnecessary curly braces in conditionals
+
+## ESLint Rules
+The following ESLint rules enforce these codestyle guidelines:
+- `curly: "off"` - Allows single-line if statements without brackets
+- `arrow-body-style: ["error", "as-needed"]` - Enforces arrow functions without brackets when possible
+- `semi: ["error", "never"]` - Enforces no semicolons
+- `@typescript-eslint/consistent-type-definitions: ["error", "interface"]` - Prefers interfaces over types
+- `import/no-default-export: "error"` - Enforces named exports (with Next.js exceptions)
+- `react/jsx-no-leaked-render: ["error", { validStrategies: ["ternary"] }]` - Prefers ternaries over && in JSX
 
 ## Error Handling
 - Fail fast: Handle errors early using guard clauses & early returns

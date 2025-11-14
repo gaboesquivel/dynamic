@@ -10,7 +10,7 @@ interface GameKeypadProps {
   onInputAtPosition?: (char: string) => void
 }
 
-export default function GameKeypad({
+export function GameKeypad({
   onInput,
   onBackspace,
   onSubmit,

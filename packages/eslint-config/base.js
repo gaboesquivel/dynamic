@@ -26,6 +26,8 @@ export const config = [
       "semi": ["error", "never"],
       // Enforce arrow function expressions when possible
       "arrow-body-style": ["error", "as-needed", { requireReturnForObjectLiteral: false }],
+      // Prefer interfaces over types for object definitions
+      "@typescript-eslint/consistent-type-definitions": ["error", "interface"],
     },
   },
   {

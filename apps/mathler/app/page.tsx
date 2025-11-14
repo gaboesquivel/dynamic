@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import MathlerGame from '@/components/mathler-game'
+import { MathlerGame } from '@/components/mathler-game'
 
 export const dynamic = 'force-dynamic'
 

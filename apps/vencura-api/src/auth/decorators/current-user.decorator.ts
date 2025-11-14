@@ -1,7 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 import type { Request } from 'express'
 
-type User = {
+interface User {
   id: string
   email: string
 }

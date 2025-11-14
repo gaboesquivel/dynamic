@@ -11,11 +11,11 @@ import {
 import { calculateFeedback } from '@/lib/feedback-utils'
 import { useGameHistory } from '@/hooks/use-game-history'
 import { useMathlerInput } from '@/hooks/use-mathler-input'
-import GuessRow from './guess-row'
-import GameKeypad from './game-keypad'
-import GameStatus from './game-status'
-import SuccessModal from './success-modal'
-import VoiceControl from './voice-control'
+import { GuessRow } from './guess-row'
+import { GameKeypad } from './game-keypad'
+import { GameStatus } from './game-status'
+import { SuccessModal } from './success-modal'
+import { VoiceControl } from './voice-control'
 
 interface GameState {
   target: number
@@ -26,7 +26,7 @@ interface GameState {
   showSuccessModal: boolean
 }
 
-export default function MathlerGame() {
+export function MathlerGame() {
   const [gameState, setGameState] = useSetState<GameState>({
     target: 0,
     solution: '',
@@ -198,17 +198,17 @@ export default function MathlerGame() {
       </div>
 
       {/* Game Status */}
-      {gameState.gameStatus !== 'playing' && (
+      {gameState.gameStatus !== 'playing' ? (
         <GameStatus
           status={gameState.gameStatus}
           target={gameState.target}
           guessCount={gameState.guesses.length}
           onReset={resetGame}
         />
-      )}
+      ) : null}
 
       {/* Keypad */}
-      {gameState.gameStatus === 'playing' && (
+      {gameState.gameStatus === 'playing' ? (
         <div className="space-y-4">
           <VoiceControl onResult={handleVoiceResult} onCommand={handleVoiceCommand} />
           <GameKeypad
@@ -223,7 +223,7 @@ export default function MathlerGame() {
             onInputAtPosition={handleInputAtPosition}
           />
         </div>
-      )}
+      ) : null}
 
       {/* Success Modal */}
       <SuccessModal

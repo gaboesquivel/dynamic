@@ -149,7 +149,7 @@ function seededRandom(seed: number | string): number {
  * @property guard - Predicate that checks if operation is valid (e.g., no division by zero, positive subtraction)
  * @property prec - Precedence level (1 = addition/subtraction, 2 = multiplication/division)
  */
-type Op = {
+interface Op {
   sym: '+' | '-' | '*' | '/'
   fn: (x: number, y: number) => number | undefined
   guard: (x: number, y: number) => boolean

@@ -17,12 +17,7 @@ interface SuccessModalProps {
   onPlayAgain: () => void
 }
 
-export default function SuccessModal({
-  open,
-  onOpenChange,
-  guessCount,
-  onPlayAgain,
-}: SuccessModalProps) {
+export function SuccessModal({ open, onOpenChange, guessCount, onPlayAgain }: SuccessModalProps) {
   const handlePlayAgain = () => {
     onPlayAgain()
     onOpenChange(false)

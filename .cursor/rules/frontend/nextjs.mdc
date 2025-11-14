@@ -10,6 +10,12 @@ alwaysApply: false
 - Minimize `'use client'` directives to leverage SSR benefits
 - Use `nuqs` for URL search parameter state management
 
+## Exports
+- **Pages and Layouts**: Next.js requires default exports for pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`)
+  - This is an exception to the general "prefer named exports" rule
+  - ESLint is configured to allow default exports for these specific file patterns
+- **Components**: All other components should use named exports
+
 ## Code Style
 - See [TypeScript Rules](../base/typescript.mdc) for code style guidelines
 

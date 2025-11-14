@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import SuccessModal from './success-modal'
+import { SuccessModal } from './success-modal'
 
 // Mock the dialog component since it might have complex dependencies
 jest.mock('@workspace/ui/components/dialog', () => ({

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import VoiceControl from './voice-control'
+import { VoiceControl } from './voice-control'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 
 // Mock the useVoiceInput hook

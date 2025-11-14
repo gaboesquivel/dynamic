@@ -18,11 +18,11 @@ import {
 } from './base-wallet-client'
 
 /**
- * Type for Dynamic SDK's Solana wallet client.
+ * Interface for Dynamic SDK's Solana wallet client.
  * Uses the actual Dynamic SDK client type - no manual duplication.
- * The client is imported dynamically, so we use a type that matches the SDK's interface.
+ * The client is imported dynamically, so we use an interface that matches the SDK's interface.
  */
-type DynamicSvmWalletClient = {
+interface DynamicSvmWalletClient {
   authenticateApiToken: (token: string) => Promise<void>
   createWalletAccount: (options: {
     thresholdSignatureScheme: unknown

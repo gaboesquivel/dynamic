@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import GuessRow from './guess-row'
+import { GuessRow } from './guess-row'
 
 describe('GuessRow', () => {
   it('should render current input correctly', () => {

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import GameKeypad from './game-keypad'
+import { GameKeypad } from './game-keypad'
 
 describe('GameKeypad', () => {
   const mockOnInput = jest.fn()

@@ -7,7 +7,7 @@ interface GameStatusProps {
   onReset: () => void
 }
 
-export default function GameStatus({ status, target, guessCount, onReset }: GameStatusProps) {
+export function GameStatus({ status, target, guessCount, onReset }: GameStatusProps) {
   return (
     <div
       className={`p-4 rounded-lg text-center ${

@@ -9,7 +9,7 @@ interface VoiceControlProps {
   enabled?: boolean
 }
 
-export default function VoiceControl({ onResult, onCommand, enabled = true }: VoiceControlProps) {
+export function VoiceControl({ onResult, onCommand, enabled = true }: VoiceControlProps) {
   const { isListening, isSupported, error, toggleListening } = useVoiceInput({
     onResult,
     onCommand,
@@ -43,10 +43,10 @@ export default function VoiceControl({ onResult, onCommand, enabled = true }: Vo
       >
         {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
       </button>
-      {isListening && (
+      {isListening ? (
         <div className="text-sm text-primary font-semibold animate-pulse">Listening...</div>
-      )}
-      {error && <div className="text-sm text-destructive">{error}</div>}
+      ) : null}
+      {error ? <div className="text-sm text-destructive">{error}</div> : null}
     </div>
   )
 }

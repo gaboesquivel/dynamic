@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import GameStatus from './game-status'
+import { GameStatus } from './game-status'
 
 describe('GameStatus', () => {
   const mockOnReset = jest.fn()
