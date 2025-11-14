@@ -9,10 +9,28 @@ jest.mock('@/lib/math-utils', () => ({
   evaluateExpression: jest.fn(),
   getRandomTarget: jest.fn(),
   generateSolutionEquation: jest.fn(),
+  getDateKey: jest.fn(() => '2024-01-01'),
 }))
 
 jest.mock('@/lib/feedback-utils', () => ({
   calculateFeedback: jest.fn(),
+}))
+
+jest.mock('@/hooks/use-game-history', () => ({
+  useGameHistory: jest.fn(() => ({
+    saveGame: jest.fn().mockResolvedValue(true),
+    getHistory: jest.fn(() => []),
+    getGameByDate: jest.fn(() => undefined),
+    getStats: jest.fn(() => ({
+      totalGames: 0,
+      wins: 0,
+      losses: 0,
+      winRate: 0,
+      averageGuesses: 0,
+    })),
+    isAuthenticated: false,
+    history: [],
+  })),
 }))
 
 // Mock child components to simplify testing

@@ -1,8 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@/lib/math-utils'
+import {
+  evaluateExpression,
+  getRandomTarget,
+  generateSolutionEquation,
+  getDateKey,
+} from '@/lib/math-utils'
 import { calculateFeedback } from '@/lib/feedback-utils'
+import { useGameHistory } from '@/hooks/use-game-history'
 import GuessRow from './guess-row'
 import GameKeypad from './game-keypad'
 import GameStatus from './game-status'
@@ -16,6 +22,7 @@ export default function MathlerGame() {
   const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing')
   const [feedback, setFeedback] = useState<Array<Array<'correct' | 'present' | 'absent'>>>([])
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const { saveGame } = useGameHistory()
 
   const resetGame = useCallback(() => {
     const newTarget = getRandomTarget()
@@ -71,11 +78,28 @@ export default function MathlerGame() {
 
         // Check win condition (result equals target AND guess matches solution exactly)
         const isWin = result === target && normalizedGuess === solution
+        const isGameOver = isWin || newGuesses.length >= 6
+
         if (isWin) {
           setGameStatus('won')
           setShowSuccessModal(true)
         } else if (newGuesses.length >= 6) {
           setGameStatus('lost')
+        }
+
+        // Save game history when game ends
+        if (isGameOver) {
+          const finalStatus: 'won' | 'lost' = isWin ? 'won' : 'lost'
+          saveGame({
+            date: getDateKey(),
+            target,
+            solution,
+            guesses: newGuesses,
+            status: finalStatus,
+            guessCount: newGuesses.length,
+          }).catch(error => {
+            console.error('Failed to save game history:', error)
+          })
         }
 
         return newGuesses
@@ -85,7 +109,7 @@ export default function MathlerGame() {
     } catch {
       alert('Invalid expression')
     }
-  }, [currentInput, gameStatus, solution, target])
+  }, [currentInput, gameStatus, solution, target, saveGame])
 
   // Keyboard support
   useEffect(() => {

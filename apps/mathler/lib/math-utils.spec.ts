@@ -3,6 +3,7 @@ import {
   getRandomTarget,
   generateSolutionEquation,
   generateEquationsForTarget,
+  getDateKey,
 } from './math-utils'
 
 describe('evaluateExpression', () => {
@@ -69,6 +70,45 @@ describe('evaluateExpression', () => {
   it('should handle complex expressions', () => {
     expect(evaluateExpression('2+3*4-1')).toBe(13) // 2 + 12 - 1 = 13
     expect(evaluateExpression('10/2*3')).toBe(15) // 5 * 3 = 15
+  })
+})
+
+describe('getDateKey', () => {
+  it('should return date in YYYY-MM-DD format', () => {
+    const date = new Date('2024-01-15')
+    const key = getDateKey(date)
+    expect(key).toBe('2024-01-15')
+  })
+
+  it('should use today if no date provided', () => {
+    const today = new Date()
+    const key = getDateKey()
+    const expected = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    expect(key).toBe(expected)
+  })
+
+  it('should pad single digit months and days with zeros', () => {
+    const date = new Date('2024-01-05')
+    const key = getDateKey(date)
+    expect(key).toBe('2024-01-05')
+  })
+
+  it('should handle dates at year boundaries', () => {
+    const date1 = new Date('2024-12-31')
+    expect(getDateKey(date1)).toBe('2024-12-31')
+
+    const date2 = new Date('2025-01-01')
+    expect(getDateKey(date2)).toBe('2025-01-01')
+  })
+
+  it('should throw error for invalid date', () => {
+    const invalidDate = new Date('invalid')
+    expect(() => getDateKey(invalidDate)).toThrow('Invalid date provided to getDateKey')
+  })
+
+  it('should handle dates with different months', () => {
+    expect(getDateKey(new Date('2024-03-15'))).toBe('2024-03-15')
+    expect(getDateKey(new Date('2024-10-25'))).toBe('2024-10-25')
   })
 })
 
