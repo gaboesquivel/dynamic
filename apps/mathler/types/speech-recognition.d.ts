@@ -43,8 +43,8 @@ interface SpeechRecognitionConstructor {
   new (): SpeechRecognition
 }
 
-declare var SpeechRecognition: SpeechRecognitionConstructor | undefined
-declare var webkitSpeechRecognition: SpeechRecognitionConstructor | undefined
+declare const SpeechRecognition: SpeechRecognitionConstructor | undefined
+declare const webkitSpeechRecognition: SpeechRecognitionConstructor | undefined
 
 interface Window {
   SpeechRecognition?: SpeechRecognitionConstructor

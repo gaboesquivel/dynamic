@@ -47,7 +47,7 @@ export default function GuessRow({
             key={i}
             onClick={() => isClickable && onTileClick(i)}
             className={`
-              w-12 h-12 flex items-center justify-center text-xl font-bold
+              relative w-12 h-12 flex items-center justify-center text-xl font-bold
               rounded transition-all duration-200 ${bgColor}
               ${isCurrentRow && isActive ? 'border-2 border-primary scale-105' : ''}
               ${isClickable ? 'cursor-pointer hover:opacity-80' : ''}
