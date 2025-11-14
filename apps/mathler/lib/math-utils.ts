@@ -1,3 +1,5 @@
+import { Parser } from 'expr-eval'
+
 export function evaluateExpression(expr: string): number | null {
   try {
     // Replace × and ÷ with * and /
@@ -8,7 +10,7 @@ export function evaluateExpression(expr: string): number | null {
       return null
     }
 
-    // Check for valid syntax
+    // Check for valid syntax - reject expressions starting or ending with operators
     if (/^[+*/%]|[+*/%]$/.test(normalized)) {
       return null
     }
@@ -17,17 +19,16 @@ export function evaluateExpression(expr: string): number | null {
       return null
     }
 
-    // Use Function constructor for safe evaluation
-    // This is safer than eval() as it's evaluated in a restricted scope
-    const result = Function('"use strict"; return (' + normalized + ')')()
+    // expr-eval handles parsing and evaluation
+    const parser = new Parser()
+    const result = parser.evaluate(normalized)
 
     // Check if result is a valid number
     if (typeof result !== 'number' || !isFinite(result)) {
       return null
     }
 
-    // Round to avoid floating point issues
-    return Math.round(result * 1000000) / 1000000
+    return result
   } catch {
     return null
   }
