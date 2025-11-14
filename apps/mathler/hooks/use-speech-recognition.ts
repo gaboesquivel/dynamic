@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
+import { useSetState } from 'react-use'
 
 interface UseSpeechRecognitionOptions {
   onResult: (text: string) => void
@@ -15,14 +16,21 @@ interface UseSpeechRecognitionReturn {
   stop: () => void
 }
 
+interface SpeechRecognitionState {
+  listening: boolean
+  supported: boolean
+}
+
 export function useSpeechRecognition({
   onResult,
   onError,
   lang = 'en-US',
 }: UseSpeechRecognitionOptions): UseSpeechRecognitionReturn {
   const ref = useRef<SpeechRecognition | null>(null)
-  const [listening, setListening] = useState(false)
-  const [supported, setSupported] = useState(false)
+  const [state, setState] = useSetState<SpeechRecognitionState>({
+    listening: false,
+    supported: false,
+  })
 
   useEffect(() => {
     // Type-safe access to SpeechRecognition API
@@ -35,7 +43,7 @@ export function useSpeechRecognition({
       return
     }
 
-    setSupported(true)
+    setState({ supported: true })
 
     const recognition = new SpeechRecognition()
     recognition.continuous = true
@@ -43,15 +51,15 @@ export function useSpeechRecognition({
     recognition.lang = lang
 
     recognition.onstart = () => {
-      setListening(true)
+      setState({ listening: true })
     }
 
     recognition.onend = () => {
-      setListening(false)
+      setState({ listening: false })
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      setListening(false)
+      setState({ listening: false })
       if (event.error === 'no-speech') {
         onError('No speech detected')
       } else if (event.error === 'not-allowed') {
@@ -79,27 +87,27 @@ export function useSpeechRecognition({
         ref.current.stop()
       }
     }
-  }, [lang, onResult, onError])
+  }, [lang, onResult, onError, setState])
 
   const start = useCallback(() => {
-    if (ref.current && !listening) {
+    if (ref.current && !state.listening) {
       try {
         ref.current.start()
       } catch {
         onError('Failed to start speech recognition')
       }
     }
-  }, [listening, onError])
+  }, [state.listening, onError])
 
   const stop = useCallback(() => {
-    if (ref.current && listening) {
+    if (ref.current && state.listening) {
       ref.current.stop()
     }
-  }, [listening])
+  }, [state.listening])
 
   return {
-    supported,
-    listening,
+    supported: state.supported,
+    listening: state.listening,
     start,
     stop,
   }

@@ -25,7 +25,9 @@ alwaysApply: false
 - **RORO Pattern**: Applies to utility functions, not NestJS method signatures (which use decorators)
 
 ## Code Style
-- **Enforce single-line if statements without brackets**: Use `if(condition) doSomething()` or `condition && doSomething()` for one-liners
+- **Enforce single-line if statements without brackets**: Use `if(cond) do()` or `cond && do()` for one-liners
+- **Enforce single-line arrow functions without brackets**: Use `() => expr` for one-liners
+- Always use the less amount chars possible when writing code, while maintaining simplicity
 - Multi-line if statements must use brackets
 - Prefer one-liners for simple conditional logic
 - Avoid unnecessary curly braces in conditionals

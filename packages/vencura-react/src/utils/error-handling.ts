@@ -49,17 +49,12 @@ export function isZodError(error: unknown): error is ZodError {
 export function extractErrorMessage(error: unknown): string | null {
   if (!error) return null
 
-  if (isZodError(error)) {
-    return formatZodError({ error })
-  }
+  if (isZodError(error)) return formatZodError({ error })
 
-  if (error instanceof Error) {
-    return error.message
-  }
+  if (error instanceof Error) return error.message
 
-  if (typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+  if (typeof error === 'object' && 'message' in error && typeof error.message === 'string')
     return error.message
-  }
 
   return String(error)
 }

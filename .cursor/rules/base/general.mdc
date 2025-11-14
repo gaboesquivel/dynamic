@@ -15,3 +15,6 @@ alwaysApply: true
 - Always run `pnpm run qa` at the root of the monorepo to verify it all works
 - Always update readme files after making code changes
 
+## Stack
+- Always prefer on Zod based solutions, unless a good for not using it
+

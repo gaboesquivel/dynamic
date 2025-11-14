@@ -50,17 +50,15 @@ export function validateAddressInput({
   // Basic format validation based on chain type
   if (chainType === 'solana') {
     // Solana addresses are base58, typically 32-44 characters
-    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmed)) {
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmed))
       return { valid: false, error: 'Invalid Solana address format' }
-    }
   } else if (chainType === 'evm' || !chainType) {
     // EVM addresses are 0x-prefixed hex, 42 characters
-    if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
+    if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed))
       return {
         valid: false,
         error: 'Invalid EVM address format (must be 0x followed by 40 hex characters)',
       }
-    }
   }
 
   return { valid: true }

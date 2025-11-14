@@ -10,12 +10,83 @@ alwaysApply: false
 
 ## Props and State
 - Follow the RORO (Receive an Object, Return an Object) pattern for props
+- **Use `useSetState` from `react-use` when multiple related state variables are updated together**
+- Group related state into a single state object instead of multiple `useState` calls
 
 ## Rendering Optimization
 - Memoize expensive calculations with useMemo
 - Use memo for pure components that render often
 - Use useCallback for functions passed to child components
 - Avoid creating new objects/arrays in render
+
+## State Management
+
+### Grouping Related State
+
+When multiple state variables are consistently updated together, consolidate them into a single state object using `useSetState` from `react-use`. This simplifies state updates and reduces boilerplate.
+
+❌ **Don't**: Use multiple `useState` calls for related state
+```tsx
+// Bad
+const [message, setMessage] = useState('')
+const [signedMessage, setSignedMessage] = useState<string | null>(null)
+const [txTo, setTxTo] = useState('')
+const [txAmount, setTxAmount] = useState('')
+const [showBalance, setShowBalance] = useState(false)
+const [addressError, setAddressError] = useState<string | null>(null)
+const [amountError, setAmountError] = useState<string | null>(null)
+
+// Updating multiple states requires multiple calls
+const handleSuccess = () => {
+  setSignedMessage(data.signedMessage)
+  setMessage('')
+}
+```
+
+✅ **Do**: Use `useSetState` for grouped state
+```tsx
+// Good
+import { useSetState } from 'react-use'
+
+interface FormState {
+  message: string
+  signedMessage: string | null
+  txTo: string
+  txAmount: string
+  showBalance: boolean
+  addressError: string | null
+  amountError: string | null
+}
+
+const [state, setState] = useSetState<FormState>({
+  message: '',
+  signedMessage: null,
+  txTo: '',
+  txAmount: '',
+  showBalance: false,
+  addressError: null,
+  amountError: null,
+})
+
+// Update multiple properties atomically
+const handleSuccess = () => {
+  setState({ signedMessage: data.signedMessage, message: '' })
+}
+
+// Partial updates are easy
+setState({ txTo: value, addressError: null })
+```
+
+**When to use `useSetState`:**
+- Multiple related state variables updated together
+- Form state with multiple fields
+- UI state that changes together (modals, panels, etc.)
+- Game/app state with multiple related properties
+
+**When to keep separate `useState`:**
+- Completely independent state variables
+- Simple boolean flags
+- Single primitive values with no relation to other state
 
 ## Component Composition
 - Use children prop for flexible composition

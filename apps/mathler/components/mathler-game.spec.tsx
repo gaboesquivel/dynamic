@@ -34,6 +34,7 @@ jest.mock('@/hooks/use-game-history', () => ({
 }))
 
 // Mock child components to simplify testing
+// eslint-disable-next-line arrow-body-style
 jest.mock('./guess-row', () => {
   return function GuessRow({
     guess,
@@ -59,6 +60,7 @@ jest.mock('./guess-row', () => {
   }
 })
 
+// eslint-disable-next-line arrow-body-style
 jest.mock('./game-keypad', () => {
   return function GameKeypad({ onInput, onBackspace, onSubmit, currentInput }: any) {
     const numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -84,6 +86,7 @@ jest.mock('./game-keypad', () => {
   }
 })
 
+// eslint-disable-next-line arrow-body-style
 jest.mock('./game-status', () => {
   return function GameStatus({ status, onReset }: any) {
     return (
@@ -95,6 +98,7 @@ jest.mock('./game-status', () => {
   }
 })
 
+// eslint-disable-next-line arrow-body-style
 jest.mock('./success-modal', () => {
   return function SuccessModal({ open, onPlayAgain }: any) {
     if (!open) return null
@@ -106,6 +110,7 @@ jest.mock('./success-modal', () => {
   }
 })
 
+// eslint-disable-next-line arrow-body-style
 jest.mock('./voice-control', () => {
   return function VoiceControl({ onResult, onCommand }: any) {
     return (

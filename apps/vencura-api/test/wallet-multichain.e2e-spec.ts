@@ -32,8 +32,8 @@ describe('WalletController Multichain (e2e)', () => {
   })
 
   describe('EVM Chain Wallet Creation', () => {
-    it('should create wallet on Arbitrum Sepolia', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Arbitrum Sepolia', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
@@ -42,11 +42,10 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', '421614')
           expect(res.body).toHaveProperty('chainType', 'evm')
           expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        })
-    })
+        }))
 
-    it('should create wallet on Base Sepolia', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Base Sepolia', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.BASE_SEPOLIA })
@@ -55,11 +54,10 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', '84532')
           expect(res.body).toHaveProperty('chainType', 'evm')
           expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        })
-    })
+        }))
 
-    it('should create wallet on Ethereum Sepolia', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Ethereum Sepolia', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ETHEREUM_SEPOLIA })
@@ -68,11 +66,10 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', '11155111')
           expect(res.body).toHaveProperty('chainType', 'evm')
           expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        })
-    })
+        }))
 
-    it('should create wallet on Optimism Sepolia', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Optimism Sepolia', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.OPTIMISM_SEPOLIA })
@@ -81,11 +78,10 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', '11155420')
           expect(res.body).toHaveProperty('chainType', 'evm')
           expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        })
-    })
+        }))
 
-    it('should create wallet on Polygon Amoy', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Polygon Amoy', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.POLYGON_AMOY })
@@ -94,13 +90,12 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', '80002')
           expect(res.body).toHaveProperty('chainType', 'evm')
           expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        })
-    })
+        }))
   })
 
   describe('Solana Chain Wallet Creation', () => {
-    it('should create wallet on Solana Mainnet', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Solana Mainnet', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.SOLANA.MAINNET })
@@ -110,11 +105,10 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('chainType', 'solana')
           expect(res.body.address).toBeTruthy()
           expect(typeof res.body.address).toBe('string')
-        })
-    })
+        }))
 
-    it('should create wallet on Solana Devnet', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Solana Devnet', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.SOLANA.DEVNET })
@@ -123,11 +117,10 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', 'solana-devnet')
           expect(res.body).toHaveProperty('chainType', 'solana')
           expect(res.body.address).toBeTruthy()
-        })
-    })
+        }))
 
-    it('should create wallet on Solana Testnet', async () => {
-      return request(app.getHttpServer())
+    it('should create wallet on Solana Testnet', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.SOLANA.TESTNET })
@@ -136,8 +129,7 @@ describe('WalletController Multichain (e2e)', () => {
           expect(res.body).toHaveProperty('network', 'solana-testnet')
           expect(res.body).toHaveProperty('chainType', 'solana')
           expect(res.body.address).toBeTruthy()
-        })
-    })
+        }))
   })
 
   describe('Chain-Specific Balance Queries', () => {

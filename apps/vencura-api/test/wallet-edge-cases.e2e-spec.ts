@@ -33,45 +33,40 @@ describe('WalletController Edge Cases (e2e)', () => {
   })
 
   describe('Wallet Creation Edge Cases', () => {
-    it('should return 400 for unsupported chain ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for unsupported chain ID', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 999999 })
-        .expect(400)
-    })
+        .expect(400))
 
-    it('should return 400 for negative chain ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for negative chain ID', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: -1 })
-        .expect(400)
-    })
+        .expect(400))
 
-    it('should return 400 for zero chain ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for zero chain ID', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 0 })
-        .expect(400)
-    })
+        .expect(400))
 
-    it('should return 400 for empty string chain ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for empty string chain ID', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: '' })
-        .expect(400)
-    })
+        .expect(400))
 
-    it('should return 400 for null chain ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for null chain ID', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: null })
-        .expect(400)
-    })
+        .expect(400))
   })
 
   describe('Balance Query Edge Cases', () => {
@@ -93,19 +88,17 @@ describe('WalletController Edge Cases (e2e)', () => {
         })
     })
 
-    it('should return 404 for invalid UUID format', async () => {
-      return request(app.getHttpServer())
+    it('should return 404 for invalid UUID format', async () =>
+      request(app.getHttpServer())
         .get('/wallets/invalid-uuid')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(404)
-    })
+        .expect(404))
 
-    it('should return 404 for empty wallet ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 404 for empty wallet ID', async () =>
+      request(app.getHttpServer())
         .get('/wallets/')
         .set('Authorization', `Bearer ${authToken}`)
-        .expect(404)
-    })
+        .expect(404))
   })
 
   describe('Message Signing Edge Cases', () => {
@@ -283,24 +276,22 @@ describe('WalletController Edge Cases (e2e)', () => {
   })
 
   describe('Malformed Request Bodies', () => {
-    it('should return 400 for malformed JSON in wallet creation', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for malformed JSON in wallet creation', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .set('Content-Type', 'application/json')
         .send('{"chainId": 421614, invalid}')
-        .expect(400)
-    })
+        .expect(400))
 
-    it('should return 400 for extra fields in wallet creation', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for extra fields in wallet creation', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
           extraField: 'should be ignored',
         })
-        .expect(201)
-    })
+        .expect(201))
   })
 })

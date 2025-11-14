@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
+import { useAsyncFn } from 'react-use'
 import {
   useDynamicContext,
   useUserUpdateRequest,
@@ -41,94 +42,79 @@ export function useGameHistory() {
     return metadata.mathlerHistory ?? []
   }, [user?.metadata])
 
-  const saveGame = useCallback(
+  const [saveGameState, saveGame] = useAsyncFn(
     async (gameData: Omit<GameHistoryEntry, 'completedAt'>) => {
       if (!user) {
-        console.warn('Cannot save game: user not authenticated')
-        return false
+        throw new Error('Cannot save game: user not authenticated')
       }
 
-      try {
-        const metadata = (user.metadata as UserMetadata) || {}
-        const existingHistory = metadata.mathlerHistory ?? []
+      const metadata = (user.metadata as UserMetadata) || {}
+      const existingHistory = metadata.mathlerHistory ?? []
 
-        // Check if game for this date already exists and update it, otherwise append
-        const dateIndex = existingHistory.findIndex(entry => entry.date === gameData.date)
-        const newEntry: GameHistoryEntry = {
-          ...gameData,
-          completedAt: new Date().toISOString(),
-        }
-
-        const updatedHistory =
-          dateIndex >= 0
-            ? existingHistory.map((entry, index) => (index === dateIndex ? newEntry : entry))
-            : [...existingHistory, newEntry]
-
-        const updatedMetadata: UserMetadata = {
-          ...metadata,
-          mathlerHistory: updatedHistory,
-        }
-
-        const result = await updateUser({
-          metadata: updatedMetadata,
-        })
-
-        // Check for updateUser errors or unsuccessful responses
-        if (!result) {
-          console.error('Failed to save game history: updateUser returned no result')
-          return false
-        }
-
-        // Type-safe error checking
-        const hasError =
-          typeof result === 'object' &&
-          result !== null &&
-          ('error' in result || ('success' in result && result.success === false))
-
-        if (hasError) {
-          const errorMessage =
-            (typeof result === 'object' &&
-              result !== null &&
-              'error' in result &&
-              typeof result.error === 'object' &&
-              result.error !== null &&
-              'message' in result.error &&
-              typeof result.error.message === 'string' &&
-              result.error.message) ||
-            'Failed to update user metadata. Please try again.'
-          console.error('Failed to save game history:', errorMessage)
-          return false
-        }
-
-        // Refresh user to get updated metadata only if update was successful
-        // (no verification required)
-        const requiresVerification =
-          result.isEmailVerificationRequired || result.isSmsVerificationRequired
-        if (!requiresVerification) {
-          await refreshUser()
-        }
-
-        return !requiresVerification
-      } catch (error) {
-        console.error('Failed to save game history:', error)
-        return false
+      // Check if game for this date already exists and update it, otherwise append
+      const dateIndex = existingHistory.findIndex(entry => entry.date === gameData.date)
+      const newEntry: GameHistoryEntry = {
+        ...gameData,
+        completedAt: new Date().toISOString(),
       }
+
+      const updatedHistory =
+        dateIndex >= 0
+          ? existingHistory.map((entry, index) => (index === dateIndex ? newEntry : entry))
+          : [...existingHistory, newEntry]
+
+      const updatedMetadata: UserMetadata = {
+        ...metadata,
+        mathlerHistory: updatedHistory,
+      }
+
+      const result = await updateUser({
+        metadata: updatedMetadata,
+      })
+
+      // Check for updateUser errors or unsuccessful responses
+      if (!result) {
+        throw new Error('Failed to save game history: updateUser returned no result')
+      }
+
+      // Type-safe error checking
+      const hasError =
+        typeof result === 'object' &&
+        result !== null &&
+        ('error' in result || ('success' in result && result.success === false))
+
+      if (hasError) {
+        const errorMessage =
+          (typeof result === 'object' &&
+            result !== null &&
+            'error' in result &&
+            typeof result.error === 'object' &&
+            result.error !== null &&
+            'message' in result.error &&
+            typeof result.error.message === 'string' &&
+            result.error.message) ||
+          'Failed to update user metadata. Please try again.'
+        throw new Error(errorMessage)
+      }
+
+      // Refresh user to get updated metadata only if update was successful
+      // (no verification required)
+      const requiresVerification =
+        result.isEmailVerificationRequired || result.isSmsVerificationRequired
+      if (!requiresVerification) {
+        await refreshUser()
+      }
+
+      return !requiresVerification
     },
     [user, updateUser, refreshUser],
   )
 
-  const getHistory = useCallback(() => {
-    return history
-  }, [history])
+  const getHistory = () => history
 
-  const getGameByDate = useCallback(
-    (date: string) => {
-      return history.find(entry => entry.date === date)
-    },
-    [history],
-  )
+  const getGameByDate = (date: string) => history.find(entry => entry.date === date)
 
-  const getStats = useCallback((): GameStats => {
+  const getStats = (): GameStats => {
     const totalGames = history.length
     const wins = history.filter(entry => entry.status === 'won').length
     const losses = history.filter(entry => entry.status === 'lost').length
@@ -143,11 +129,13 @@ export function useGameHistory() {
       winRate,
       averageGuesses,
     }
-  }, [history])
+  }
 
   return {
     history,
     saveGame,
+    saveGameLoading: saveGameState.loading,
+    saveGameError: saveGameState.error,
     getHistory,
     getGameByDate,
     getStats,

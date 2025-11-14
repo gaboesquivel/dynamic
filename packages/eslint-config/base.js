@@ -24,6 +24,8 @@ export const config = [
       "@typescript-eslint/brace-style": "off",
       // Enforce no semicolons
       "semi": ["error", "never"],
+      // Enforce arrow function expressions when possible
+      "arrow-body-style": ["error", "as-needed", { requireReturnForObjectLiteral: false }],
     },
   },
   {

@@ -34,15 +34,14 @@ describe('WalletController (e2e)', () => {
   })
 
   describe('GET /wallets', () => {
-    it('should return empty list when user has no wallets', async () => {
-      return request(app.getHttpServer())
+    it('should return empty list when user has no wallets', async () =>
+      request(app.getHttpServer())
         .get('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
         .expect(res => {
           expect(Array.isArray(res.body)).toBe(true)
-        })
-    })
+        }))
 
     it('should return user wallets after creating one', async () => {
       // Create a wallet first
@@ -69,8 +68,8 @@ describe('WalletController (e2e)', () => {
   })
 
   describe('POST /wallets', () => {
-    it('should create a wallet on Arbitrum Sepolia', async () => {
-      return request(app.getHttpServer())
+    it('should create a wallet on Arbitrum Sepolia', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
@@ -81,11 +80,10 @@ describe('WalletController (e2e)', () => {
           expect(res.body).toHaveProperty('network', '421614')
           expect(res.body).toHaveProperty('chainType', 'evm')
           expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        })
-    })
+        }))
 
-    it('should create a wallet on Base Sepolia', async () => {
-      return request(app.getHttpServer())
+    it('should create a wallet on Base Sepolia', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.BASE_SEPOLIA })
@@ -95,11 +93,10 @@ describe('WalletController (e2e)', () => {
           expect(res.body).toHaveProperty('address')
           expect(res.body).toHaveProperty('network', '84532')
           expect(res.body).toHaveProperty('chainType', 'evm')
-        })
-    })
+        }))
 
-    it('should create a wallet on Solana devnet', async () => {
-      return request(app.getHttpServer())
+    it('should create a wallet on Solana devnet', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.SOLANA.DEVNET })
@@ -109,24 +106,21 @@ describe('WalletController (e2e)', () => {
           expect(res.body).toHaveProperty('address')
           expect(res.body).toHaveProperty('network', 'solana-devnet')
           expect(res.body).toHaveProperty('chainType', 'solana')
-        })
-    })
+        }))
 
-    it('should return 400 for invalid chain ID', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for invalid chain ID', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 99999 })
-        .expect(400)
-    })
+        .expect(400))
 
-    it('should return 400 for missing chainId', async () => {
-      return request(app.getHttpServer())
+    it('should return 400 for missing chainId', async () =>
+      request(app.getHttpServer())
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({})
-        .expect(400)
-    })
+        .expect(400))
   })
 
   describe('GET /wallets/:id/balance', () => {
@@ -298,15 +292,13 @@ describe('WalletController (e2e)', () => {
   })
 
   describe('Authentication', () => {
-    it('should return 401 for missing authorization header', async () => {
-      return request(app.getHttpServer()).get('/wallets').expect(401)
-    })
+    it('should return 401 for missing authorization header', async () =>
+      request(app.getHttpServer()).get('/wallets').expect(401))
 
-    it('should return 401 for invalid token', async () => {
-      return request(app.getHttpServer())
+    it('should return 401 for invalid token', async () =>
+      request(app.getHttpServer())
         .get('/wallets')
         .set('Authorization', 'Bearer invalid-token')
-        .expect(401)
-    })
+        .expect(401))
   })
 })

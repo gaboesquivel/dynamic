@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
+import { useSetState } from 'react-use'
 import {
   evaluateExpression,
   getRandomTarget,
@@ -16,18 +17,29 @@ import GameStatus from './game-status'
 import SuccessModal from './success-modal'
 import VoiceControl from './voice-control'
 
+interface GameState {
+  target: number
+  solution: string
+  guesses: string[]
+  gameStatus: 'playing' | 'won' | 'lost'
+  feedback: Array<Array<'correct' | 'present' | 'absent'>>
+  showSuccessModal: boolean
+}
+
 export default function MathlerGame() {
-  const [target, setTarget] = useState<number>(0)
-  const [solution, setSolution] = useState<string>('')
-  const [guesses, setGuesses] = useState<string[]>([])
-  const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost'>('playing')
-  const [feedback, setFeedback] = useState<Array<Array<'correct' | 'present' | 'absent'>>>([])
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [gameState, setGameState] = useSetState<GameState>({
+    target: 0,
+    solution: '',
+    guesses: [],
+    gameStatus: 'playing',
+    feedback: [],
+    showSuccessModal: false,
+  })
   const { saveGame } = useGameHistory()
 
   const handleSubmit = useCallback(
     (value: string) => {
-      if (!value || gameStatus !== 'playing') return
+      if (!value || gameState.gameStatus !== 'playing') return
 
       try {
         const result = evaluateExpression(value)
@@ -37,49 +49,55 @@ export default function MathlerGame() {
           return
         }
 
-        setGuesses(prevGuesses => {
-          const newGuesses = [...prevGuesses, value]
+        const newGuesses = [...gameState.guesses, value]
 
-          // Normalize guess for feedback comparison (× -> *, ÷ -> /)
-          const normalizedGuess = value.replace(/×/g, '*').replace(/÷/g, '/')
+        // Normalize guess for feedback comparison (× -> *, ÷ -> /)
+        const normalizedGuess = value.replace(/×/g, '*').replace(/÷/g, '/')
 
-          // Calculate feedback comparing guess to solution equation
-          const feedbackRow = calculateFeedback(normalizedGuess, solution)
-          setFeedback(prevFeedback => [...prevFeedback, feedbackRow])
+        // Calculate feedback comparing guess to solution equation
+        const feedbackRow = calculateFeedback(normalizedGuess, gameState.solution)
 
-          // Check win condition (result equals target AND guess matches solution exactly)
-          const isWin = result === target && normalizedGuess === solution
-          const isGameOver = isWin || newGuesses.length >= 6
+        // Check win condition (result equals target AND guess matches solution exactly)
+        const isWin = result === gameState.target && normalizedGuess === gameState.solution
+        const isGameOver = isWin || newGuesses.length >= 6
 
-          if (isWin) {
-            setGameStatus('won')
-            setShowSuccessModal(true)
-          } else if (newGuesses.length >= 6) {
-            setGameStatus('lost')
-          }
+        if (isWin) {
+          setGameState({
+            guesses: newGuesses,
+            feedback: [...gameState.feedback, feedbackRow],
+            gameStatus: 'won',
+            showSuccessModal: true,
+          })
+        } else if (newGuesses.length >= 6) {
+          setGameState({
+            guesses: newGuesses,
+            feedback: [...gameState.feedback, feedbackRow],
+            gameStatus: 'lost',
+          })
+        } else {
+          setGameState({
+            guesses: newGuesses,
+            feedback: [...gameState.feedback, feedbackRow],
+          })
+        }
 
-          // Save game history when game ends
-          if (isGameOver) {
-            const finalStatus: 'won' | 'lost' = isWin ? 'won' : 'lost'
-            saveGame({
-              date: getDateKey(),
-              target,
-              solution,
-              guesses: newGuesses,
-              status: finalStatus,
-              guessCount: newGuesses.length,
-            }).catch(error => {
-              console.error('Failed to save game history:', error)
-            })
-          }
-
-          return newGuesses
-        })
+        // Save game history when game ends
+        if (isGameOver) {
+          const finalStatus: 'won' | 'lost' = isWin ? 'won' : 'lost'
+          saveGame({
+            date: getDateKey(),
+            target: gameState.target,
+            solution: gameState.solution,
+            guesses: newGuesses,
+            status: finalStatus,
+            guessCount: newGuesses.length,
+          })
+        }
       } catch {
         alert('Invalid expression')
       }
     },
-    [gameStatus, solution, target, saveGame],
+    [gameState, saveGame, setGameState],
   )
 
   const {
@@ -87,27 +105,28 @@ export default function MathlerGame() {
     cursor: cursorPosition,
     insertAt: handleInputAtPosition,
     backspace: handleBackspace,
-    moveCursor: handleCursorMove,
     clear: handleClear,
     setCursor: setCursorPosition,
     reset: resetInput,
   } = useMathlerInput({
     maxLength: 9,
-    gameStatus,
+    gameStatus: gameState.gameStatus,
     onSubmit: handleSubmit,
   })
 
   const resetGame = useCallback(() => {
     const newTarget = getRandomTarget()
     const newSolution = generateSolutionEquation(newTarget)
-    setTarget(newTarget)
-    setSolution(newSolution)
-    setGuesses([])
+    setGameState({
+      target: newTarget,
+      solution: newSolution,
+      guesses: [],
+      gameStatus: 'playing',
+      feedback: [],
+      showSuccessModal: false,
+    })
     resetInput()
-    setGameStatus('playing')
-    setFeedback([])
-    setShowSuccessModal(false)
-  }, [resetInput])
+  }, [resetInput, setGameState])
 
   useEffect(() => {
     resetGame()
@@ -115,30 +134,30 @@ export default function MathlerGame() {
 
   const handleInputChange = useCallback(
     (value: string) => {
-      if (gameStatus !== 'playing') return
+      if (gameState.gameStatus !== 'playing') return
       // Replace entire input
       resetInput()
       for (const char of value) {
         handleInputAtPosition(char)
       }
     },
-    [gameStatus, resetInput, handleInputAtPosition],
+    [gameState.gameStatus, resetInput, handleInputAtPosition],
   )
 
   const handleVoiceResult = useCallback(
     (text: string) => {
-      if (gameStatus !== 'playing') return
+      if (gameState.gameStatus !== 'playing') return
       // Insert voice input at cursor position
       for (const char of text) {
         handleInputAtPosition(char)
       }
     },
-    [gameStatus, handleInputAtPosition],
+    [gameState.gameStatus, handleInputAtPosition],
   )
 
   const handleVoiceCommand = useCallback(
     (command: 'backspace' | 'delete' | 'enter' | 'submit' | 'clear') => {
-      if (gameStatus !== 'playing') return
+      if (gameState.gameStatus !== 'playing') return
       if (command === 'backspace' || command === 'delete') {
         handleBackspace()
       } else if (command === 'enter' || command === 'submit') {
@@ -149,7 +168,7 @@ export default function MathlerGame() {
         handleClear()
       }
     },
-    [gameStatus, handleBackspace, handleSubmit, handleClear, currentInput],
+    [gameState.gameStatus, handleBackspace, handleSubmit, handleClear, currentInput],
   )
 
   return (
@@ -158,7 +177,8 @@ export default function MathlerGame() {
       <div className="text-center">
         <h1 className="text-4xl font-bold text-foreground mb-2">Mathler</h1>
         <p className="text-lg text-muted-foreground">
-          Find the equation that equals <span className="font-bold text-primary">{target}</span>
+          Find the equation that equals{' '}
+          <span className="font-bold text-primary">{gameState.target}</span>
         </p>
       </div>
 
@@ -167,28 +187,28 @@ export default function MathlerGame() {
         {[...Array(6)].map((_, i) => (
           <GuessRow
             key={i}
-            guess={guesses[i] || ''}
-            feedback={feedback[i] || []}
-            isCurrentRow={i === guesses.length && gameStatus === 'playing'}
-            currentInput={i === guesses.length ? currentInput : ''}
-            cursorPosition={i === guesses.length ? cursorPosition : -1}
-            onTileClick={i === guesses.length ? pos => setCursorPosition(pos) : undefined}
+            guess={gameState.guesses[i] || ''}
+            feedback={gameState.feedback[i] || []}
+            isCurrentRow={i === gameState.guesses.length && gameState.gameStatus === 'playing'}
+            currentInput={i === gameState.guesses.length ? currentInput : ''}
+            cursorPosition={i === gameState.guesses.length ? cursorPosition : -1}
+            onTileClick={i === gameState.guesses.length ? pos => setCursorPosition(pos) : undefined}
           />
         ))}
       </div>
 
       {/* Game Status */}
-      {gameStatus !== 'playing' && (
+      {gameState.gameStatus !== 'playing' && (
         <GameStatus
-          status={gameStatus}
-          target={target}
-          guessCount={guesses.length}
+          status={gameState.gameStatus}
+          target={gameState.target}
+          guessCount={gameState.guesses.length}
           onReset={resetGame}
         />
       )}
 
       {/* Keypad */}
-      {gameStatus === 'playing' && (
+      {gameState.gameStatus === 'playing' && (
         <div className="space-y-4">
           <VoiceControl onResult={handleVoiceResult} onCommand={handleVoiceCommand} />
           <GameKeypad
@@ -207,9 +227,9 @@ export default function MathlerGame() {
 
       {/* Success Modal */}
       <SuccessModal
-        open={showSuccessModal}
-        onOpenChange={setShowSuccessModal}
-        guessCount={guesses.length}
+        open={gameState.showSuccessModal}
+        onOpenChange={open => setGameState({ showSuccessModal: open })}
+        guessCount={gameState.guesses.length}
         onPlayAgain={resetGame}
       />
     </div>

@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import MathlerGame from '@/components/mathler-game'
 
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
   const [mounted, setMounted] = useState(false)
 
