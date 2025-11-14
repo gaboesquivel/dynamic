@@ -4,34 +4,42 @@ import { useDynamicContext, getAuthToken } from '@dynamic-labs/sdk-react-core'
 import { DynamicWidget } from '@/lib/dynamic'
 import { Button } from '@workspace/ui/components/button'
 import { WalletDashboard } from '@/components/wallet-dashboard'
-import { useState } from 'react'
+import { useSetState } from 'react-use'
 import * as React from 'react'
+
+interface PageState {
+  showToken: boolean
+  copied: boolean
+  authToken: string | null
+}
 
 export default function Page() {
   const { user } = useDynamicContext()
-  const [showToken, setShowToken] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [authToken, setAuthToken] = useState<string | null>(null)
+  const [state, setState] = useSetState<PageState>({
+    showToken: false,
+    copied: false,
+    authToken: null,
+  })
 
   // Update token when authentication state changes
   React.useEffect(() => {
     if (user) {
-      setAuthToken(getAuthToken() || null)
+      setState({ authToken: getAuthToken() || null })
     } else {
-      setAuthToken(null)
+      setState({ authToken: null })
     }
-  }, [user])
+  }, [user, setState])
 
   const handleCopyToken = async () => {
     const token = getAuthToken()
     if (token) {
       try {
         await navigator.clipboard.writeText(token)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        setState({ copied: true })
+        setTimeout(() => setState({ copied: false }), 2000)
       } catch (err) {
         console.error('Failed to copy token:', err)
-        setCopied(false)
+        setState({ copied: false })
       }
     }
   }
@@ -56,8 +64,12 @@ export default function Page() {
             <div className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-semibold">User Info</h2>
-                <Button variant="outline" size="sm" onClick={() => setShowToken(!showToken)}>
-                  {showToken ? 'Hide' : 'Show'} Auth Token
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setState({ showToken: !state.showToken })}
+                >
+                  {state.showToken ? 'Hide' : 'Show'} Auth Token
                 </Button>
               </div>
               {user && (
@@ -72,17 +84,17 @@ export default function Page() {
                   )}
                 </div>
               )}
-              {showToken && (
+              {state.showToken && (
                 <div className="mt-4 space-y-2">
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={authToken || ''}
+                      value={state.authToken || ''}
                       readOnly
                       className="flex-1 px-3 py-2 border rounded-md text-xs font-mono bg-muted"
                     />
                     <Button onClick={handleCopyToken} size="sm" variant="outline">
-                      {copied ? 'Copied!' : 'Copy'}
+                      {state.copied ? 'Copied!' : 'Copy'}
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">

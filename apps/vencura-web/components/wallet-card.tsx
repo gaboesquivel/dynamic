@@ -1,38 +1,48 @@
 'use client'
 
-import { useState } from 'react'
+import { useSetState } from 'react-use'
 import { Button } from '@workspace/ui/components/button'
 import { useWalletBalance, useSignMessage, useSendTransaction, type Wallet } from '@vencura/react'
 import { getChainByNetworkId } from '@/lib/chains'
 import { getErrorMessage } from '@/lib/error-utils'
 import { signMessageSchema, sendTransactionSchema, validateAddressInput } from '@/lib/validation'
 
+interface WalletCardState {
+  message: string
+  signedMessage: string | null
+  txTo: string
+  txAmount: string
+  showBalance: boolean
+  addressError: string | null
+  amountError: string | null
+}
+
 export function WalletCard({ wallet }: { wallet: Wallet }) {
-  const [message, setMessage] = useState('')
-  const [signedMessage, setSignedMessage] = useState<string | null>(null)
-  const [txTo, setTxTo] = useState('')
-  const [txAmount, setTxAmount] = useState('')
-  const [showBalance, setShowBalance] = useState(false)
-  const [addressError, setAddressError] = useState<string | null>(null)
-  const [amountError, setAmountError] = useState<string | null>(null)
+  const [state, setState] = useSetState<WalletCardState>({
+    message: '',
+    signedMessage: null,
+    txTo: '',
+    txAmount: '',
+    showBalance: false,
+    addressError: null,
+    amountError: null,
+  })
 
   const {
     data: balanceData,
     isLoading: balanceLoading,
     refetch: refetchBalance,
-  } = useWalletBalance(wallet.id, { enabled: showBalance })
+  } = useWalletBalance(wallet.id, { enabled: state.showBalance })
 
   const signMessage = useSignMessage(wallet.id, {
     onSuccess: data => {
-      setSignedMessage(data.signedMessage)
-      setMessage('')
+      setState({ signedMessage: data.signedMessage, message: '' })
     },
   })
 
   const sendTransaction = useSendTransaction(wallet.id, {
     onSuccess: () => {
-      setTxTo('')
-      setTxAmount('')
+      setState({ txTo: '', txAmount: '' })
       refetchBalance()
     },
   })
@@ -42,13 +52,13 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
   const txHash = sendTransaction.data?.transactionHash || null
 
   const handleGetBalance = () => {
-    setShowBalance(true)
+    setState({ showBalance: true })
     refetchBalance()
   }
 
   const handleSignMessage = (e?: React.FormEvent) => {
     e?.preventDefault()
-    const validation = signMessageSchema.safeParse({ message })
+    const validation = signMessageSchema.safeParse({ message: state.message })
     if (!validation.success) return
     signMessage.mutate(validation.data)
   }
@@ -56,27 +66,27 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
   const handleSendTransaction = () => {
     // Validate address format
     const addressValidation = validateAddressInput({
-      address: txTo,
+      address: state.txTo,
       chainType: wallet.chainType,
     })
     if (!addressValidation.valid) {
-      setAddressError(addressValidation.error || 'Invalid address')
+      setState({ addressError: addressValidation.error || 'Invalid address' })
       return
     }
-    setAddressError(null)
+    setState({ addressError: null })
 
     // Parse and validate amount
-    const amount = parseFloat(txAmount)
+    const amount = parseFloat(state.txAmount)
     const transactionValidation = sendTransactionSchema.safeParse({
-      to: txTo.trim(),
+      to: state.txTo.trim(),
       amount,
     })
     if (!transactionValidation.success) {
       const error = transactionValidation.error.errors.find(e => e.path[0] === 'amount')
-      setAmountError(error?.message || 'Invalid amount')
+      setState({ amountError: error?.message || 'Invalid amount' })
       return
     }
-    setAmountError(null)
+    setState({ amountError: null })
 
     sendTransaction.mutate(transactionValidation.data)
   }
@@ -85,7 +95,7 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
   const error =
     getErrorMessage(signMessage.error) ||
     getErrorMessage(sendTransaction.error) ||
-    (balanceData === undefined && showBalance ? 'Failed to fetch balance' : null)
+    (balanceData === undefined && state.showBalance ? 'Failed to fetch balance' : null)
 
   return (
     <div className="border rounded-lg p-6 space-y-6 bg-card">
@@ -133,22 +143,22 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
         <form onSubmit={handleSignMessage} className="flex gap-2">
           <input
             type="text"
-            value={message}
+            value={state.message}
             onChange={e => {
-              setMessage(e.target.value)
+              setState({ message: e.target.value })
             }}
             placeholder="Enter message to sign"
             className="flex-1 px-3 py-2 border rounded-md text-sm bg-background"
             disabled={isLoading}
           />
-          <Button type="submit" disabled={isLoading || !message.trim()} size="sm">
+          <Button type="submit" disabled={isLoading || !state.message.trim()} size="sm">
             {signMessage.isPending ? 'Signing...' : 'Sign'}
           </Button>
         </form>
-        {signedMessage && (
+        {state.signedMessage && (
           <div className="mt-2 p-3 bg-muted rounded-md">
             <p className="text-xs font-medium text-muted-foreground mb-1">Signed Message:</p>
-            <p className="text-xs font-mono break-all">{signedMessage}</p>
+            <p className="text-xs font-mono break-all">{state.signedMessage}</p>
           </div>
         )}
       </div>
@@ -159,10 +169,9 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
           <div className="space-y-1">
             <input
               type="text"
-              value={txTo}
+              value={state.txTo}
               onChange={e => {
-                setTxTo(e.target.value)
-                setAddressError(null)
+                setState({ txTo: e.target.value, addressError: null })
               }}
               placeholder={
                 wallet.chainType === 'solana'
@@ -170,29 +179,28 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
                   : 'Recipient address (0x...)'
               }
               className={`w-full px-3 py-2 border rounded-md text-sm font-mono bg-background ${
-                addressError ? 'border-destructive' : ''
+                state.addressError ? 'border-destructive' : ''
               }`}
               disabled={isLoading}
             />
-            {addressError && <p className="text-xs text-destructive">{addressError}</p>}
+            {state.addressError && <p className="text-xs text-destructive">{state.addressError}</p>}
           </div>
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
               <input
                 type="number"
                 step="0.0001"
-                value={txAmount}
+                value={state.txAmount}
                 onChange={e => {
-                  setTxAmount(e.target.value)
-                  setAmountError(null)
+                  setState({ txAmount: e.target.value, amountError: null })
                 }}
                 placeholder={`Amount (${currency})`}
                 className={`w-full px-3 py-2 border rounded-md text-sm bg-background ${
-                  amountError ? 'border-destructive' : ''
+                  state.amountError ? 'border-destructive' : ''
                 }`}
                 disabled={isLoading}
               />
-              {amountError && <p className="text-xs text-destructive">{amountError}</p>}
+              {state.amountError && <p className="text-xs text-destructive">{state.amountError}</p>}
             </div>
             <Button onClick={handleSendTransaction} disabled={isLoading} size="sm">
               {sendTransaction.isPending ? 'Sending...' : 'Send'}

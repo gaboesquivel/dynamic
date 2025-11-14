@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
+import { useSetState } from 'react-use'
 
 interface UseMathlerInputProps {
   maxLength: number
@@ -8,42 +9,48 @@ interface UseMathlerInputProps {
   onSubmit: (value: string) => void
 }
 
+interface InputState {
+  input: string
+  cursor: number
+}
+
 export function useMathlerInput({ maxLength, gameStatus, onSubmit }: UseMathlerInputProps) {
-  const [input, setInput] = useState('')
-  const [cursor, setCursor] = useState(0)
+  const [state, setState] = useSetState<InputState>({ input: '', cursor: 0 })
 
   const insertAt = useCallback(
-    (char: string, position = cursor) => {
+    (char: string, position = state.cursor) => {
       if (gameStatus !== 'playing') return
-      const next = input.slice(0, position) + char + input.slice(position)
+      const next = state.input.slice(0, position) + char + state.input.slice(position)
       if (next.length <= maxLength) {
-        setInput(next)
-        setCursor(position + 1)
+        setState({ input: next, cursor: position + 1 })
       }
     },
-    [input, cursor, maxLength, gameStatus],
+    [state.input, state.cursor, maxLength, gameStatus, setState],
   )
 
   const backspace = useCallback(() => {
-    if (gameStatus !== 'playing' || cursor === 0) return
-    const next = input.slice(0, cursor - 1) + input.slice(cursor)
-    setInput(next)
-    setCursor(cursor - 1)
-  }, [input, cursor, gameStatus])
+    if (gameStatus !== 'playing' || state.cursor === 0) return
+    const next = state.input.slice(0, state.cursor - 1) + state.input.slice(state.cursor)
+    setState({ input: next, cursor: state.cursor - 1 })
+  }, [state.input, state.cursor, gameStatus, setState])
 
   const moveCursor = useCallback(
     (dir: 'left' | 'right') => {
       if (gameStatus !== 'playing') return
-      setCursor(c => (dir === 'left' ? Math.max(0, c - 1) : Math.min(input.length, c + 1)))
+      setState({
+        cursor:
+          dir === 'left'
+            ? Math.max(0, state.cursor - 1)
+            : Math.min(state.input.length, state.cursor + 1),
+      })
     },
-    [input.length, gameStatus],
+    [state.input.length, state.cursor, gameStatus, setState],
   )
 
   const clear = useCallback(() => {
     if (gameStatus !== 'playing') return
-    setInput('')
-    setCursor(0)
-  }, [gameStatus])
+    setState({ input: '', cursor: 0 })
+  }, [gameStatus, setState])
 
   const handleKey = useCallback(
     (e: KeyboardEvent) => {
@@ -101,13 +108,13 @@ export function useMathlerInput({ maxLength, gameStatus, onSubmit }: UseMathlerI
       }
 
       // Handle enter
-      if (e.key === 'Enter' && input) {
-        onSubmit(input)
+      if (e.key === 'Enter' && state.input) {
+        onSubmit(state.input)
         clear()
         return
       }
     },
-    [gameStatus, insertAt, backspace, moveCursor, clear, input, onSubmit],
+    [gameStatus, insertAt, backspace, moveCursor, clear, state.input, onSubmit],
   )
 
   useEffect(() => {
@@ -116,13 +123,19 @@ export function useMathlerInput({ maxLength, gameStatus, onSubmit }: UseMathlerI
   }, [handleKey])
 
   const reset = useCallback(() => {
-    setInput('')
-    setCursor(0)
-  }, [])
+    setState({ input: '', cursor: 0 })
+  }, [setState])
+
+  const setCursor = useCallback(
+    (pos: number) => {
+      setState({ cursor: pos })
+    },
+    [setState],
+  )
 
   return {
-    input,
-    cursor,
+    input: state.input,
+    cursor: state.cursor,
     insertAt,
     backspace,
     moveCursor,
