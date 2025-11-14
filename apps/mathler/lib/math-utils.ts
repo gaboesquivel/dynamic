@@ -79,9 +79,23 @@ export function generateEquationsForTarget(target: number, maxLength = 9): strin
 
 /**
  * Seeded random number generator for consistent daily puzzles
+ * Accepts both number and string seeds (strings are hashed to numbers)
  */
-function seededRandom(seed: number) {
-  const x = Math.sin(seed) * 10000
+function seededRandom(seed: number | string): number {
+  let numericSeed: number
+  if (typeof seed === 'string') {
+    // Simple hash function to convert string to number
+    let hash = 0
+    for (let i = 0; i < seed.length; i++) {
+      const char = seed.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash | 0 // Convert to 32-bit integer
+    }
+    numericSeed = hash
+  } else {
+    numericSeed = seed
+  }
+  const x = Math.sin(numericSeed) * 10000
   return x - Math.floor(x)
 }
 
@@ -97,6 +111,7 @@ type Op = {
   fn: (x: number, y: number) => number | undefined
   guard: (x: number, y: number) => boolean
   prec: 1 | 2
+  commutative: boolean
 }
 
 /**
@@ -107,14 +122,15 @@ type Op = {
  * - Division: Only valid when y !== 0 and x is divisible by y (integer results), precedence 2
  */
 const OPS: Op[] = [
-  { sym: '+', fn: (x, y) => x + y, guard: () => true, prec: 1 },
-  { sym: '-', fn: (x, y) => x - y, guard: (x, y) => x > y, prec: 1 },
-  { sym: '*', fn: (x, y) => x * y, guard: () => true, prec: 2 },
+  { sym: '+', fn: (x, y) => x + y, guard: () => true, prec: 1, commutative: true },
+  { sym: '-', fn: (x, y) => x - y, guard: (x, y) => x > y, prec: 1, commutative: false },
+  { sym: '*', fn: (x, y) => x * y, guard: () => true, prec: 2, commutative: true },
   {
     sym: '/',
     fn: (x, y) => (y !== 0 && x % y === 0 ? x / y : undefined),
     guard: (x, y) => y !== 0,
     prec: 2,
+    commutative: false,
   },
 ]
 
@@ -163,14 +179,22 @@ export function generateSolutionEquation(target: number, seed?: number): string 
           for (const op2 of OPS) {
             // Left-associative: (a op1 b) op2 c
             // Example: (2+3)*4 evaluates as (5)*4 = 20
-            // Need parentheses if op2 has higher precedence than op1
+            // Need parentheses if op2 has higher precedence, or if equal precedence and non-commutative
             if (op2.guard(v1, c)) {
               const v2 = op2.fn(v1, c)
               if (v2 === target) {
-                // Add parentheses if op2 has higher precedence to ensure correct evaluation
-                const left = op2.prec > op1.prec ? `(${a}${op1.sym}${b})` : `${a}${op1.sym}${b}`
+                // Validate the equation evaluates correctly before adding to candidates
+                const needParens =
+                  op2.prec > op1.prec || (op2.prec === op1.prec && !op2.commutative)
+                const left = needParens ? `(${a}${op1.sym}${b})` : `${a}${op1.sym}${b}`
                 const expr = `${left}${op2.sym}${c}`
-                if (expr.length <= MAX) candidates.add(expr)
+                // Verify the equation evaluates correctly to avoid filtering later
+                if (expr.length <= MAX) {
+                  const result = evaluateExpression(expr)
+                  if (result === target) {
+                    candidates.add(expr)
+                  }
+                }
               }
             }
 
@@ -189,7 +213,13 @@ export function generateSolutionEquation(target: number, seed?: number): string 
                   // Example: 2+(3*4) needs parens, but 2*(3+4) doesn't
                   const mid = op2.prec < op1.prec ? `(${b}${op2.sym}${c})` : `${b}${op2.sym}${c}`
                   const expr = `${a}${op1.sym}${mid}`
-                  if (expr.length <= MAX) candidates.add(expr)
+                  // Verify the equation evaluates correctly to avoid filtering later
+                  if (expr.length <= MAX) {
+                    const result = evaluateExpression(expr)
+                    if (result === target) {
+                      candidates.add(expr)
+                    }
+                  }
                 }
               }
             }
@@ -199,19 +229,16 @@ export function generateSolutionEquation(target: number, seed?: number): string 
     }
   }
 
-  // Convert Set to array and validate all equations evaluate correctly
-  const arr = Array.from(candidates).filter(eq => {
-    const result = evaluateExpression(eq)
-    return result === target
-  })
+  // Convert Set to array (validation already done during generation)
+  const arr = Array.from(candidates)
 
   // Fallback if no valid equations found (shouldn't happen in practice)
   if (!arr.length) return `${target}+0`
 
   // Use seeded random to ensure same puzzle for same date and target
-  // Combine dateSeed with target to get different selection for each target
+  // Combine dateSeed with target using string concatenation to avoid collisions
   // This makes puzzles consistent across sessions for the same day
-  const combinedSeed = dateSeed + target
+  const combinedSeed = `${dateSeed}:${target}`
   const randomIndex = Math.floor(seededRandom(combinedSeed) * arr.length)
   return arr[randomIndex] ?? arr[0] ?? `${target}+0`
 }
