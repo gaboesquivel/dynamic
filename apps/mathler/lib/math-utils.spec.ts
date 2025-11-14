@@ -136,9 +136,10 @@ describe('generateSolutionEquation', () => {
   })
 
   it('should handle edge cases', () => {
-    // Test with various targets
+    // Test with various targets using fixed seed for deterministic results
     for (let target = 10; target <= 20; target++) {
-      const equation = generateSolutionEquation(target)
+      const seed = 20240101 // Fixed seed for deterministic testing
+      const equation = generateSolutionEquation(target, seed)
       const result = evaluateExpression(equation)
       expect(result).toBe(target)
       expect(equation.length).toBeLessThanOrEqual(9)

@@ -9,7 +9,7 @@ A Mathler game built with Next.js - like Wordle but with numbers. Users have 6 g
 ## Planned Features
 
 - Daily puzzles with changing target numbers
-- Dynamic SDK integration for authentication
+- ~~Dynamic SDK integration for authentication~~ ✅ **Completed**
 - User history stored in Dynamic metadata
 - Color-coded feedback (green/yellow/grey tiles)
 - Order of operations support
@@ -22,7 +22,7 @@ A Mathler game built with Next.js - like Wordle but with numbers. Users have 6 g
 - Next.js 15
 - React 19
 - TypeScript
-- Dynamic SDK (planned)
+- Dynamic SDK
 - Tailwind CSS
 - Shadcn/ui components (via `@workspace/ui`)
 
@@ -32,6 +32,7 @@ A Mathler game built with Next.js - like Wordle but with numbers. Users have 6 g
 
 - Node.js >= 20.0.0
 - pnpm (package manager)
+- Dynamic SDK environment ID (see Environment Variables below)
 
 ### Installation
 
@@ -56,6 +57,16 @@ pnpm dev
 ```
 
 The application will be available at `http://localhost:3002` (or the next available port).
+
+### Environment Variables
+
+Create a `.env.local` file in the `apps/mathler` directory with the following:
+
+```bash
+NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your-dynamic-environment-id
+```
+
+If not provided, the app will use a placeholder ID. Get your Dynamic environment ID from the [Dynamic Dashboard](https://app.dynamic.xyz/).
 
 ## Development
 

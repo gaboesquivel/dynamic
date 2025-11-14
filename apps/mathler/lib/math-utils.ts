@@ -163,11 +163,13 @@ export function generateSolutionEquation(target: number, seed?: number): string 
           for (const op2 of OPS) {
             // Left-associative: (a op1 b) op2 c
             // Example: (2+3)*4 evaluates as (5)*4 = 20
-            // No parentheses needed in output since we evaluate left-to-right
+            // Need parentheses if op2 has higher precedence than op1
             if (op2.guard(v1, c)) {
               const v2 = op2.fn(v1, c)
               if (v2 === target) {
-                const expr = `${a}${op1.sym}${b}${op2.sym}${c}`
+                // Add parentheses if op2 has higher precedence to ensure correct evaluation
+                const left = op2.prec > op1.prec ? `(${a}${op1.sym}${b})` : `${a}${op1.sym}${b}`
+                const expr = `${left}${op2.sym}${c}`
                 if (expr.length <= MAX) candidates.add(expr)
               }
             }
@@ -197,13 +199,19 @@ export function generateSolutionEquation(target: number, seed?: number): string 
     }
   }
 
-  // Convert Set to array for random selection
-  const arr = Array.from(candidates)
+  // Convert Set to array and validate all equations evaluate correctly
+  const arr = Array.from(candidates).filter(eq => {
+    const result = evaluateExpression(eq)
+    return result === target
+  })
+
   // Fallback if no valid equations found (shouldn't happen in practice)
   if (!arr.length) return `${target}+0`
 
-  // Use seeded random to ensure same puzzle for same date
+  // Use seeded random to ensure same puzzle for same date and target
+  // Combine dateSeed with target to get different selection for each target
   // This makes puzzles consistent across sessions for the same day
-  const randomIndex = Math.floor(seededRandom(dateSeed) * arr.length)
+  const combinedSeed = dateSeed + target
+  const randomIndex = Math.floor(seededRandom(combinedSeed) * arr.length)
   return arr[randomIndex] ?? arr[0] ?? `${target}+0`
 }
