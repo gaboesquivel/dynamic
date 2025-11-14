@@ -35,9 +35,27 @@ jest.mock('@/hooks/use-game-history', () => ({
 
 // Mock child components to simplify testing
 jest.mock('./guess-row', () => {
-  return function GuessRow({ guess, currentInput, isCurrentRow }: any) {
+  return function GuessRow({
+    guess,
+    currentInput,
+    isCurrentRow,
+    cursorPosition,
+    onTileClick,
+  }: any) {
     const display = isCurrentRow ? currentInput : guess
-    return <div data-testid={`guess-row-${isCurrentRow ? 'current' : 'past'}`}>{display}</div>
+    return (
+      <div data-testid={`guess-row-${isCurrentRow ? 'current' : 'past'}`}>
+        {display}
+        {onTileClick && isCurrentRow && (
+          <button onClick={() => onTileClick(0)} data-testid="tile-click-0">
+            Click Tile 0
+          </button>
+        )}
+        {cursorPosition !== undefined && cursorPosition >= 0 && isCurrentRow && (
+          <span data-testid="cursor-position">{cursorPosition}</span>
+        )}
+      </div>
+    )
   }
 })
 
@@ -83,6 +101,17 @@ jest.mock('./success-modal', () => {
     return (
       <div data-testid="success-modal">
         <button onClick={onPlayAgain}>Play Again</button>
+      </div>
+    )
+  }
+})
+
+jest.mock('./voice-control', () => {
+  return function VoiceControl({ onResult, onCommand }: any) {
+    return (
+      <div data-testid="voice-control">
+        <button onClick={() => onResult('1+2')}>Test Voice Input</button>
+        <button onClick={() => onCommand('enter')}>Test Voice Command</button>
       </div>
     )
   }
@@ -145,7 +174,10 @@ describe('MathlerGame', () => {
     // Should only accept first 9 characters
     await waitFor(() => {
       const currentRow = screen.getByTestId('guess-row-current')
-      expect(currentRow.textContent?.length).toBeLessThanOrEqual(9)
+      // Extract just the input text (numbers and operators), excluding mock UI elements
+      const text = currentRow.textContent || ''
+      const inputMatch = text.match(/^[\d+\-×÷]+/)
+      expect((inputMatch?.[0] || '').length).toBeLessThanOrEqual(9)
     })
   })
 
@@ -302,7 +334,9 @@ describe('MathlerGame', () => {
 
     await waitFor(() => {
       const currentRow = screen.getByTestId('guess-row-current')
-      expect(currentRow.textContent).toBe('12')
+      const text = currentRow.textContent || ''
+      const inputMatch = text.match(/^[\d+\-×÷]+/)
+      expect(inputMatch?.[0] || '').toBe('12')
     })
   })
 
@@ -339,7 +373,79 @@ describe('MathlerGame', () => {
 
     await waitFor(() => {
       const currentRow = screen.getByTestId('guess-row-current')
-      expect(currentRow.textContent).toBe('')
+      const text = currentRow.textContent || ''
+      const inputMatch = text.match(/^[\d+\-×÷]+/)
+      expect(inputMatch?.[0] || '').toBe('')
+    })
+  })
+
+  it('should handle arrow keys for cursor navigation', async () => {
+    const user = userEvent.setup()
+    render(<MathlerGame />)
+
+    await user.keyboard('123')
+    await user.keyboard('{ArrowLeft}')
+    await user.keyboard('{ArrowLeft}')
+
+    await waitFor(() => {
+      const cursorPos = screen.getByTestId('cursor-position')
+      expect(cursorPos.textContent).toBe('1')
+    })
+  })
+
+  it('should handle Escape key to clear input', async () => {
+    const user = userEvent.setup()
+    render(<MathlerGame />)
+
+    await user.keyboard('123')
+    await user.keyboard('{Escape}')
+
+    await waitFor(() => {
+      const currentRow = screen.getByTestId('guess-row-current')
+      const text = currentRow.textContent || ''
+      const inputMatch = text.match(/^[\d+\-×÷]+/)
+      expect(inputMatch?.[0] || '').toBe('')
+    })
+  })
+
+  it('should handle tile click to position cursor', async () => {
+    const user = userEvent.setup()
+    render(<MathlerGame />)
+
+    await user.keyboard('123')
+    const tileButton = screen.getByTestId('tile-click-0')
+    await user.click(tileButton)
+
+    await waitFor(() => {
+      const cursorPos = screen.getByTestId('cursor-position')
+      expect(cursorPos.textContent).toBe('0')
+    })
+  })
+
+  it('should handle voice input', async () => {
+    const user = userEvent.setup()
+    render(<MathlerGame />)
+
+    const voiceButton = screen.getByRole('button', { name: 'Test Voice Input' })
+    await user.click(voiceButton)
+
+    await waitFor(() => {
+      const currentRow = screen.getByTestId('guess-row-current')
+      expect(currentRow.textContent).toContain('1')
+    })
+  })
+
+  it('should handle voice commands', async () => {
+    const user = userEvent.setup()
+    mockEvaluateExpression.mockReturnValue(3)
+    render(<MathlerGame />)
+
+    await user.keyboard('1+2')
+    const voiceCommandButton = screen.getByRole('button', { name: 'Test Voice Command' })
+    await user.click(voiceCommandButton)
+
+    await waitFor(() => {
+      expect(mockEvaluateExpression).toHaveBeenCalled()
     })
   })
 })

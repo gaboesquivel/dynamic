@@ -137,4 +137,24 @@ describe('GameKeypad', () => {
     const button = screen.getByRole('button', { name: /submit/i })
     expect(button).not.toBeDisabled()
   })
+
+  it('should use onInputAtPosition when provided', async () => {
+    const mockOnInputAtPosition = jest.fn()
+    const user = userEvent.setup()
+    render(
+      <GameKeypad
+        onInput={mockOnInput}
+        onBackspace={mockOnBackspace}
+        onSubmit={mockOnSubmit}
+        currentInput="1"
+        onInputAtPosition={mockOnInputAtPosition}
+      />,
+    )
+
+    const button = screen.getByRole('button', { name: '2' })
+    await user.click(button)
+
+    expect(mockOnInputAtPosition).toHaveBeenCalledWith('2')
+    expect(mockOnInput).not.toHaveBeenCalled()
+  })
 })

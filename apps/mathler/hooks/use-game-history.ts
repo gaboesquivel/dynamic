@@ -74,10 +74,16 @@ export function useGameHistory() {
         })
 
         // Check for updateUser errors or unsuccessful responses
-        // updateUser throws on network/validation errors (caught by try-catch)
-        // but we should verify the result exists and handle verification requirements
         if (!result) {
           console.error('Failed to save game history: updateUser returned no result')
+          return false
+        }
+
+        // Check for error property or success flag if they exist
+        if ((result as any).error || (result as any).success === false) {
+          const errorMessage =
+            (result as any).error?.message || 'Failed to update user metadata. Please try again.'
+          console.error('Failed to save game history:', errorMessage)
           return false
         }
 

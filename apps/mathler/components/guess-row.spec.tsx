@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import GuessRow from './guess-row'
 
 describe('GuessRow', () => {
@@ -75,5 +76,53 @@ describe('GuessRow', () => {
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('+')).toBeInTheDocument()
     expect(screen.getByText('4')).toBeInTheDocument()
+  })
+
+  it('should show cursor position when provided', () => {
+    const { container } = render(
+      <GuessRow guess="" feedback={[]} isCurrentRow={true} currentInput="12" cursorPosition={1} />,
+    )
+
+    const cells = container.querySelectorAll('div.flex > div')
+    expect(cells[1]).toHaveClass('ring-primary')
+  })
+
+  it('should call onTileClick when tile is clicked', async () => {
+    const mockOnTileClick = jest.fn()
+    const user = userEvent.setup()
+    const { container } = render(
+      <GuessRow
+        guess=""
+        feedback={[]}
+        isCurrentRow={true}
+        currentInput="12"
+        cursorPosition={0}
+        onTileClick={mockOnTileClick}
+      />,
+    )
+
+    const cells = container.querySelectorAll('div.flex > div')
+    await user.click(cells[1] as HTMLElement)
+
+    expect(mockOnTileClick).toHaveBeenCalledWith(1)
+  })
+
+  it('should not call onTileClick when not current row', async () => {
+    const mockOnTileClick = jest.fn()
+    const user = userEvent.setup()
+    render(
+      <GuessRow
+        guess="12"
+        feedback={[]}
+        isCurrentRow={false}
+        currentInput=""
+        onTileClick={mockOnTileClick}
+      />,
+    )
+
+    const cells = screen.getAllByText(/^[0-9]?$/)
+    await user.click(cells[0])
+
+    expect(mockOnTileClick).not.toHaveBeenCalled()
   })
 })
