@@ -154,24 +154,22 @@ export class EvmWalletClient extends BaseWalletClient {
       },
       signTypedData: async <const TTypedData extends TypedData | { [key: string]: unknown }>(
         parameters: TTypedData,
-      ) => {
-        return (await dynamicEvmClient.signTypedData({
+      ) =>
+        (await dynamicEvmClient.signTypedData({
           accountAddress: address,
           externalServerKeyShares,
           typedData: parameters,
-        })) as Hex
-      },
+        })) as Hex,
       signTransaction: async <
         transaction extends TransactionSerializable = TransactionSerializable,
       >(
         transaction: transaction,
-      ) => {
-        return (await dynamicEvmClient.signTransaction({
+      ) =>
+        (await dynamicEvmClient.signTransaction({
           senderAddress: address,
           externalServerKeyShares,
           transaction,
-        })) as Hex
-      },
+        })) as Hex,
     } as LocalAccount
 
     const walletClient = createWalletClient({

@@ -71,14 +71,12 @@ export function useWallets(
     ...walletsKeys.all,
     queryFn: async () => {
       const result = await client.wallet.list({})
-      if (result.status === 200) {
-        // Validate response using zod schema
+      if (result.status === 200)
         return validateResponse({
           data: result.body,
           schema: z.array(WalletSchema),
           errorMessage: 'Invalid wallets response',
         })
-      }
       throw new Error('Failed to fetch wallets')
     },
     ...options,
@@ -123,25 +121,22 @@ export function useCreateWallet(options?: UseMutationOptions<Wallet, void, Creat
     ...restOptions,
     mutationFn: async (data: CreateWalletInput) => {
       const result = await client.wallet.create({ body: data })
-      if (result.status === 201) {
-        // Validate response using zod schema
+      if (result.status === 201)
         return validateResponse({
           data: result.body,
           schema: WalletSchema,
           errorMessage: 'Invalid wallet creation response',
         })
-      }
       throw new Error('Failed to create wallet')
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: walletsKeys._def })
-      if (userOnSuccess) {
-        ;(userOnSuccess as (data: Wallet, variables: CreateWalletInput, context: unknown) => void)(
+      if (userOnSuccess)
+        (userOnSuccess as (data: Wallet, variables: CreateWalletInput, context: unknown) => void)(
           data,
           variables,
           context,
         )
-      }
     },
   })
 }
@@ -184,14 +179,12 @@ export function useWalletBalance(
     ...walletsKeys.balance(id),
     queryFn: async () => {
       const result = await client.wallet.getBalance({ params: { id } })
-      if (result.status === 200) {
-        // Validate response using zod schema
+      if (result.status === 200)
         return validateResponse({
           data: result.body,
           schema: WalletBalanceSchema,
           errorMessage: 'Invalid wallet balance response',
         })
-      }
       throw new Error('Failed to fetch wallet balance')
     },
     ...options,
@@ -237,14 +230,12 @@ export function useSignMessage(
   return useMutation({
     mutationFn: async (data: SignMessageInput) => {
       const result = await client.wallet.signMessage({ params: { id }, body: data })
-      if (result.status === 200) {
-        // Validate response using zod schema
+      if (result.status === 200)
         return validateResponse({
           data: result.body,
           schema: SignMessageResultSchema,
           errorMessage: 'Invalid sign message response',
         })
-      }
       throw new Error('Failed to sign message')
     },
     ...options,
@@ -293,14 +284,12 @@ export function useSendTransaction(
   return useMutation({
     mutationFn: async (data: SendTransactionInput) => {
       const result = await client.wallet.sendTransaction({ params: { id }, body: data })
-      if (result.status === 200) {
-        // Validate response using zod schema
+      if (result.status === 200)
         return validateResponse({
           data: result.body,
           schema: SendTransactionResultSchema,
           errorMessage: 'Invalid send transaction response',
         })
-      }
       throw new Error('Failed to send transaction')
     },
     ...options,

@@ -117,14 +117,10 @@ export function useGameHistory() {
     [user, updateUser, refreshUser],
   )
 
-  const getHistory = useCallback(() => {
-    return history
-  }, [history])
+  const getHistory = useCallback(() => history, [history])
 
   const getGameByDate = useCallback(
-    (date: string) => {
-      return history.find(entry => entry.date === date)
-    },
+    (date: string) => history.find(entry => entry.date === date),
     [history],
   )
 

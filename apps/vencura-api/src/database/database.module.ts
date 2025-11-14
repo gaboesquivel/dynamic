@@ -16,9 +16,7 @@ import * as schema from './schema'
     },
     {
       provide: 'DATABASE',
-      useFactory: (client: PGlite) => {
-        return drizzle(client, { schema })
-      },
+      useFactory: (client: PGlite) => drizzle(client, { schema }),
       inject: ['PGLITE'],
     },
     {
