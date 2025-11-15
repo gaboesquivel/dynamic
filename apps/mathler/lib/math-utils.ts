@@ -1,4 +1,5 @@
 import { Parser } from 'expr-eval'
+import { uniq } from 'lodash'
 
 /**
  * Singleton parser instance configured for basic arithmetic only.
@@ -124,7 +125,7 @@ export function generateEquationsForTarget(target: number, maxLength = 9): strin
     }
   }
 
-  return [...new Set(equations)].slice(0, 10)
+  return uniq(equations).slice(0, 10)
 }
 
 /**

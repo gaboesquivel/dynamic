@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { useAsyncFn } from 'react-use'
+import { groupBy, sumBy } from 'lodash'
 import {
   useDynamicContext,
   useUserUpdateRequest,
@@ -116,10 +117,11 @@ export function useGameHistory() {
 
   const getStats = (): GameStats => {
     const totalGames = history.length
-    const wins = history.filter(entry => entry.status === 'won').length
-    const losses = history.filter(entry => entry.status === 'lost').length
+    const groupedByStatus = groupBy(history, 'status')
+    const wins = groupedByStatus.won?.length ?? 0
+    const losses = groupedByStatus.lost?.length ?? 0
     const winRate = totalGames > 0 ? wins / totalGames : 0
-    const totalGuesses = history.reduce((sum, entry) => sum + entry.guessCount, 0)
+    const totalGuesses = sumBy(history, 'guessCount')
     const averageGuesses = totalGames > 0 ? totalGuesses / totalGames : 0
 
     return {

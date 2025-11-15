@@ -38,9 +38,12 @@ alwaysApply: false
   - Integrate with TypeScript for type inference
 
 ### Authentication & Actions
-- **next-auth**: Authentication solution
-  - Server-side session management
-  - Secure authentication flows
+- **@dynamic-labs/sdk-react-core**: Secure wallet authentication solution
+  - Multi-chain wallet connection (Ethereum, Solana, etc.)
+  - JWT-based authentication with RS256 algorithm
+  - Server-side token verification via public key
+  - Secure token handling and user session management
+  - See [Web3 Rules](../web3/wagmi.mdc) for wallet integration patterns
 - **next-safe-action**: Type-safe server actions
   - Use for all server actions
   - Provides type safety and error handling
@@ -52,8 +55,10 @@ alwaysApply: false
   - Prefer TanStack Query for data fetching
   - Use for non-data-fetching async operations
 - **lodash**: Utility functions
-  - Use sparingly, prefer native JavaScript when possible
-  - Import specific functions: `import debounce from 'lodash/debounce'`
+  - **Prefer lodash over custom implementations** for common operations
+  - Use lodash for array manipulation, object operations, string utilities, and functional programming helpers
+  - Import specific functions to reduce bundle size: `import { debounce, isEmpty, merge } from 'lodash'`
+  - Only use native JavaScript when lodash doesn't provide a clear benefit or adds unnecessary complexity
 
 ## Usage Patterns
 
@@ -187,6 +192,158 @@ const userSchema = z.object({
 type User = z.infer<typeof userSchema>
 ```
 
+### Secure Wallet Authentication with Dynamic Labs
+
+Dynamic Labs provides secure, multi-chain wallet authentication. Use it for all wallet-related authentication flows.
+
+#### Setup
+
+```tsx
+// app/layout.tsx or providers.tsx
+'use client'
+
+import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core'
+import { EthereumWalletConnectors } from '@dynamic-labs/ethereum'
+import { SolanaWalletConnectors } from '@dynamic-labs/solana'
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <DynamicContextProvider
+      settings={{
+        environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID!,
+        walletConnectors: [EthereumWalletConnectors, SolanaWalletConnectors],
+      }}
+    >
+      {children}
+    </DynamicContextProvider>
+  )
+}
+```
+
+#### Usage in Components
+
+```tsx
+'use client'
+
+import { useDynamicContext, getAuthToken } from '@dynamic-labs/sdk-react-core'
+
+export function WalletAuth() {
+  const { user, isAuthenticated } = useDynamicContext()
+  const authToken = getAuthToken() // JWT token for API requests
+
+  if (!isAuthenticated) {
+    return <DynamicWidget /> // Shows wallet connection UI
+  }
+
+  return <div>Welcome, {user?.email}</div>
+}
+```
+
+#### Secure Token Handling
+
+```tsx
+// hooks/use-vencura-headers.ts
+'use client'
+
+import { getAuthToken } from '@dynamic-labs/sdk-react-core'
+
+export function useVencuraHeaders() {
+  const token = getAuthToken()
+  
+  return {
+    Authorization: token ? `Bearer ${token}` : undefined,
+  }
+}
+```
+
+**Security Best Practices:**
+- Always verify JWT tokens on the server using Dynamic's public key
+- Never expose private keys or sensitive wallet data to the client
+- Use RS256 algorithm for token verification (not HS256)
+- Handle token expiration and refresh appropriately
+- Store tokens securely (not in localStorage for sensitive apps)
+
+### Utility Functions with lodash
+
+Prefer lodash over custom implementations for common operations. Lodash provides well-tested, optimized utilities.
+
+#### Common lodash Patterns
+
+```tsx
+// Array operations
+import { isEmpty, uniq, groupBy, chunk } from 'lodash'
+
+const uniqueItems = uniq([1, 2, 2, 3]) // [1, 2, 3]
+const grouped = groupBy(users, 'role')
+const chunks = chunk(array, 10) // Split into chunks of 10
+
+// Object operations
+import { merge, pick, omit, isEmpty } from 'lodash'
+
+const merged = merge({ a: 1 }, { b: 2 }) // { a: 1, b: 2 }
+const selected = pick(user, ['id', 'name']) // Extract specific keys
+const filtered = omit(user, ['password']) // Remove specific keys
+
+// String operations
+import { camelCase, kebabCase, startCase } from 'lodash'
+
+const camel = camelCase('hello world') // 'helloWorld'
+const kebab = kebabCase('HelloWorld') // 'hello-world'
+
+// Functional utilities
+import { debounce, throttle, memoize } from 'lodash'
+
+const debouncedSearch = debounce((query) => {
+  searchAPI(query)
+}, 300)
+
+const memoizedExpensive = memoize((input) => {
+  return expensiveCalculation(input)
+})
+
+// Type checking
+import { isString, isNumber, isEmpty, isPlainObject } from 'lodash'
+
+if (isString(value)) { /* ... */ }
+if (isEmpty(array)) { /* ... */ }
+```
+
+#### When to Use lodash vs Native JavaScript
+
+✅ **Use lodash for:**
+- Complex array/object manipulations (groupBy, merge, pick, omit)
+- Functional utilities (debounce, throttle, memoize)
+- Type checking utilities (isEmpty, isPlainObject, etc.)
+- String transformations (camelCase, kebabCase, etc.)
+- Operations that benefit from lodash's optimizations
+
+✅ **Use native JavaScript for:**
+- Simple operations (array.map, array.filter, Object.keys)
+- Basic type checks (typeof, Array.isArray)
+- Simple string operations (toLowerCase, includes, etc.)
+- When bundle size is critical and lodash adds unnecessary weight
+
+**Anti-Patterns:**
+```tsx
+// ❌ BAD: Custom implementation when lodash exists
+function uniqueArray(arr) {
+  return [...new Set(arr)]
+}
+// ✅ GOOD: Use lodash
+import { uniq } from 'lodash'
+const unique = uniq(arr)
+
+// ❌ BAD: Custom debounce implementation
+let timeout
+function debounce(fn, delay) {
+  clearTimeout(timeout)
+  timeout = setTimeout(fn, delay)
+}
+// ✅ GOOD: Use lodash debounce
+import { debounce } from 'lodash'
+const debouncedFn = debounce(fn, delay)
+```
+
 ## Best Practices
 
 - **Prefer TanStack Query** over react-use for data fetching
@@ -194,9 +351,11 @@ type User = z.infer<typeof userSchema>
 - **Use nuqs** for UI state that should be shareable via URL (filters, search, tabs, pagination)
 - **Use TanStack Query's built-in state** (`isLoading`, `isError`, `isFetching`) for loading/error states - never manually manage these with `useState`
 - **Use `useSetState`** for grouped state that doesn't belong in URL (game engine, form state, ephemeral UI state)
+- **Prefer lodash** over custom implementations for common operations (array/object manipulation, utilities, type checking)
+- **Use Dynamic Labs** for secure wallet authentication with JWT token verification
 - **Validate all external data** with zod schemas
 - **Type-safe server actions** with next-safe-action
-- **Import utilities selectively** to reduce bundle size
+- **Import utilities selectively** to reduce bundle size (lodash, react-use)
 - **Combine related queries** into cohesive custom hooks
 - **Follow fractal component patterns** for consistent structure
 - **Mobile-first design** - Always design and develop mobile-first, then enhance for larger screens

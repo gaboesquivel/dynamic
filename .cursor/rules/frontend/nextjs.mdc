@@ -6,8 +6,86 @@ alwaysApply: false
 # Next.js Rules
 
 ## Core Principles
-- Default to Server Components for better performance
-- Minimize `'use client'` directives to leverage SSR benefits
+
+### React Server Components (CRITICAL)
+
+**ALWAYS default to Server Components. Only use `'use client'` when absolutely necessary.**
+
+Server Components provide significant performance benefits:
+- Reduced JavaScript bundle size (components render on server)
+- Faster initial page loads
+- Better SEO (content rendered on server)
+- Direct database/API access without exposing credentials
+- Automatic code splitting
+
+**Default Pattern:**
+```tsx
+// ✅ GOOD: Server Component (default, no directive needed)
+export default function Page() {
+  return <div>Server-rendered content</div>
+}
+```
+
+**When to Use Client Components (`'use client'`):**
+Only add `'use client'` when you need:
+- Interactive features: `onClick`, `onChange`, `onSubmit` handlers
+- Browser APIs: `window`, `document`, `localStorage`, `navigator`
+- React hooks: `useState`, `useEffect`, `useContext` (for client-side state)
+- Third-party libraries that require client-side execution
+- Event listeners or real-time subscriptions
+
+**Component Splitting Pattern:**
+Split pages into Server Components (default) and Client Components (when needed):
+
+```tsx
+// ✅ GOOD: Server Component page
+import { ClientInteractiveSection } from './client-interactive-section'
+
+export default function Page() {
+  // Server Component - can fetch data directly
+  const data = await fetchData()
+  
+  return (
+    <div>
+      <h1>{data.title}</h1>
+      {/* Only interactive parts are client components */}
+      <ClientInteractiveSection initialData={data} />
+    </div>
+  )
+}
+```
+
+```tsx
+// ✅ GOOD: Client Component (only when needed)
+'use client'
+
+export function ClientInteractiveSection({ initialData }) {
+  const [state, setState] = useState(initialData)
+  // Interactive logic here
+}
+```
+
+**Anti-Patterns:**
+```tsx
+// ❌ BAD: Unnecessary client component
+'use client'
+export default function Page() {
+  return <div>Static content</div> // No interactivity needed!
+}
+
+// ❌ BAD: Entire page as client component when only small part needs interactivity
+'use client'
+export default function Page() {
+  return (
+    <div>
+      <StaticHeader />
+      <StaticContent />
+      <InteractiveButton /> {/* Only this needs client */}
+    </div>
+  )
+}
+```
+
 - Use `nuqs` for URL search parameter state management
   - Prefer `nuqs` over manual URL state management for filters, search, tabs, pagination
   - See [React Rules](./react.mdc) for state management decision tree
@@ -26,9 +104,55 @@ alwaysApply: false
 - See [React Hooks Rules](./react-hooks.mdc) for TanStack Query patterns
 - See [React Rules](./react.mdc) for component patterns
 
-## Server vs Client Components
-- Favor Server Components and Next.js SSR
-- Use client components only when necessary (interactive UI, browser APIs)
+## Server vs Client Components Decision Tree
+
+**Start here:** Is this a page or layout component?
+- **Yes** → Use Server Component (default, no `'use client'`)
+- **No** → Continue to next question
+
+**Does the component need any of these?**
+- Event handlers (`onClick`, `onChange`, etc.)
+- Browser APIs (`window`, `document`, `localStorage`, etc.)
+- React hooks for client-side state (`useState`, `useEffect`, etc.)
+- Third-party libraries requiring client-side execution
+
+**If YES to any above:**
+- Extract that specific functionality into a separate Client Component
+- Keep the parent as a Server Component
+- Pass data as props to the Client Component
+
+**If NO to all above:**
+- Use Server Component (default)
+
+**Example Refactoring:**
+
+```tsx
+// ❌ BAD: Entire page as client component
+'use client'
+export default function Page() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+  return <StaticContent />
+}
+
+// ✅ GOOD: Server Component with client wrapper only where needed
+export default function Page() {
+  return (
+    <ClientHydrationWrapper>
+      <StaticContent />
+    </ClientHydrationWrapper>
+  )
+}
+
+'use client'
+function ClientHydrationWrapper({ children }) {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+  if (!mounted) return null
+  return <>{children}</>
+}
+```
 
 ## Performance Optimization
 - Implement streaming with `Suspense` for progressive loading
