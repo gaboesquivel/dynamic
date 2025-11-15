@@ -16,9 +16,10 @@ alwaysApply: false
   - Combine multiple queries into cohesive custom hooks
   - See [React Hooks Rules](./react-hooks.mdc) for detailed patterns
 - **nuqs**: URL-based state management
-  - Use for shareable, bookmarkable state
+  - Use for shareable, bookmarkable UI state that should be in the URL
   - Decouples components from internal state logic
   - Prefer over local state when state should be in URL
+  - See [React Rules](./react.mdc) for detailed state management patterns
 
 ### Ethereum Integration
 - **viem**: Type-safe Ethereum interface
@@ -81,17 +82,83 @@ export function useUserData(userId: string) {
 ```
 
 ### URL State with nuqs
+
+Use `nuqs` for UI state that should be shareable via URL. This includes filters, search, tabs, pagination, sort options, and view preferences.
+
+#### Basic Usage
+
 ```tsx
-import { useQueryState } from 'nuqs'
+import { useQueryState, parseAsString } from 'nuqs'
 
 export function useSearchFilter() {
-  const [search, setSearch] = useQueryState('q', {
-    defaultValue: '',
-    clearOnDefault: true
-  })
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
   return { search, setSearch }
 }
 ```
+
+#### Multiple Query States
+
+```tsx
+import { useQueryStates, parseAsString, parseAsInteger } from 'nuqs'
+
+export function useFilters() {
+  const [filters, setFilters] = useQueryStates({
+    search: parseAsString.withDefault(''),
+    page: parseAsInteger.withDefault(1),
+    sort: parseAsString.withDefault('name'),
+    view: parseAsString.withDefault('grid'), // 'grid' | 'list'
+  })
+  
+  return { filters, setFilters }
+}
+```
+
+#### Tab/Panel Selection
+
+```tsx
+import { useQueryState, parseAsStringEnum } from 'nuqs'
+
+const tabs = ['overview', 'settings', 'analytics'] as const
+
+export function useTabNavigation() {
+  const [activeTab, setActiveTab] = useQueryState(
+    'tab',
+    parseAsStringEnum(tabs).withDefault('overview')
+  )
+  return { activeTab, setActiveTab }
+}
+```
+
+#### Pagination
+
+```tsx
+import { useQueryState, parseAsInteger } from 'nuqs'
+
+export function usePagination() {
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [pageSize, setPageSize] = useQueryState('size', parseAsInteger.withDefault(20))
+  
+  return { page, setPage, pageSize, setPageSize }
+}
+```
+
+#### When to Use nuqs
+
+✅ **Use nuqs for:**
+- Search/filter state
+- Tab/panel selection
+- Pagination state
+- Sort/filter options
+- View preferences (grid/list, theme)
+- Modal state (if shareable/bookmarkable)
+- Any state that benefits from being shareable via URL
+
+❌ **Don't use nuqs for:**
+- Game engine state (use `useSetState` instead)
+- Form input state (temporary, not shareable)
+- Component-local UI state (use TanStack Query's built-in state instead)
+- State that changes too frequently (would pollute URL)
+- Sensitive data
 
 ### Ethereum with wagmi
 ```tsx
@@ -124,7 +191,9 @@ type User = z.infer<typeof userSchema>
 
 - **Prefer TanStack Query** over react-use for data fetching
 - **Use Query Key Factory** (`@lukemorales/query-key-factory`) for all TanStack Query keys
-- **Use nuqs** for state that should be shareable via URL
+- **Use nuqs** for UI state that should be shareable via URL (filters, search, tabs, pagination)
+- **Use TanStack Query's built-in state** (`isLoading`, `isError`, `isFetching`) for loading/error states - never manually manage these with `useState`
+- **Use `useSetState`** for grouped state that doesn't belong in URL (game engine, form state, ephemeral UI state)
 - **Validate all external data** with zod schemas
 - **Type-safe server actions** with next-safe-action
 - **Import utilities selectively** to reduce bundle size

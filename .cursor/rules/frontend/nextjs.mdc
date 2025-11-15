@@ -9,6 +9,9 @@ alwaysApply: false
 - Default to Server Components for better performance
 - Minimize `'use client'` directives to leverage SSR benefits
 - Use `nuqs` for URL search parameter state management
+  - Prefer `nuqs` over manual URL state management for filters, search, tabs, pagination
+  - See [React Rules](./react.mdc) for state management decision tree
+  - See [Frontend Stack](./stack.mdc) for nuqs usage patterns and examples
 
 ## Exports
 - **Pages and Layouts**: Next.js requires default exports for pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`)

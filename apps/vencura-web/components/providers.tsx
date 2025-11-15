@@ -6,6 +6,7 @@ import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core'
 import { EthereumWalletConnectors } from '@dynamic-labs/ethereum'
 import { SolanaWalletConnectors } from '@dynamic-labs/solana'
 import { VencuraProvider } from '@vencura/react'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { useVencuraHeaders } from '@/hooks/use-vencura-headers'
 import { getEnv } from '@/lib/env'
 
@@ -50,15 +51,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }}
     >
       <VencuraProviderWrapper>
-        <NextThemesProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          enableColorScheme
-        >
-          {children}
-        </NextThemesProvider>
+        <NuqsAdapter>
+          <NextThemesProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            enableColorScheme
+          >
+            {children}
+          </NextThemesProvider>
+        </NuqsAdapter>
       </VencuraProviderWrapper>
     </DynamicContextProvider>
   )

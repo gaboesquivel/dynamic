@@ -21,6 +21,109 @@ alwaysApply: false
 
 ## State Management
 
+### State Management Decision Tree
+
+Choose the right state management approach based on your use case:
+
+1. **URL-shareable UI state** → Use `nuqs` (filters, search, tabs, pagination, view preferences)
+2. **Grouped state not in URL** → Use `useSetState` (game engine, form state, ephemeral UI state)
+3. **Loading/error states from async operations** → Use TanStack Query's built-in state (`isLoading`, `isError`, `isFetching`)
+4. **Simple independent state** → Use `useState` (rare, prefer other options)
+
+### URL State Management with nuqs
+
+Use `nuqs` for UI state that should be shareable via URL. This makes state bookmarkable, shareable, and persists across page refreshes.
+
+❌ **Don't**: Use `useState` or `useSetState` for URL-shareable state
+```tsx
+// Bad - state not in URL, not shareable
+const [search, setSearch] = useState('')
+const [page, setPage] = useState(1)
+const [activeTab, setActiveTab] = useState('overview')
+```
+
+✅ **Do**: Use `nuqs` for URL-shareable state
+```tsx
+// Good - state in URL, shareable and bookmarkable
+import { useQueryState, useQueryStates, parseAsString, parseAsInteger, parseAsStringEnum } from 'nuqs'
+
+const tabs = ['overview', 'settings', 'analytics'] as const
+
+export function useFilters() {
+  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [activeTab, setActiveTab] = useQueryState('tab', parseAsStringEnum(tabs).withDefault('overview'))
+  
+  return { search, setSearch, page, setPage, activeTab, setActiveTab }
+}
+
+// Or use useQueryStates for multiple related URL params
+export function useFilters() {
+  const [filters, setFilters] = useQueryStates({
+    search: parseAsString.withDefault(''),
+    page: parseAsInteger.withDefault(1),
+    sort: parseAsString.withDefault('name'),
+  })
+  
+  return { filters, setFilters }
+}
+```
+
+**When to use `nuqs`:**
+- Search/filter state
+- Tab/panel selection
+- Pagination state
+- Sort/filter options
+- View preferences (grid/list, theme)
+- Modal state (if shareable/bookmarkable)
+- Any state that benefits from being shareable via URL
+
+See [Frontend Stack](./stack.mdc) for more nuqs examples and patterns.
+
+### Loading/Error State Management
+
+For loading spinners, tooltips, and ephemeral flags from async operations, rely on TanStack Query's built-in state management.
+
+❌ **Don't**: Manually manage loading/error states
+```tsx
+// Bad - manually managing loading/error state
+const [isLoading, setIsLoading] = useState(false)
+const [error, setError] = useState<Error | null>(null)
+
+const fetchData = async () => {
+  setIsLoading(true)
+  setError(null)
+  try {
+    const data = await api.fetch()
+    // use data
+  } catch (err) {
+    setError(err)
+  } finally {
+    setIsLoading(false)
+  }
+}
+```
+
+✅ **Do**: Use TanStack Query's built-in state
+```tsx
+// Good - TanStack Query provides loading/error state automatically
+import { useQuery } from '@tanstack/react-query'
+import { articles } from '@/queries/articles'
+
+const { data, isLoading, isError, error } = useQuery(articles.all)
+
+// Or for one-off async operations, use useAsyncFn
+import { useAsyncFn } from 'react-use'
+
+const [saveState, saveData] = useAsyncFn(async (data) => {
+  return await api.save(data)
+}, [])
+
+// Access loading/error automatically: saveState.loading, saveState.error
+```
+
+**Never manually manage `isLoading`, `error`, or `isError` states** - these are provided automatically by TanStack Query hooks or `useAsyncFn`. See [React Hooks Rules](./react-hooks.mdc) for detailed patterns.
+
 ### Grouping Related State
 
 When multiple state variables are consistently updated together, consolidate them into a single state object using `useSetState` from `react-use`. This simplifies state updates and reduces boilerplate.
@@ -79,14 +182,19 @@ setState({ txTo: value, addressError: null })
 
 **When to use `useSetState`:**
 - Multiple related state variables updated together
-- Form state with multiple fields
-- UI state that changes together (modals, panels, etc.)
-- Game/app state with multiple related properties
+- Form state with multiple fields (temporary, not shareable)
+- UI state that changes together (modals, panels, etc.) - **only if not URL-shareable**
+- Game/app state with multiple related properties (game engine state)
+- Ephemeral UI state that doesn't belong in URL
+
+**When NOT to use `useSetState`:**
+- URL-shareable state (use `nuqs` instead)
+- Loading/error states from async operations (use TanStack Query's built-in state)
 
 **When to keep separate `useState`:**
-- Completely independent state variables
-- Simple boolean flags
-- Single primitive values with no relation to other state
+- Completely independent state variables (rare, prefer other options)
+- Simple boolean flags (only if truly independent and not URL-shareable)
+- Single primitive values with no relation to other state (rare, prefer other options)
 
 ## Component Composition
 - Use children prop for flexible composition

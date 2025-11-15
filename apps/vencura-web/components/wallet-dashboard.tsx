@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useQueryState, parseAsInteger } from 'nuqs'
 import { Button } from '@workspace/ui/components/button'
 import { useWallets, useCreateWallet } from '@vencura/react'
 import { WalletCard } from './wallet-card'
@@ -8,7 +8,7 @@ import { SUPPORTED_CHAINS } from '@/lib/chains'
 import { getErrorMessage } from '@/lib/error-utils'
 
 export function WalletDashboard() {
-  const [chainId, setChainId] = useState<number | string>(421614) // Default to Arbitrum Sepolia
+  const [chainId, setChainId] = useQueryState('chainId', parseAsInteger.withDefault(421614)) // Default to Arbitrum Sepolia
   const { data: wallets = [], isLoading: loadingWallets, error: walletsError } = useWallets()
   const createWallet = useCreateWallet({
     onSuccess: () => {
@@ -17,7 +17,9 @@ export function WalletDashboard() {
   })
 
   const handleCreateWallet = () => {
-    createWallet.mutate({ chainId })
+    if (chainId !== null) {
+      createWallet.mutate({ chainId })
+    }
   }
 
   const error = getErrorMessage(walletsError) || getErrorMessage(createWallet.error) || null
@@ -34,7 +36,7 @@ export function WalletDashboard() {
               onChange={e => {
                 const value = e.target.value
                 const parsed = Number(value)
-                setChainId(isNaN(parsed) ? value : parsed)
+                setChainId(isNaN(parsed) ? null : parsed)
               }}
               className="w-full px-3 py-2 border rounded-md text-sm bg-background"
               disabled={createWallet.isPending}
