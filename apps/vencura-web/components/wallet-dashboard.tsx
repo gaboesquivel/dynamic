@@ -45,7 +45,7 @@ export function WalletDashboard() {
                 chain => chain.chainType === 'evm' || chain.chainType === 'solana',
               ).map(chain => (
                 <option key={String(chain.chainId)} value={String(chain.chainId)}>
-                  {chain.name} {chain.testnet && '(Testnet)'}
+                  {chain.name} {chain.testnet ? '(Testnet)' : null}
                 </option>
               ))}
             </select>
@@ -54,11 +54,11 @@ export function WalletDashboard() {
             {createWallet.isPending ? 'Creating...' : 'Create Wallet'}
           </Button>
         </div>
-        {error && (
+        {error ? (
           <div className="mt-3 text-sm text-destructive bg-destructive/10 p-3 rounded-md">
             {error}
           </div>
-        )}
+        ) : null}
       </div>
 
       <div>

@@ -102,16 +102,16 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-lg">Wallet</h3>
-          {wallet.chainType && (
+          {wallet.chainType ? (
             <span className="text-xs font-medium px-2 py-1 bg-muted rounded-md uppercase">
               {wallet.chainType}
             </span>
-          )}
+          ) : null}
         </div>
         <p className="text-sm text-muted-foreground font-mono break-all">{wallet.address}</p>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>
-            {chainInfo?.name || wallet.network} {chainInfo?.testnet && '(Testnet)'}
+            {chainInfo?.name || wallet.network} {chainInfo?.testnet ? '(Testnet)' : null}
           </span>
         </div>
       </div>
@@ -127,14 +127,14 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
           >
             {balanceLoading ? 'Loading...' : 'Get Balance'}
           </Button>
-          {balanceData && (
+          {balanceData ? (
             <div className="text-sm">
               <span className="text-muted-foreground">Balance: </span>
               <strong className="text-lg">
                 {balanceData.balance} {currency}
               </strong>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
@@ -155,12 +155,12 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
             {signMessage.isPending ? 'Signing...' : 'Sign'}
           </Button>
         </form>
-        {state.signedMessage && (
+        {state.signedMessage ? (
           <div className="mt-2 p-3 bg-muted rounded-md">
             <p className="text-xs font-medium text-muted-foreground mb-1">Signed Message:</p>
             <p className="text-xs font-mono break-all">{state.signedMessage}</p>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="space-y-3 border-t pt-4">
@@ -183,7 +183,9 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
               }`}
               disabled={isLoading}
             />
-            {state.addressError && <p className="text-xs text-destructive">{state.addressError}</p>}
+            {state.addressError ? (
+              <p className="text-xs text-destructive">{state.addressError}</p>
+            ) : null}
           </div>
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
@@ -200,24 +202,26 @@ export function WalletCard({ wallet }: { wallet: Wallet }) {
                 }`}
                 disabled={isLoading}
               />
-              {state.amountError && <p className="text-xs text-destructive">{state.amountError}</p>}
+              {state.amountError ? (
+                <p className="text-xs text-destructive">{state.amountError}</p>
+              ) : null}
             </div>
             <Button onClick={handleSendTransaction} disabled={isLoading} size="sm">
               {sendTransaction.isPending ? 'Sending...' : 'Send'}
             </Button>
           </div>
-          {txHash && (
+          {txHash ? (
             <div className="mt-2 p-3 bg-muted rounded-md">
               <p className="text-xs font-medium text-muted-foreground mb-1">Transaction Hash:</p>
               <p className="text-xs font-mono break-all">{txHash}</p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {error && (
+      {error ? (
         <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>
-      )}
+      ) : null}
     </div>
   )
 }

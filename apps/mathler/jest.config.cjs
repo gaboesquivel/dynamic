@@ -17,6 +17,7 @@ const customJestConfig = {
     '^lucide-react$': '<rootDir>/jest.setup.lucide.js',
   },
   testMatch: ['**/*.spec.ts', '**/*.spec.tsx'],
+  testPathIgnorePatterns: ['/node_modules/', '/.next/', '/e2e/'],
   collectCoverageFrom: [
     'lib/**/*.{ts,tsx}',
     'components/**/*.{ts,tsx}',

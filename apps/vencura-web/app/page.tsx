@@ -72,19 +72,19 @@ export default function Page() {
                   {state.showToken ? 'Hide' : 'Show'} Auth Token
                 </Button>
               </div>
-              {user && (
+              {user ? (
                 <div className="space-y-1 text-sm">
                   <p>
                     <span className="text-muted-foreground">Email:</span> {user.email || 'N/A'}
                   </p>
-                  {user.userId && (
+                  {user.userId ? (
                     <p>
                       <span className="text-muted-foreground">User ID:</span> {user.userId}
                     </p>
-                  )}
+                  ) : null}
                 </div>
-              )}
-              {state.showToken && (
+              ) : null}
+              {state.showToken ? (
                 <div className="mt-4 space-y-2">
                   <div className="flex gap-2">
                     <input
@@ -101,7 +101,7 @@ export default function Page() {
                     Copy this token to use in Swagger UI for API testing
                   </p>
                 </div>
-              )}
+              ) : null}
             </div>
 
             <WalletDashboard />

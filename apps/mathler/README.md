@@ -132,6 +132,46 @@ pnpm lint
 pnpm typecheck
 ```
 
+## Testing
+
+### Unit Tests
+
+```bash
+# Run unit tests
+pnpm test
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Run tests with coverage
+pnpm test:cov
+```
+
+### E2E Tests
+
+E2E tests use Playwright to test the application in a real browser environment.
+
+```bash
+# Run e2e tests (builds and starts the app automatically)
+pnpm test:e2e
+
+# Run e2e tests with UI mode (interactive)
+pnpm test:e2e:ui
+
+# Run e2e tests in debug mode
+pnpm test:e2e:debug
+```
+
+**E2E Test Coverage:**
+
+- Page loading and hydration
+- Game UI rendering (header, game board, keypad)
+- User interactions (keypad input, submit, backspace)
+- Responsive design on mobile viewports
+- Error handling and console error detection
+
+**Note**: E2E tests require the app to be built. The test runner will automatically build and start the production server before running tests.
+
 ## Game Engine Documentation
 
 ### Game Rules & Constraints

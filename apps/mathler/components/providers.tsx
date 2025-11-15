@@ -7,8 +7,14 @@ import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { getEnv } from '@/lib/env'
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = React.useState(false)
   const env = getEnv()
   const environmentId = env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID
+
+  // Only initialize on client side after hydration
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Warn/error handling for missing environment ID
   React.useEffect(() => {
@@ -17,33 +23,46 @@ export function Providers({ children }: { children: React.ReactNode }) {
         console.error(
           'NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID is required in production. Please set it in your environment variables.',
         )
-        // In production, log error but don't throw to avoid breaking the app
-        // The placeholder ID will be used, but authentication won't work properly
       } else {
         console.warn(
-          'NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID is not set. Using placeholder ID. Set this environment variable to enable Dynamic authentication.',
+          'NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID is not set. Dynamic authentication will be disabled.',
         )
       }
     }
   }, [environmentId])
 
+  // Base providers that don't depend on Dynamic SDK
+  const baseProviders = (
+    <NuqsAdapter>
+      <NextThemesProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+        enableColorScheme
+      >
+        {children}
+      </NextThemesProvider>
+    </NuqsAdapter>
+  )
+
+  // Don't initialize Dynamic SDK if:
+  // 1. Not mounted yet (SSR)
+  // 2. Missing environment ID in production
+  // 3. Missing environment ID in development (graceful degradation)
+  if (!mounted || !environmentId) {
+    return baseProviders
+  }
+
+  // Initialize Dynamic SDK with valid environment ID
   return (
     <DynamicContextProvider
       settings={{
-        environmentId: environmentId || 'placeholder-id',
+        environmentId,
+        appName: 'Mathler',
       }}
     >
-      <NuqsAdapter>
-        <NextThemesProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          enableColorScheme
-        >
-          {children}
-        </NextThemesProvider>
-      </NuqsAdapter>
+      {baseProviders}
     </DynamicContextProvider>
   )
 }

@@ -13,7 +13,8 @@
         "ENCRYPTION_KEY",
         "RPC_URL_*",
         "ARBITRUM_SEPOLIA_RPC_URL",
-        "SOLANA_RPC_URL"
+        "SOLANA_RPC_URL",
+        "NODE_ENV"
       ]
     },
     "lint": {
@@ -29,12 +30,17 @@
     },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*", "e2e/**", "playwright.config.ts"],
+      "outputs": ["playwright-report/**", "test-results/**"],
       "env": [
         "DYNAMIC_ENVIRONMENT_ID",
         "DYNAMIC_API_TOKEN",
         "ENCRYPTION_KEY",
-        "TEST_AUTH_TOKEN"
+        "TEST_AUTH_TOKEN",
+        "NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID",
+        "NEXT_PUBLIC_API_URL",
+        "PORT",
+        "PLAYWRIGHT_TEST_BASE_URL"
       ]
     },
     "dev": {
