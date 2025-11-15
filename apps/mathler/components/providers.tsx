@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { getEnv } from '@/lib/env'
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -32,15 +33,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
         environmentId: environmentId || 'placeholder-id',
       }}
     >
-      <NextThemesProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-        enableColorScheme
-      >
-        {children}
-      </NextThemesProvider>
+      <NuqsAdapter>
+        <NextThemesProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          enableColorScheme
+        >
+          {children}
+        </NextThemesProvider>
+      </NuqsAdapter>
     </DynamicContextProvider>
   )
 }
