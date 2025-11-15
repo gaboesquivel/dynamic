@@ -231,9 +231,31 @@ Content-Type: application/json
 }
 ```
 
+## Dynamic SDK Integration
+
+Vencura API uses Dynamic SDK for all wallet operations:
+
+- **Wallet Creation**: Uses `DynamicEvmWalletClient.createWalletAccount()` for EVM chains and `DynamicSvmWalletClient.createWalletAccount()` for Solana
+- **Message Signing**: Uses Dynamic SDK's `signMessage()` method with 2-of-2 threshold signatures
+- **Transaction Signing**: Uses Dynamic SDK's `signTransaction()` method for both EVM and Solana
+- **Wallet Management**: All wallets are created with `ThresholdSignatureScheme.TWO_OF_TWO` for enhanced security
+
+Both EVM and Solana wallet clients authenticate with Dynamic using `DYNAMIC_ENVIRONMENT_ID` and `DYNAMIC_API_TOKEN`, ensuring all wallet operations go through Dynamic's secure infrastructure.
+
 ## Testing
 
-The API includes comprehensive blackbox E2E tests that use the real Dynamic SDK.
+The API includes comprehensive blackbox E2E tests that use the real Dynamic SDK. All tests hit real Dynamic SDK endpoints with real API keys - NO MOCKS are used for core functionality.
+
+### Testing Philosophy
+
+**CRITICAL**: Most tests use real APIs with real API keys. NO MOCKS allowed for core functionality.
+
+- E2E tests hit real Dynamic SDK endpoints for wallet creation, balance, and signing
+- Integration tests use real blockchain RPCs
+- All API calls use actual credentials from environment variables
+- Tests verify end-to-end functionality with real infrastructure
+
+**Exception**: Transaction sending tests are currently mocked due to requiring test token deployments and faucet infrastructure. These will be implemented with real tokens and faucet in a follow-up PR.
 
 ### Running Tests
 
@@ -272,10 +294,28 @@ E2E tests require the following environment variables in `.env`:
 
 ### Test Files
 
-- `test/wallet.e2e-spec.ts` - Main wallet endpoint tests
-- `test/wallet-edge-cases.e2e-spec.ts` - Edge case and error handling tests
-- `test/wallet-multichain.e2e-spec.ts` - Multichain wallet creation tests
+- `test/wallet.e2e-spec.ts` - Main wallet endpoint tests (uses real Dynamic SDK)
+- `test/wallet-transactions.e2e-spec.ts` - Transaction sending tests (**currently mocked** - see Future Work)
+- `test/wallet-edge-cases.e2e-spec.ts` - Edge case and error handling tests (uses real Dynamic SDK)
+- `test/wallet-multichain.e2e-spec.ts` - Multichain wallet creation tests (uses real Dynamic SDK)
 - `test/app.e2e-spec.ts` - Basic health check tests
+
+### Test Coverage
+
+The test suite covers all requirements from the backend specification:
+
+- ✅ **Wallet Creation**: Tests verify wallets are created via Dynamic SDK for both EVM and Solana chains
+- ✅ **getBalance()**: Tests verify balance queries work correctly for all supported chains
+- ✅ **signMessage()**: Tests verify message signing works via Dynamic SDK for both chain types
+- ⚠️ **sendTransaction()**: Tests are mocked - real transaction tests will be added in follow-up PR (see Future Work)
+
+All tests verify that:
+
+- Wallets are created through Dynamic SDK (not local key generation)
+- Address formats match expected chain-specific formats
+- Signatures are valid and created via Dynamic SDK
+- User isolation is enforced (users can only access their own wallets)
+- Error handling works correctly for invalid inputs
 
 ### Getting a Test Auth Token
 
@@ -541,6 +581,30 @@ const [wallet] = await this.db
 - **Viem**: Modern TypeScript-first library for Ethereum interactions
 - **DrizzleORM**: Type-safe ORM with excellent TypeScript support
 - **Dynamic SDK**: Provides secure authentication and user management
+
+## Future Work
+
+### Real Transaction Testing
+
+Currently, transaction sending tests (`test/wallet-transactions.e2e-spec.ts`) are mocked. A follow-up PR will implement:
+
+1. **Token Deployment**:
+   - Deploy SPL token on Solana testnet
+   - Deploy ERC20 token on Arbitrum Sepolia
+   - Save token addresses to configuration
+
+2. **Faucet Infrastructure**:
+   - Create faucet API endpoints for funding test wallets
+   - Implement rate limiting and security controls
+   - Support both native tokens (SOL, ETH) and test tokens (SPL, ERC20)
+
+3. **Real Transaction Tests**:
+   - Replace mocked transaction tests with real blockchain transactions
+   - Test actual transaction sending on testnets
+   - Verify transaction hashes on blockchain explorers
+   - Test error cases (insufficient balance, invalid addresses)
+
+This will enable comprehensive end-to-end testing of the transaction sending functionality with real blockchain interactions.
 
 ## License
 

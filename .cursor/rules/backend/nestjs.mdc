@@ -19,4 +19,14 @@ alwaysApply: false
 - Optimize database queries for performance
 
 ## Testing
-- Implement API testing, input output
+- Use E2E tests for API endpoints (blackbox testing with real APIs)
+- Use unit tests for services/controllers (mock only external dependencies)
+- All tests use real Dynamic SDK APIs with real API keys (NO MOCKS)
+- See [Backend Testing Rules](./testing.mdc) for detailed testing patterns
+- Test coverage should include:
+  - Wallet creation via Dynamic SDK
+  - Balance queries
+  - Message signing
+  - Transaction sending (may be mocked initially)
+  - Error handling and validation
+  - User isolation and security

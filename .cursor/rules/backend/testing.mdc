@@ -1,0 +1,217 @@
+---
+description: Backend testing standards and patterns for NestJS
+globs: *.spec.ts,**/*.e2e-spec.ts,**/*test.ts
+alwaysApply: false
+---
+# Backend Testing Rules
+
+## Testing Philosophy
+
+**CRITICAL**: All tests use real APIs with real API keys. NO MOCKS allowed for core functionality.
+
+- E2E tests hit real Dynamic SDK endpoints
+- Integration tests use real blockchain RPCs
+- All API calls use actual credentials from environment variables
+- Tests verify end-to-end functionality with real infrastructure
+
+**Exception**: Transaction sending tests may be mocked temporarily when requiring test token deployments and faucet infrastructure. These should be replaced with real implementations in follow-up PRs.
+
+## Test Structure
+
+### E2E Tests (Blackbox API Testing)
+
+- **Location**: `test/*.e2e-spec.ts`
+- **Pattern**: Tests only interact with HTTP endpoints, not internal implementation
+- **Real APIs**: All tests use real Dynamic SDK endpoints (no mocks)
+- **Automated**: Tests run without manual intervention
+- **Comprehensive**: Tests cover all wallet endpoints, error cases, and multichain scenarios
+
+**Example Structure:**
+```typescript
+describe('WalletController (e2e)', () => {
+  let app: INestApplication<App>
+  let authToken: string
+
+  beforeAll(async () => {
+    // Setup real app with real Dynamic SDK
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile()
+    app = moduleFixture.createNestApplication()
+    await app.init()
+    
+    // Get real Dynamic auth token
+    authToken = await getTestAuthToken()
+  })
+
+  it('should create wallet using Dynamic SDK', async () => {
+    // Test hits real API endpoint which uses real Dynamic SDK
+    return request(app.getHttpServer())
+      .post('/wallets')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ chainId: 421614 })
+      .expect(201)
+      .expect(res => {
+        // Verify response structure matches Dynamic SDK output
+        expect(res.body).toHaveProperty('address')
+        expect(res.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
+      })
+  })
+})
+```
+
+### Unit Tests (Service/Controller Testing)
+
+- **Location**: `src/**/*.spec.ts`
+- **Pattern**: Test individual services/controllers in isolation
+- **Mocking**: Only mock external dependencies (database, external APIs)
+- **Real Logic**: Test actual business logic without mocks
+
+**Example Structure:**
+```typescript
+describe('WalletService', () => {
+  let service: WalletService
+  let mockDb: any
+  let mockEncryptionService: jest.Mocked<EncryptionService>
+
+  beforeEach(async () => {
+    // Mock only external dependencies
+    mockDb = { insert: jest.fn(), select: jest.fn() }
+    mockEncryptionService = { encrypt: jest.fn(), decrypt: jest.fn() }
+
+    const module = await Test.createTestingModule({
+      providers: [
+        WalletService,
+        { provide: 'DATABASE', useValue: mockDb },
+        { provide: EncryptionService, useValue: mockEncryptionService },
+      ],
+    }).compile()
+
+    service = module.get<WalletService>(WalletService)
+  })
+
+  it('should create wallet with proper structure', async () => {
+    // Test actual service logic
+    const result = await service.createWallet('user-123', 421614)
+    expect(result).toHaveProperty('address')
+  })
+})
+```
+
+## Test Coverage Requirements
+
+### Required Coverage
+
+- **Wallet Creation**: Test EVM and Solana wallet creation via Dynamic SDK
+- **Balance Queries**: Test balance retrieval for both chain types
+- **Message Signing**: Test message signing for both chain types
+- **Transaction Sending**: Test transaction sending (may be mocked initially)
+- **Error Handling**: Test all error cases and validation
+- **User Isolation**: Test that users can only access their own wallets
+- **Multichain Support**: Test all supported chains
+
+### Test Files Organization
+
+- `test/wallet.e2e-spec.ts` - Main wallet endpoint tests (real APIs)
+- `test/wallet-transactions.e2e-spec.ts` - Transaction sending tests (may be mocked)
+- `test/wallet-multichain.e2e-spec.ts` - Multichain wallet creation tests (real APIs)
+- `test/wallet-edge-cases.e2e-spec.ts` - Edge case and error handling tests (real APIs)
+- `test/app.e2e-spec.ts` - Basic health check tests
+
+## Dynamic SDK Integration Testing
+
+### Wallet Creation Verification
+
+Tests must verify that wallets are created through Dynamic SDK:
+
+```typescript
+it('should create wallet using Dynamic SDK', async () => {
+  const response = await request(app.getHttpServer())
+    .post('/wallets')
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({ chainId: 421614 })
+    .expect(201)
+
+  // Verify response structure matches Dynamic SDK output
+  expect(response.body).toHaveProperty('address')
+  expect(response.body).toHaveProperty('network')
+  expect(response.body).toHaveProperty('chainType')
+  
+  // Verify address format (EVM addresses are 0x-prefixed hex)
+  expect(response.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
+})
+```
+
+### Message Signing Verification
+
+Tests must verify signatures are created via Dynamic SDK:
+
+```typescript
+it('should sign message using Dynamic SDK', async () => {
+  const wallet = await createTestWallet({ app, authToken, chainId: 421614 })
+  
+  const response = await request(app.getHttpServer())
+    .post(`/wallets/${wallet.id}/sign`)
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({ message: 'Test message' })
+    .expect(200)
+
+  // Verify signature format (EVM signatures are 0x-prefixed hex)
+  expect(response.body.signedMessage).toMatch(/^0x[a-fA-F0-9]+$/)
+})
+```
+
+## Environment Setup
+
+### Required Environment Variables
+
+Tests require these environment variables to use real APIs:
+
+- `DYNAMIC_ENVIRONMENT_ID` - Dynamic environment ID
+- `DYNAMIC_API_TOKEN` - Dynamic API token
+- `ENCRYPTION_KEY` - Encryption key (32+ characters)
+- `TEST_AUTH_TOKEN` (optional) - Pre-configured JWT token for testing
+
+### Test Helpers
+
+Use test helpers from `test/utils/`:
+
+- `getTestAuthToken()` - Get real Dynamic auth token
+- `createTestWallet()` - Create test wallet via API
+- `TEST_CHAINS` - Test chain IDs
+- `TEST_ADDRESSES` - Test addresses for validation
+
+## Running Tests
+
+```bash
+# E2E tests (blackbox API tests with real APIs)
+pnpm run test:e2e
+
+# E2E tests in watch mode
+pnpm run test:e2e:watch
+
+# E2E tests for CI (with coverage)
+pnpm run test:e2e:ci
+
+# Unit tests
+pnpm run test
+
+# Test coverage
+pnpm run test:cov
+```
+
+## Best Practices
+
+1. **Use Real APIs**: Always prefer real API calls over mocks
+2. **Test End-to-End**: Test the full flow from HTTP request to response
+3. **Verify Response Structure**: Check that responses match expected formats
+4. **Test Error Cases**: Include tests for validation errors, 404s, 401s
+5. **Clean Up**: Use `afterAll` to close app instances
+6. **Isolation**: Each test should be independent and not rely on others
+7. **Documentation**: Add comments explaining what each test verifies
+
+## Future Work
+
+- Replace mocked transaction tests with real token deployments
+- Add faucet infrastructure for funding test wallets
+- Add integration tests for token operations (SPL, ERC20)
