@@ -1,6 +1,7 @@
 import { Controller, UseGuards, Req } from '@nestjs/common'
 import { TsRestHandler, tsRestHandler } from '@ts-rest/nest'
 import { walletAPIContract } from '@vencura/types'
+import type { CreateWalletInput, SendTransactionInput, SignMessageInput } from '@vencura/types'
 import { WalletService } from './wallet.service'
 import { AuthGuard } from '../auth/auth.guard'
 import type { Request } from 'express'
@@ -25,7 +26,7 @@ export class WalletContractController {
           body: wallets,
         }
       },
-      create: async ({ body }) => {
+      create: async ({ body }: { body: CreateWalletInput }) => {
         const user = req.user
 
         const wallet = await this.walletService.createWallet(user.id, body.chainId)
@@ -34,7 +35,7 @@ export class WalletContractController {
           body: wallet,
         }
       },
-      getBalance: async ({ params }) => {
+      getBalance: async ({ params }: { params: { id: string } }) => {
         const user = req.user
         const { id } = params
 
@@ -44,9 +45,10 @@ export class WalletContractController {
           body: balance,
         }
       },
-      signMessage: async ({ params, body }) => {
+      signMessage: async ({ params, body }: { params: { id: string }; body: SignMessageInput }) => {
         const user = req.user
         const { id } = params
+
         const { message } = body
 
         const result = await this.walletService.signMessage(id, user.id, message)
@@ -55,9 +57,16 @@ export class WalletContractController {
           body: result,
         }
       },
-      sendTransaction: async ({ params, body }) => {
+      sendTransaction: async ({
+        params,
+        body,
+      }: {
+        params: { id: string }
+        body: SendTransactionInput
+      }) => {
         const user = req.user
         const { id } = params
+
         const { to, amount } = body
 
         const result = await this.walletService.sendTransaction(id, user.id, to, amount)

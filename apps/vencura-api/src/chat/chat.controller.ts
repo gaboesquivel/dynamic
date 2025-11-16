@@ -41,7 +41,7 @@ export class ChatController {
         res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`)
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const finishReason = await result.finishReason
       res.write(`data: ${JSON.stringify({ finishReason })}\n\n`)
       res.write('data: [DONE]\n\n')
@@ -56,7 +56,7 @@ export class ChatController {
         fullText += String(chunk)
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
       const finishReason = await result.finishReason
 
       res.json({

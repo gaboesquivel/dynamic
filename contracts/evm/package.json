@@ -1,0 +1,18 @@
+{
+  "name": "@workspace/contracts-evm",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "test:coverage": "forge coverage",
+    "test:snapshot": "forge snapshot",
+    "fmt": "forge fmt",
+    "deploy:local": "forge script script/TestToken.s.sol:TestTokenScript --rpc-url http://localhost:8545 --broadcast",
+    "deploy:anvil": "anvil"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

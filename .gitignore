@@ -35,6 +35,14 @@ build
 dist
 bin
 
+# Contracts
+contracts/evm/out/
+contracts/evm/cache/
+contracts/evm/broadcast/
+contracts/solana/target/
+contracts/solana/.anchor/
+contracts/solana/**/*.so
+
 
 # Debug
 npm-debug.log*

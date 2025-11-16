@@ -153,12 +153,34 @@ export class WalletService {
     if (!wallet) throw new NotFoundException('Wallet not found')
 
     // Destructure wallet properties
-    const { network, address, privateKeyEncrypted, chainType } = wallet
+    const { network, address, privateKeyEncrypted, chainType: chainTypeRaw } = wallet
+
+    // Validate chainType is a valid ChainType
+    const validChainTypes: ChainType[] = [
+      'evm',
+      'solana',
+      'cosmos',
+      'bitcoin',
+      'flow',
+      'starknet',
+      'algorand',
+      'sui',
+      'spark',
+      'tron',
+    ]
+    if (!validChainTypes.includes(chainTypeRaw as ChainType)) {
+      throw new BadRequestException(`Invalid chain type: ${chainTypeRaw}`)
+    }
+
+    // Type is now validated, safe to cast
+
+    const chainType = chainTypeRaw as ChainType
 
     // Validate recipient address based on wallet's chain type
-    if (!validateAddress({ address: to, chainType: chainType as ChainType })) {
+
+    if (!validateAddress({ address: to, chainType })) {
       throw new BadRequestException(
-        `Invalid address format for chain type ${chainType}. Please provide a valid ${chainType} address.`,
+        `Invalid address format for chain type ${chainTypeRaw}. Please provide a valid ${chainTypeRaw} address.`,
       )
     }
 

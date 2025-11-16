@@ -19,6 +19,9 @@ dynamic/
 │   ├── ui/            # Shared Shadcn/ui component library
 │   ├── eslint-config/ # Shared ESLint configuration
 │   └── typescript-config/ # Shared TypeScript configuration
+├── contracts/         # Smart contracts
+│   ├── evm/           # EVM contracts (Foundry)
+│   └── solana/        # Solana programs (Anchor)
 └── infra/             # Infrastructure as Code
     └── vencura/       # Pulumi infrastructure for Vencura API
 ```
@@ -30,6 +33,8 @@ See individual project READMEs for detailed documentation:
 - **[Vencura API](./apps/vencura-api/README.md)** - Backend API documentation
 - **[Vencura Web](./apps/vencura-web/README.md)** - Frontend application documentation
 - **[Mathler](./apps/mathler/README.md)** - Mathler game documentation
+- **[EVM Contracts](./contracts/evm/README.md)** - EVM smart contracts (Foundry)
+- **[Solana Contracts](./contracts/solana/README.md)** - Solana programs (Anchor)
 - **[Infrastructure](./infra/README.md)** - Infrastructure setup and deployment
 
 ## Standards & Conventions
@@ -91,13 +96,23 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 
 ## Projects
 
+### Applications
+
 - **[Vencura API](./apps/vencura-api/README.md)** - NestJS backend for multichain custodial wallet management
 - **[Vencura Web](./apps/vencura-web/README.md)** - Next.js frontend for Vencura API
 - **[Mathler](./apps/mathler/README.md)** - Next.js Mathler game
+
+### Packages
+
 - **[@vencura/core](./packages/vencura-core/README.md)** - TypeScript SDK (auto-generated)
 - **[@vencura/react](./packages/vencura-react/README.md)** - React hooks with TanStack Query
 - **[@vencura/ai](./packages/vencura-ai/README.md)** - AI chatbot component and SDK for wallet operations
 - **[UI Package](./packages/ui/README.md)** - Shared Shadcn/ui components
+
+### Contracts
+
+- **[EVM Contracts](./contracts/evm/README.md)** - Foundry-based test token contracts for EVM chains
+- **[Solana Contracts](./contracts/solana/README.md)** - Anchor-based test token programs for Solana
 
 ### Live Deployments
 
@@ -125,6 +140,23 @@ pnpm check-types
 
 # Run quality checks (install, format, lint, build, test)
 pnpm run qa
+
+# Build contracts
+pnpm run contracts:evm:build      # Build EVM contracts
+pnpm run contracts:solana:build  # Build Solana programs
+
+# Test contracts
+pnpm run contracts:evm:test       # Test EVM contracts
+pnpm run contracts:solana:test    # Test Solana programs
 ```
 
 For project-specific setup, see individual project READMEs linked in [Projects](#projects).
+
+## Contracts
+
+This monorepo includes smart contracts for both EVM and Solana chains:
+
+- **EVM Contracts** (`contracts/evm/`): Built with Foundry, includes TestToken contract for testing and faucet purposes
+- **Solana Contracts** (`contracts/solana/`): Built with Anchor framework, includes TestToken program matching EVM functionality
+
+Both implementations provide open minting/burning functionality for testing environments. See the respective README files for detailed documentation.

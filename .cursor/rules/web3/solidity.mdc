@@ -7,7 +7,8 @@ alwaysApply: false
 
 ## Core Principles
 - Use latest stable Solidity version (^0.8.20)
-- Use custom errors instead of revert strings
+- Use custom errors instead of revert strings (when validation is needed)
+- For test contracts with intentionally open access (e.g., faucet tokens), custom errors may not be necessary
 
 ## Contract Structure
 ```solidity

@@ -41,7 +41,7 @@ export class ChatService {
     const model = options.model || 'gpt-4o-mini'
     const tools = createWalletTools(this.walletService, userId)
 
-    return streamText({
+    const result = streamText({
       model: openai(model, { apiKey: openAiKey }),
       messages: messages.map(msg => ({
         role: msg.role,
@@ -50,7 +50,9 @@ export class ChatService {
       tools,
       temperature: options.temperature ?? 0.7,
       maxTokens: options.maxTokens,
-    }) as StreamTextResult<ReturnType<typeof createWalletTools>>
+    })
+
+    return result as StreamTextResult<ReturnType<typeof createWalletTools>>
   }
 
   getTools() {

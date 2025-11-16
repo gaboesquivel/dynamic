@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+.next
+out
+dist
+build
+bin
+target
+.anchor
+
+# Contracts
+contracts/**/*.sol
+contracts/**/*.rs
+contracts/solana/**/*.ts
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Generated files
+*.generated.*
+**/target/**
+
+# Logs
+*.log
+
+# Coverage
+coverage
+
+# Test results
+test-results
+playwright-report
+
