@@ -14,11 +14,11 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 export class ChatMessageDto {
   @ApiProperty({ enum: ['user', 'assistant', 'system'] })
   @IsString()
-  role: 'user' | 'assistant' | 'system'
+  role!: 'user' | 'assistant' | 'system'
 
   @ApiProperty()
   @IsString()
-  content: string
+  content!: string
 }
 
 export class ChatRequestDto {
@@ -26,7 +26,7 @@ export class ChatRequestDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ChatMessageDto)
-  messages: ChatMessageDto[]
+  messages!: ChatMessageDto[]
 
   @ApiPropertyOptional()
   @IsOptional()

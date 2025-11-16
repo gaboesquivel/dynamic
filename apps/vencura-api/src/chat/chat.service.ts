@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { openai, streamText } from 'ai'
-import type { StreamTextResult } from 'ai'
+import { streamText } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
 import { WalletService } from '../wallet/wallet.service'
 import { createWalletTools } from './tools/wallet-tools'
 
@@ -11,7 +11,7 @@ export interface ChatMessage {
 }
 
 export interface ChatRequest {
-  messages: ChatMessage[]
+  messages?: ChatMessage[]
   model?: string
   stream?: boolean
   temperature?: number
@@ -25,11 +25,7 @@ export class ChatService {
     private readonly walletService: WalletService,
   ) {}
 
-  streamChat(
-    messages: ChatMessage[],
-    userId: string,
-    options: ChatRequest = {},
-  ): StreamTextResult<ReturnType<typeof createWalletTools>> {
+  streamChat(messages: ChatMessage[], userId: string, options: Omit<ChatRequest, 'messages'> = {}) {
     const openAiKey = this.configService.get<string>('ai.openAiKey')
 
     if (!openAiKey) {
@@ -40,19 +36,20 @@ export class ChatService {
 
     const model = options.model || 'gpt-4o-mini'
     const tools = createWalletTools(this.walletService, userId)
+    const openai = createOpenAI({ apiKey: openAiKey })
 
-    const result = streamText({
-      model: openai(model, { apiKey: openAiKey }),
+    const streamTextOptions = {
+      model: openai(model),
       messages: messages.map(msg => ({
         role: msg.role,
         content: msg.content,
       })),
       tools,
       temperature: options.temperature ?? 0.7,
-      maxTokens: options.maxTokens,
-    })
+      ...(options.maxTokens !== undefined && { maxTokens: options.maxTokens }),
+    }
 
-    return result as StreamTextResult<ReturnType<typeof createWalletTools>>
+    return streamText(streamTextOptions)
   }
 
   getTools() {
