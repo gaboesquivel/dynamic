@@ -1,4 +1,4 @@
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 import { useDynamicContext, getAuthToken } from '@dynamic-labs/sdk-react-core'
 import { useMemo } from 'react'
 

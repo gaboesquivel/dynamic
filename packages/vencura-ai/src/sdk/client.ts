@@ -68,8 +68,8 @@ export class ChatbotSDK {
       },
       body: JSON.stringify({
         messages: validatedMessages,
-        stream: true,
         ...validatedOptions,
+        stream: true,
       }),
     })
 
@@ -84,6 +84,7 @@ export class ChatbotSDK {
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
+    let buffer = ''
 
     try {
       while (true) {
@@ -91,11 +92,16 @@ export class ChatbotSDK {
         if (done) break
 
         const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n').filter(line => line.trim())
+        buffer += chunk
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
+        let newlineIndex: number
+        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+          const line = buffer.slice(0, newlineIndex).trim()
+          buffer = buffer.slice(newlineIndex + 1)
+          if (!line) continue
+
+          if (line.startsWith('data:')) {
+            const data = line.replace(/^data:\s*/, '')
             if (data === '[DONE]') {
               return
             }
