@@ -56,6 +56,8 @@ Install Foundry dependencies:
 forge install
 ```
 
+This will install OpenZeppelin Contracts and other dependencies. The `lib/` directory is gitignored to ensure dependencies remain pristine and are installed via Foundry's dependency management.
+
 ## Usage
 
 ### Build

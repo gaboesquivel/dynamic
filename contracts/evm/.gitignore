@@ -12,3 +12,6 @@ docs/
 
 # Dotenv file
 .env
+
+# Dependencies - should be installed via forge install, not tracked in git
+lib/

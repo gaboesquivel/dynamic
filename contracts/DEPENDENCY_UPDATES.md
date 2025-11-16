@@ -23,23 +23,29 @@
   - Updated in `test/TestToken.t.sol`
   - Updated in `script/TestToken.s.sol`
 
-## ⚠️ Pending Security Update
+## 🚨 Critical Security Update - Immediate Action Required
 
 ### OpenZeppelin Contracts
 
 - **Current Version**: `5.2.0` (vendored)
 - **Required Version**: `≥5.4.0` (for security patch)
-- **Status**: Documented in `contracts/evm/SECURITY.md`
-- **Action Required**: Replace entire `contracts/evm/lib/openzeppelin-contracts` directory
+- **Status**: **Critical - Immediate Action Required**
+- **Remediation Deadline**: **Must be completed within 7 days**
+- **Owner/Responsible Party**: Contract maintainers / Security team
 
-**Critical Vulnerability**: The `lastIndexOf(bytes,byte,uint256)` function in version 5.2.0 may access uninitialized memory. This requires updating the vendored OpenZeppelin Contracts library.
+**Critical Vulnerability**: The `lastIndexOf(bytes,byte,uint256)` function in OpenZeppelin Contracts version 5.2.0 contains a critical vulnerability that may access uninitialized memory when the buffer is empty and position != max uint256. This can lead to unpredictable behavior and potential security risks.
 
-**Update Process**:
+**Impact**: Uninitialized memory access can result in reading arbitrary memory contents, potentially exposing sensitive data or causing unexpected contract behavior.
 
-1. Download OpenZeppelin Contracts ≥5.4.0
-2. Replace `contracts/evm/lib/openzeppelin-contracts` directory
-3. Verify imports remain compatible
-4. Run `forge build` and `forge test` to verify
+**Remediation Steps**:
+
+1. Download OpenZeppelin Contracts ≥5.4.0 from the official repository
+2. Replace the entire `contracts/evm/lib/openzeppelin-contracts` directory with the updated version
+3. Verify all imports remain compatible with the updated library
+4. Run `forge build` to ensure contracts compile successfully
+5. Run `forge test` to verify all tests pass
+6. Perform security checks and review any breaking changes in the updated version
+7. Update `contracts/evm/lib/openzeppelin-contracts/package.json` version field to reflect the new version
 
 ## Verification Status
 

@@ -1,7 +1,7 @@
 import { Controller, Post, Get, Body, UseGuards, Res, HttpCode, HttpStatus } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
-import { Response } from 'express'
+import type { Response } from 'express'
 import { ChatService } from './chat.service'
 import { ChatRequestDto } from './dto/chat.dto'
 import { AuthGuard } from '../auth/auth.guard'
