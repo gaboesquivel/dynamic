@@ -138,7 +138,7 @@ cast <subcommand>
 
 Foundry configuration is in `foundry.toml`:
 
-- Solidity version: `0.8.20`
+- Solidity version: `0.8.24`
 - Optimizer: Enabled (200 runs)
 - Fuzz tests: 256 runs
 - Remappings: OpenZeppelin contracts
