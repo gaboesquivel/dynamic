@@ -4,9 +4,6 @@
       "command": "bunx",
       "args": ["shadcn@latest", "mcp"]
     },
-    "supabase": {
-      "url": "https://mcp.supabase.com/mcp"
-    },
     "v0": {
       "command": "bunx",
       "args": [
