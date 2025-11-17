@@ -459,15 +459,6 @@ The codebase has **12 well-documented ADRs**:
 1. **`@tanstack/react-query-devtools`**
    - **Recommendation**: ✅ **High Priority** - Add for better DX
 
-2. **`@storybook/react`**
-   - **Use Case**: Component development
-   - **Recommendation**: Consider if building component library
-
-3. **`msw`** (Mock Service Worker)
-   - **Use Case**: API mocking in tests
-   - **Current**: No mocks policy
-   - **Recommendation**: Only if needed for UI-only tests
-
 ---
 
 ## 6. Recommendations Summary

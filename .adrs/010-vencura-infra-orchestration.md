@@ -4,6 +4,15 @@
 
 **Current Deployment**: The Vencura API is currently deployed to **Vercel** for all environments. Vercel provides excellent support for NestJS applications with reduced cold starts, automatic scaling, and seamless integration with our monorepo.
 
+**Vercel's 2024 Backend Improvements**:
+
+- Zero-configuration support for NestJS (no manual setup required)
+- Fluid Compute with Active CPU pricing (automatic scaling, pay-for-what-you-use)
+- Significantly reduced cold starts for backend APIs
+- Native support for long-running backend applications
+
+**Vercel MCP Integration**: We use Vercel MCP (Model Context Protocol) server for AI-assisted deployment workflows, allowing Composer 1 to deploy, monitor, and manage Vercel resources directly.
+
 **Google Cloud Option**: We're working on a Google Cloud deployment option using Pulumi and GitHub Actions for production workloads that require enhanced control, security, and extensibility. See [Google Cloud Deployment Option](../../docs/google-cloud-deployment.md) for details.
 
 ## Context
@@ -158,7 +167,9 @@ We will use **Pulumi with TypeScript** for infrastructure orchestration of the G
 - Preview and rollback capabilities for safer deployments
 - Support for ephemeral PR deployments and environment-based configurations
 
-**Note**: This decision applies to the Google Cloud deployment option. The primary deployment platform is Vercel, which provides excellent developer experience and reduced cold starts for backend APIs. The Google Cloud option is intended for production workloads requiring enhanced security, control, and extensibility.
+**Note**: This decision applies to the Google Cloud deployment option. The primary deployment platform is Vercel, which provides excellent developer experience and reduced cold starts for backend APIs (especially with 2024 improvements). The Google Cloud option is intended for production workloads requiring enhanced security, control, and extensibility.
+
+**Portable-by-Default Architecture**: Our infrastructure is designed for portability. We avoid vendor-specific features by default to maintain portability, but can leverage vendor features (e.g., Vercel edge functions, Cloud Run features) pragmatically when scaling/performance needs justify from product/business perspective. The stack can run on any Linux distribution and be deployed to any containerized platform. Vercel is chosen for convenience and rapid deployment, not as a requirement.
 
 ## Deployment Strategy
 
@@ -243,8 +254,10 @@ The production environment:
 
 - Fast iteration and deployment are priorities
 - Standard security and compliance requirements are sufficient
-- Cold starts are acceptable (Vercel has significantly reduced cold starts)
+- Cold starts are acceptable (Vercel has significantly reduced cold starts with 2024 improvements)
 - Simplicity and ease of use are important
+- Leveraging Vercel MCP for AI-assisted deployment workflows
+- Rapid prototyping and development
 
 **Use Google Cloud when:**
 
@@ -253,4 +266,5 @@ The production environment:
 - Avoiding cold starts is critical (persistent instances)
 - Integration with other GCP services is required
 - Custom networking or security policies are needed
-- Handling sensitive financial data (wallet API) requires additional controls
+- **Handling sensitive financial data (custodial wallet) requires additional controls and data governance**
+- Production workloads requiring strict data governance and security compliance
