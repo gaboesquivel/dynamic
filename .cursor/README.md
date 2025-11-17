@@ -47,12 +47,20 @@ The `mcp.json` file configures Model Context Protocol (MCP) servers that enhance
 
 - `shadcn`: Provides UI component management capabilities using shadcn/ui
 - `v0`: Connects to v0.dev for UI design and generation capabilities
-- `supabase`: Connects to Supabase for database and backend capabilities
+- `github`: Connects to GitHub for repository management and operations
+- `vercel`: Connects to Vercel for deployment and project management
 
 ### Authentication
 
-- **shadcn**: Uses local CLI command execution
+- **shadcn**: Uses local CLI command execution (no API key required)
 - **v0**: Requires `V0_API_KEY` environment variable
-- **supabase**: Uses OAuth authentication flow via browser
+- **github**: Requires `GITHUB_TOKEN` environment variable
+- **vercel**: Requires `VERCEL_API_TOKEN` environment variable
+
+### Package Manager
+
+All MCP servers use `pnpm dlx` to execute commands, consistent with the project's package manager choice.
+
+For detailed usage documentation, see [MCP Servers Guide](../../docs/mcp-servers.md).
 
 For more information on Cursor rules and MCP, see the [official documentation](https://cursor.com/docs/context/rules) and [MCP documentation](https://cursor.com/docs/context/model-context-protocol).

@@ -106,7 +106,7 @@ Serverless container platform on Azure.
 
 ### Option E – Vercel
 
-Serverless platform optimized for Next.js and Node.js.
+Serverless platform optimized for Next.js and Node.js, with significant 2024 improvements for backend support.
 
 **Pros**
 
@@ -114,15 +114,21 @@ Serverless platform optimized for Next.js and Node.js.
 - Simple deployment process
 - Built-in CI/CD
 - Good performance for serverless functions
+- **2024 Backend Improvements:**
+  - Zero-configuration support for NestJS (no manual setup required)
+  - Fluid Compute with Active CPU pricing (automatic scaling, pay-for-what-you-use)
+  - Significantly reduced cold starts for backend APIs
+  - Native support for long-running backend applications
+- Seamless integration with monorepo structure
+- MCP integration for AI-assisted deployment workflows
 
 **Cons**
 
-- Limited WebSocket support
-- Function execution time limits
-- Not designed for long-running applications
-- NestJS requires significant adaptation
-- More expensive at scale
-- Less suitable for traditional backend APIs
+- Limited WebSocket support (improved but still has limitations)
+- Function execution time limits (mitigated by Fluid Compute)
+- More expensive at scale compared to Cloud Run
+- Less suitable for workloads requiring strict data governance (custodial wallet security)
+- Vendor-specific features can create lock-in if not managed carefully
 
 ### Option F – Railway
 
@@ -203,3 +209,15 @@ We will deploy the NestJS Vencura API on **Google Cloud Run with Docker containe
 - Monitor Cloud Run metrics and Cloudflare analytics for optimization opportunities
 - Consider Cloudflare Workers for edge computing needs in the future
 - Review pricing regularly as traffic scales to optimize costs
+
+## Portable-by-Default Architecture
+
+**Critical architectural principle**: Our infrastructure is designed for portability:
+
+- **Default approach**: Avoid vendor-specific features to maintain portability
+- **Pragmatic exceptions**: Leverage vendor-specific features (e.g., Vercel edge functions, Cloud Run features) when scaling/performance needs justify from product/business perspective
+- **Platform-agnostic**: Stack can run on any Linux distribution and be deployed to any containerized platform (Docker, Kubernetes, etc.)
+- **Vercel as convenience**: Vercel is chosen for rapid deployment and excellent developer experience, not as a requirement
+- **All core components** can be migrated to any platform without code changes
+
+**For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it preferred for production workloads requiring strict data governance. Vercel is suitable for development and rapid iteration, while Google Cloud offers the enhanced security and control needed for handling sensitive financial data.
