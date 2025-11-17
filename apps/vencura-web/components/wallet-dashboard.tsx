@@ -1,5 +1,6 @@
 'use client'
 
+import { isEmpty } from 'lodash'
 import { useQueryState, parseAsInteger } from 'nuqs'
 import { Button } from '@workspace/ui/components/button'
 import { useWallets, useCreateWallet } from '@vencura/react'
@@ -65,7 +66,7 @@ export function WalletDashboard() {
         <h2 className="text-xl font-bold mb-4">Your Wallets</h2>
         {loadingWallets ? (
           <div className="text-muted-foreground py-4">Loading wallets...</div>
-        ) : wallets.length === 0 ? (
+        ) : isEmpty(wallets) ? (
           <div className="text-muted-foreground py-4">
             No wallets yet. Create your first wallet above.
           </div>

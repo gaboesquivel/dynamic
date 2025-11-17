@@ -11,6 +11,9 @@ alwaysApply: false
 
 ## API Design
 - Use DTOs with class-validator for input validation
+  - **DTOs (Data Transfer Objects)** in NestJS controllers should use `class-validator` decorators
+  - This is the NestJS standard and exception to the zod preference
+- Use zod for all other schemas (tool parameters, environment variables, internal validation)
 - Document APIs with Swagger/OpenAPI
 
 ## Database Access

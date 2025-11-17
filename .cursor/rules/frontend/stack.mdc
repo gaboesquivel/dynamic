@@ -32,10 +32,14 @@ alwaysApply: false
   - Use for wallet connections and contract reads/writes
 
 ### Validation & Type Safety
-- **zod**: Schema validation
+- **zod**: Schema validation (primary choice for all schemas)
+  - **CRITICAL: Use zod as the primary schema validation tool**
   - Use for runtime type validation
   - Validate API responses and form inputs
+  - Validate environment variables
+  - Use for tool parameters in AI integrations
   - Integrate with TypeScript for type inference
+  - **Exception**: NestJS DTOs use `class-validator` (per NestJS conventions)
 
 ### Authentication & Actions
 - **@dynamic-labs/sdk-react-core**: Secure wallet authentication solution
@@ -55,10 +59,15 @@ alwaysApply: false
   - Prefer TanStack Query for data fetching
   - Use for non-data-fetching async operations
 - **lodash**: Utility functions
-  - **Prefer lodash over custom implementations** for common operations
-  - Use lodash for array manipulation, object operations, string utilities, and functional programming helpers
+  - **CRITICAL: Prefer lodash over custom implementations** for common operations
+  - Use lodash for array manipulation (`isEmpty`, `uniq`, `groupBy`, `chunk`, `filter`, `map` when complex)
+  - Use lodash for object operations (`merge`, `pick`, `omit`, `isEmpty`, `isPlainObject`)
+  - Use lodash for type checking (`isString`, `isNumber`, `isEmpty`, `isPlainObject`, `isArray`)
+  - Use lodash for string transformations (`camelCase`, `kebabCase`, `startCase`)
+  - Use lodash for functional utilities (`debounce`, `throttle`, `memoize`)
   - Import specific functions to reduce bundle size: `import { debounce, isEmpty, merge } from 'lodash'`
   - Only use native JavaScript when lodash doesn't provide a clear benefit or adds unnecessary complexity
+  - **Anti-pattern**: Don't write custom `isEmpty`, `uniq`, `debounce`, or similar utilities - use lodash
 
 ## Usage Patterns
 
