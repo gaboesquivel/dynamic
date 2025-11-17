@@ -3,9 +3,9 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { AppModule } from '../src/app.module'
-import { getTestAuthToken } from './utils/dynamic-auth'
-import { TEST_CHAINS, TEST_MESSAGES } from './utils/fixtures'
-import { createTestWallet } from './utils/test-helpers'
+import { getTestAuthToken } from './auth'
+import { TEST_CHAINS, TEST_MESSAGES } from './fixtures'
+import { createTestWallet } from './helpers'
 
 describe('WalletController Edge Cases (e2e)', () => {
   let app: INestApplication<App>

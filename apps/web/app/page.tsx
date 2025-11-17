@@ -1,6 +1,7 @@
 'use client'
 
 import { useDynamicContext, getAuthToken } from '@dynamic-labs/sdk-react-core'
+import { delay } from '@vencura/lib'
 import { DynamicWidget } from '@/lib/dynamic'
 import { Button } from '@workspace/ui/components/button'
 import { WalletDashboard } from '@/components/wallet-dashboard'
@@ -37,7 +38,8 @@ export default function Page() {
       try {
         await navigator.clipboard.writeText(token)
         setState({ copied: true })
-        setTimeout(() => setState({ copied: false }), 2000)
+        await delay(2000)
+        setState({ copied: false })
       } catch (err) {
         console.error('Failed to copy token:', err)
         setState({ copied: false })

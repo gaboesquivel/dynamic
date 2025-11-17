@@ -34,7 +34,8 @@ dynamic/
 │   ├── react/         # React hooks for Vencura API using TanStack Query
 │   ├── ai/            # AI chatbot component and SDK
 │   ├── types/         # Shared API contracts and types
-│   └── ui/            # Shared Shadcn/ui component library
+│   ├── ui/            # Shared Shadcn/ui component library
+│   └── lib/           # Shared utility library (@vencura/lib)
 ├── config/            # Shared configurations
 │   ├── eslint/        # Shared ESLint configuration
 │   └── typescript/    # Shared TypeScript configuration

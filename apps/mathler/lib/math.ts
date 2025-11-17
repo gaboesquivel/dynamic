@@ -66,25 +66,6 @@ export function evaluateExpression(expr: string): number | null {
 }
 
 /**
- * Generates a consistent date key in YYYY-MM-DD format
- * @param date - Optional date, defaults to today
- * @returns Date string in YYYY-MM-DD format
- */
-export function getDateKey(date?: Date): string {
-  const d = date ?? new Date()
-
-  // Validate date is valid
-  if (isNaN(d.getTime())) {
-    throw new Error('Invalid date provided to getDateKey')
-  }
-
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-/**
  * Generates a random target number for daily puzzles
  * Uses current date as seed for daily consistency
  */

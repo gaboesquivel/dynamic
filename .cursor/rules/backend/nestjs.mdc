@@ -16,6 +16,13 @@ alwaysApply: false
 - Use zod for all other schemas (tool parameters, environment variables, internal validation)
 - Document APIs with Swagger/OpenAPI
 
+## Utility Libraries
+- **@vencura/lib**: Shared utility library for common operations
+  - **Error utilities**: Use `sanitizeErrorMessage` in exception filters for production error sanitization
+  - **Async utilities**: Use `fetchWithTimeout` for external API calls (addresses security LOW-003)
+  - **Error handling**: Use `getErrorMessage` to extract error messages consistently
+  - Import from `@vencura/lib`: `import { sanitizeErrorMessage, fetchWithTimeout } from '@vencura/lib'`
+
 ## Database Access
 - Use the repository pattern for database operations
 - Use Drizzle for database interactions

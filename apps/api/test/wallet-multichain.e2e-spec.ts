@@ -3,8 +3,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { AppModule } from '../src/app.module'
-import { getTestAuthToken } from './utils/dynamic-auth'
-import { TEST_CHAINS } from './utils/fixtures'
+import { getTestAuthToken } from './auth'
+import { TEST_CHAINS } from './fixtures'
 
 describe('WalletController Multichain (e2e)', () => {
   let app: INestApplication<App>

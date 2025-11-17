@@ -22,7 +22,7 @@ import {
   SignMessageResult as SignMessageResultSchema,
   SendTransactionResult as SendTransactionResultSchema,
 } from '@vencura/types/schemas'
-import { validateResponse } from '../utils/validate-response'
+import { validateResponse } from '../validate'
 import { walletsKeys } from './keys'
 
 // Re-export query keys for convenience

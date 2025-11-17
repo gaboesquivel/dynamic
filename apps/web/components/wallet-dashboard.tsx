@@ -6,7 +6,7 @@ import { Button } from '@workspace/ui/components/button'
 import { useWallets, useCreateWallet } from '@vencura/react'
 import { WalletCard } from './wallet-card'
 import { SUPPORTED_CHAINS } from '@/lib/chains'
-import { getErrorMessage } from '@/lib/error-utils'
+import { getErrorMessage } from '@/lib/error'
 
 export function WalletDashboard() {
   const [chainId, setChainId] = useQueryState('chainId', parseAsInteger.withDefault(421614)) // Default to Arbitrum Sepolia

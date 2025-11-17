@@ -1,18 +1,18 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MathlerGame } from './mathler-game'
-import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@/lib/math-utils'
-import { calculateFeedback } from '@/lib/feedback-utils'
+import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@/lib/math'
+import { calculateFeedback } from '@/lib/feedback'
 
 // Mock the utility functions to control game behavior
-jest.mock('@/lib/math-utils', () => ({
+jest.mock('@/lib/math', () => ({
   evaluateExpression: jest.fn(),
   getRandomTarget: jest.fn(),
   generateSolutionEquation: jest.fn(),
   getDateKey: jest.fn(() => '2024-01-01'),
 }))
 
-jest.mock('@/lib/feedback-utils', () => ({
+jest.mock('@/lib/feedback', () => ({
   calculateFeedback: jest.fn(),
 }))
 

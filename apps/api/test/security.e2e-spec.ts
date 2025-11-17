@@ -5,8 +5,8 @@ import { App } from 'supertest/types'
 import { AppModule } from '../src/app.module'
 import { RequestIdMiddleware } from '../src/common/request-id.middleware'
 import helmet from 'helmet'
-import { getTestAuthToken } from './utils/dynamic-auth'
-import { TEST_CHAINS } from './utils/fixtures'
+import { getTestAuthToken } from './auth'
+import { TEST_CHAINS } from './fixtures'
 
 /**
  * Comprehensive security test suite.

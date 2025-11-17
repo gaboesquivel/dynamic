@@ -27,10 +27,8 @@ export const TEST_MESSAGES = {
   SPECIAL_CHARS: 'Test message with special chars: !@#$%^&*()',
 } as const
 
-export function generateTestEmail(): string {
-  return `test-${Date.now()}-${Math.random().toString(36).substring(7)}@test.vencura.com`
-}
+export const generateTestEmail = () =>
+  `test-${Date.now()}-${Math.random().toString(36).substring(7)}@test.vencura.com`
 
-export function generateTestWalletId(): string {
-  return `wallet-${Date.now()}-${Math.random().toString(36).substring(7)}`
-}
+export const generateTestWalletId = () =>
+  `wallet-${Date.now()}-${Math.random().toString(36).substring(7)}`

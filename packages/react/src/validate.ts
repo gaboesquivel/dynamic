@@ -1,8 +1,8 @@
 import { z } from 'zod'
+import { formatZodErrors } from '@vencura/lib'
 
 /**
  * Validates API response data against a zod schema.
- * Follows RORO pattern (Receive an Object, Return an Object).
  *
  * @param params - Validation parameters
  * @param params.data - The data to validate
@@ -32,9 +32,7 @@ export function validateResponse<T extends z.ZodTypeAny>({
   const result = schema.safeParse(data)
 
   if (!result.success) {
-    const errors = result.error.errors
-      .map(err => `${err.path.join('.')}: ${err.message}`)
-      .join(', ')
+    const errors = formatZodErrors(result.error).join(', ')
     throw new Error(`${errorMessage}: ${errors}`)
   }
 

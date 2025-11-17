@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import jwt, { type JwtPayload } from 'jsonwebtoken'
 import * as schema from '../database/schema'
 import { eq } from 'drizzle-orm'
+import { fetchWithTimeout } from '@vencura/lib'
 
 @Injectable()
 export class AuthService {
@@ -18,14 +19,16 @@ export class AuthService {
 
     if (!environmentId || !apiToken) throw new Error('Dynamic configuration is not set')
 
-    const response = await fetch(
-      `https://app.dynamicauth.com/api/v0/environments/${environmentId}/keys`,
-      {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const response: Response = await fetchWithTimeout({
+      url: `https://app.dynamicauth.com/api/v0/environments/${environmentId}/keys`,
+      options: {
         headers: {
           Authorization: `Bearer ${apiToken}`,
         },
       },
-    )
+      timeoutMs: 5000,
+    })
 
     if (!response.ok) throw new Error('Failed to fetch Dynamic public key')
 
@@ -40,7 +43,7 @@ export class AuthService {
     return publicKey
   }
 
-  async verifyToken(token: string) {
+  async verifyToken(token: string): Promise<{ id: string; email: string }> {
     try {
       const publicKey = await this.getPublicKey()
 

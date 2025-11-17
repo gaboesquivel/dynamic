@@ -4,7 +4,7 @@ import { useSetState } from 'react-use'
 import { Button } from '@workspace/ui/components/button'
 import { useWalletBalance, useSignMessage, useSendTransaction, type Wallet } from '@vencura/react'
 import { getChainByNetworkId } from '@/lib/chains'
-import { getErrorMessage } from '@/lib/error-utils'
+import { getErrorMessage } from '@/lib/error'
 import { signMessageSchema, sendTransactionSchema, validateAddressInput } from '@/lib/validation'
 
 interface WalletCardState {
