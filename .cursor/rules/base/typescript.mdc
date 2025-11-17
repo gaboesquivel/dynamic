@@ -18,12 +18,75 @@ alwaysApply: false
   - **Example**: `type EnvSchema = z.infer<typeof envSchema>` ✅ (utility type)
 - Avoid enums; use maps or union types instead
 - Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`)
-- Follow the RORO (Receive an Object, Return an Object) pattern for function arguments and return values
+- Follow the RORO (Receive an Object, Return an Object) pattern for function arguments **only when there are multiple parameters**; single-parameter functions use direct parameters
 - Use lowercase-with-dashes for directories (e.g., `components/auth-wizard`)
 - Favor named exports for components
   - **Exception**: Next.js pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`) require default exports
 - Use functional & declarative programming patterns; avoid classes
 - Infer types and keep them inline unless you need to reuse them
+
+## Type Inference Enforcement
+
+**Critical Rule**: Always enforce type inference - define return types in functions, never in consumers.
+
+### Function Definitions
+- **Functions MUST define explicit return types**: Always specify return types in function signatures
+  - ✅ **Good**: `function getUser(id: string): User { ... }`
+  - ✅ **Good**: `const getUser = (id: string): User => { ... }`
+  - ❌ **Bad**: `function getUser(id: string) { ... }` (missing return type)
+- **Use `ReturnType<typeof function>` only in function definitions**, not in consumers
+  - ✅ **Good**: `type Handler = ReturnType<typeof createHandler>` (in type definition)
+  - ❌ **Bad**: `const handler: ReturnType<typeof createHandler> = createHandler()` (in consumer)
+
+### Consumer Code
+- **Consumers MUST infer types from function return values**: Never explicitly type variables that receive function results
+  - ✅ **Good**: `const user = getUser(id)` (type inferred from `getUser` return type)
+  - ✅ **Good**: `const response = await fetchWithTimeout({ url, options })` (type inferred)
+  - ❌ **Bad**: `const user: User = getUser(id)` (redundant explicit type)
+  - ❌ **Bad**: `const response: Promise<Response> = fetchWithTimeout({ url, options })` (should infer)
+- **Never add explicit type imports just to help inference**: If TypeScript isn't resolving function types correctly, fix the function definition instead
+  - ❌ **Bad**: Adding `import type { User } from './types'` just to type a consumer variable
+  - ✅ **Good**: Ensure the function has an explicit return type, then let consumers infer
+
+### Examples
+
+**Correct Pattern**:
+```typescript
+// Function defines return type
+export async function fetchWithTimeout({
+  url,
+  options = {},
+  timeoutMs = 5000,
+}: {
+  url: string
+  options?: RequestInit
+  timeoutMs?: number
+}): Promise<Response> {
+  // ... implementation
+}
+
+// Consumer infers type
+const response = await fetchWithTimeout({ url: 'https://api.example.com' })
+// response is inferred as Promise<Response>
+```
+
+**Incorrect Pattern**:
+```typescript
+// Function missing return type
+export async function fetchWithTimeout({ url, options }: Params) {
+  // ... implementation
+}
+
+// Consumer trying to help inference (WRONG)
+const response: Promise<Response> = await fetchWithTimeout({ url })
+// Should fix the function definition instead
+```
+
+### Why This Matters
+- **Single source of truth**: Return types are defined once in the function, not duplicated in consumers
+- **Better maintainability**: Changing a function's return type automatically updates all consumers
+- **Type safety**: TypeScript's inference is powerful - trust it instead of fighting it
+- **Code clarity**: Explicit types in consumers add noise and can become stale
 
 ## Framework Exceptions
 - **NestJS**: Classes are required for decorators (@Injectable, @Controller, etc.), so the "avoid classes" rule doesn't apply to NestJS services/controllers
@@ -51,6 +114,14 @@ The following ESLint rules enforce these codestyle guidelines:
 - `react/jsx-no-leaked-render: ["error", { validStrategies: ["ternary"] }]` - Prefers ternaries over && in JSX
 
 ## Utility Libraries
+- **@vencura/lib**: Shared utility library for common operations
+  - **Async utilities**: `delay`, `fetchWithTimeout`
+  - **Error utilities**: `getErrorMessage`, `formatZodError`, `sanitizeErrorMessage`, `isZodError`
+  - **Date utilities**: `getDateKey`
+  - **Environment utilities**: `validateEnv`
+  - **Zod utilities**: `formatZodErrors`
+  - Import from `@vencura/lib`: `import { delay, getErrorMessage } from '@vencura/lib'`
+  - **Prefer @vencura/lib over custom implementations** for these utilities
 - **Prefer lodash over custom implementations** for common operations
   - Use lodash for array manipulation (`isEmpty`, `uniq`, `groupBy`, `chunk`)
   - Use lodash for object operations (`merge`, `pick`, `omit`, `isEmpty`)

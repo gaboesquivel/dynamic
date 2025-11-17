@@ -1,0 +1,17 @@
+{
+  "name": "@vencura/lib",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "devDependencies": {
+    "@workspace/typescript-config": "workspace:*"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.17.20",
+    "lodash": "^4.17.21",
+    "zod": "^3.25.76",
+    "zod-validation-error": "^3.3.0"
+  }
+}

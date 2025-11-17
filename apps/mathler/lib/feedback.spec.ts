@@ -1,4 +1,4 @@
-import { calculateFeedback } from './feedback-utils'
+import { calculateFeedback } from './feedback'
 
 describe('calculateFeedback', () => {
   it('should mark all correct positions', () => {

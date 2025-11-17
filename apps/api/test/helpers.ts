@@ -1,7 +1,8 @@
 import * as request from 'supertest'
 import { INestApplication } from '@nestjs/common'
-import { getTestAuthToken } from './dynamic-auth'
+import { getTestAuthToken } from './auth'
 import type { App } from 'supertest/types'
+import { delay } from '@vencura/lib'
 
 export interface TestWallet {
   id: string
@@ -35,15 +36,8 @@ export async function getTestAuthTokenHelper(): Promise<string> {
 export async function waitForTransaction({
   delayMs = 1000,
 }: {
-  app: INestApplication<App>
-  authToken: string
-  walletId: string
-  transactionHash: string
-  maxAttempts?: number
   delayMs?: number
 }): Promise<boolean> {
-  // For now, just wait a bit - in a real implementation, you'd check transaction status
-  // This is a placeholder for transaction confirmation polling
-  await new Promise(resolve => setTimeout(resolve, delayMs))
+  await delay(delayMs)
   return true
 }

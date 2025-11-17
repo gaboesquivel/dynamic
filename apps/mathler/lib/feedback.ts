@@ -2,7 +2,7 @@ export function calculateFeedback(
   guess: string,
   solution: string,
 ): Array<'correct' | 'present' | 'absent'> {
-  const feedback: Array<'correct' | 'present' | 'absent'> = Array(guess.length).fill('absent')
+  const feedback = Array(guess.length).fill('absent') as Array<'correct' | 'present' | 'absent'>
 
   // First pass: mark correct positions
   for (let i = 0; i < guess.length; i++) {

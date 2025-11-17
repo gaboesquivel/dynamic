@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { fetchWithTimeout, getErrorMessage } from '@vencura/lib'
 import {
   chatMessageSchema,
   chatOptionsSchema,
@@ -31,16 +32,20 @@ export class ChatbotSDK {
     const validatedMessages = z.array(chatMessageSchema).parse(messages)
     const validatedOptions = chatOptionsSchema.parse(options)
 
-    const response = await fetch(`${this.baseUrl}/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...this.headers,
+    const response = await fetchWithTimeout({
+      url: `${this.baseUrl}/chat`,
+      options: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.headers,
+        },
+        body: JSON.stringify({
+          messages: validatedMessages,
+          ...validatedOptions,
+        }),
       },
-      body: JSON.stringify({
-        messages: validatedMessages,
-        ...validatedOptions,
-      }),
+      timeoutMs: 30000,
     })
 
     if (!response.ok) {
@@ -60,17 +65,21 @@ export class ChatbotSDK {
     const validatedMessages = z.array(chatMessageSchema).parse(messages)
     const validatedOptions = chatOptionsSchema.parse(options)
 
-    const response = await fetch(`${this.baseUrl}/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...this.headers,
+    const response = await fetchWithTimeout({
+      url: `${this.baseUrl}/chat`,
+      options: {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.headers,
+        },
+        body: JSON.stringify({
+          messages: validatedMessages,
+          ...validatedOptions,
+          stream: true,
+        }),
       },
-      body: JSON.stringify({
-        messages: validatedMessages,
-        ...validatedOptions,
-        stream: true,
-      }),
+      timeoutMs: 60000,
     })
 
     if (!response.ok) {
@@ -111,7 +120,7 @@ export class ChatbotSDK {
               const delta = streamChatDeltaSchema.parse(parsed)
               yield delta
             } catch (error) {
-              console.error('Failed to parse SSE data:', error)
+              console.error('Failed to parse SSE data:', getErrorMessage(error) || 'Unknown error')
             }
           }
         }
@@ -122,12 +131,16 @@ export class ChatbotSDK {
   }
 
   async getTools(): Promise<Tool[]> {
-    const response = await fetch(`${this.baseUrl}/chat/tools`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...this.headers,
+    const response = await fetchWithTimeout({
+      url: `${this.baseUrl}/chat/tools`,
+      options: {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.headers,
+        },
       },
+      timeoutMs: 10000,
     })
 
     if (!response.ok) {

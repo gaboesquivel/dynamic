@@ -1,3 +1,5 @@
+import { fetchWithTimeout, getErrorMessage } from '@vencura/lib'
+
 let cachedToken: string | null = null
 let cachedExpiry: number | null = null
 
@@ -30,9 +32,9 @@ export async function getTestAuthToken(): Promise<string> {
     // Step 1: Create or get user
     let userId: string | undefined
 
-    const createUserResponse = await fetch(
-      `https://app.dynamicauth.com/api/v0/environments/${environmentId}/users`,
-      {
+    const createUserResponse = await fetchWithTimeout({
+      url: `https://app.dynamicauth.com/api/v0/environments/${environmentId}/users`,
+      options: {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,7 +44,8 @@ export async function getTestAuthToken(): Promise<string> {
           email: testEmail,
         }),
       },
-    )
+      timeoutMs: 10000,
+    })
 
     if (createUserResponse.ok) {
       const userData = (await createUserResponse.json()) as Record<string, unknown>
@@ -56,14 +59,15 @@ export async function getTestAuthToken(): Promise<string> {
         (userData.user_id as string | undefined)
     } else if (createUserResponse.status === 409) {
       // User exists, try to find them
-      const searchResponse = await fetch(
-        `https://app.dynamicauth.com/api/v0/environments/${environmentId}/users?email=${encodeURIComponent(testEmail)}`,
-        {
+      const searchResponse = await fetchWithTimeout({
+        url: `https://app.dynamicauth.com/api/v0/environments/${environmentId}/users?email=${encodeURIComponent(testEmail)}`,
+        options: {
           headers: {
             Authorization: `Bearer ${apiToken}`,
           },
         },
-      )
+        timeoutMs: 10000,
+      })
       if (searchResponse.ok) {
         const searchData = (await searchResponse.json()) as Record<string, unknown>
         const users = (
@@ -81,14 +85,7 @@ export async function getTestAuthToken(): Promise<string> {
     }
 
     if (!userId) {
-      // Try to get response body for better error message
-      let errorText = 'Unknown error'
-      try {
-        const errorData = await createUserResponse.json()
-        errorText = JSON.stringify(errorData)
-      } catch {
-        errorText = await createUserResponse.text().catch(() => 'Unknown error')
-      }
+      const errorText = await createUserResponse.text().catch(() => 'Unknown error')
       throw new Error(
         `Failed to extract userId from user creation response (${createUserResponse.status}): ${errorText}`,
       )
@@ -100,9 +97,9 @@ export async function getTestAuthToken(): Promise<string> {
     let sessionData: Record<string, unknown> | null = null
 
     // Try endpoint: /sessions
-    sessionResponse = await fetch(
-      `https://app.dynamicauth.com/api/v0/environments/${environmentId}/sessions`,
-      {
+    sessionResponse = await fetchWithTimeout({
+      url: `https://app.dynamicauth.com/api/v0/environments/${environmentId}/sessions`,
+      options: {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,13 +109,14 @@ export async function getTestAuthToken(): Promise<string> {
           userId,
         }),
       },
-    )
+      timeoutMs: 10000,
+    })
 
     if (!sessionResponse.ok && sessionResponse.status === 404) {
       // Try alternative endpoint: /users/{userId}/sessions
-      sessionResponse = await fetch(
-        `https://app.dynamicauth.com/api/v0/environments/${environmentId}/users/${userId}/sessions`,
-        {
+      sessionResponse = await fetchWithTimeout({
+        url: `https://app.dynamicauth.com/api/v0/environments/${environmentId}/users/${userId}/sessions`,
+        options: {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -126,7 +124,8 @@ export async function getTestAuthToken(): Promise<string> {
           },
           body: JSON.stringify({}),
         },
-      )
+        timeoutMs: 10000,
+      })
     }
 
     if (!sessionResponse.ok) {
@@ -159,7 +158,7 @@ export async function getTestAuthToken(): Promise<string> {
         }
       } catch (jwtError) {
         throw new Error(
-          `Failed to create session or JWT: ${sessionResponse.status} ${errorText}. ExternalJwtApi also failed: ${jwtError instanceof Error ? jwtError.message : String(jwtError)}`,
+          `Failed to create session or JWT: ${sessionResponse.status} ${errorText}. ExternalJwtApi also failed: ${getErrorMessage(jwtError) || 'Unknown error'}`,
         )
       }
 
@@ -189,9 +188,7 @@ export async function getTestAuthToken(): Promise<string> {
 
     return cachedToken
   } catch (error) {
-    throw new Error(
-      `Failed to get test auth token: ${error instanceof Error ? error.message : String(error)}`,
-    )
+    throw new Error(`Failed to get test auth token: ${getErrorMessage(error) || 'Unknown error'}`)
   }
 }
 

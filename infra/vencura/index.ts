@@ -22,10 +22,10 @@ if (process.env.GCP_REGION && !process.env.GOOGLE_REGION) {
 }
 
 import * as gcp from '@pulumi/gcp';
-import { getConfig, type Config } from './lib/config';
+import { getConfig } from './lib/config';
 
 // Get configuration (will use env vars or Pulumi config)
-const config: Config = getConfig();
+const config = getConfig();
 
 // Ensure GCP provider env vars are set from config if not already set
 // The Pulumi GCP provider reads from GOOGLE_PROJECT, GCLOUD_PROJECT, or GOOGLE_CLOUD_PROJECT
@@ -48,52 +48,36 @@ const gcpProvider = new gcp.Provider('gcp-provider', {
   project: config.projectId,
   region: config.region,
 });
-import { createNetwork, type NetworkResources } from './lib/network';
-import { createDatabase, type DatabaseResources } from './lib/database';
-import { createSecrets, type SecretResources } from './lib/secrets';
-import {
-  createServiceAccounts,
-  type ServiceAccountResources,
-} from './lib/service-accounts';
-import {
-  createArtifactRegistry,
-  type ArtifactRegistryResources,
-} from './lib/artifact-registry';
-import {
-  createDockerBuild,
-  type DockerBuildResources,
-} from './lib/docker-build';
-import { createCloudRun, type CloudRunResources } from './lib/cloud-run';
+import { createNetwork } from './lib/network';
+import { createDatabase } from './lib/database';
+import { createSecrets } from './lib/secrets';
+import { createServiceAccounts } from './lib/service-accounts';
+import { createArtifactRegistry } from './lib/artifact-registry';
+import { createDockerBuild } from './lib/docker-build';
+import { createCloudRun } from './lib/cloud-run';
 import { createOutputs } from './lib/outputs';
 
 // Create network resources
-const network: NetworkResources = createNetwork(config, gcpProvider);
+const network = createNetwork(config, gcpProvider);
 
 // Create secrets (including auto-generated DB password)
-const secrets: SecretResources = createSecrets(config, gcpProvider);
+const secrets = createSecrets(config, gcpProvider);
 
 // Create service accounts
-const serviceAccounts: ServiceAccountResources = createServiceAccounts(
-  config,
-  secrets,
-  gcpProvider,
-);
+const serviceAccounts = createServiceAccounts(config, secrets, gcpProvider);
 
 // Create Artifact Registry
-const artifactRegistry: ArtifactRegistryResources = createArtifactRegistry(
+const artifactRegistry = createArtifactRegistry(
   config,
   serviceAccounts,
   gcpProvider,
 );
 
 // Build Docker image (conditionally - skips in CI/CD)
-const dockerBuild: DockerBuildResources = createDockerBuild(
-  config,
-  artifactRegistry,
-);
+const dockerBuild = createDockerBuild(config, artifactRegistry);
 
 // Create database (depends on network and secrets)
-const database: DatabaseResources = createDatabase(
+const database = createDatabase(
   config,
   network,
   secrets.dbPassword,
@@ -143,7 +127,7 @@ new gcp.secretmanager.SecretIamMember(
 );
 
 // Create Cloud Run service (depends on all other resources and Docker image)
-const cloudRun: CloudRunResources = createCloudRun(
+const cloudRun = createCloudRun(
   config,
   network,
   database,

@@ -2,13 +2,9 @@
 
 import { useEffect, useCallback } from 'react'
 import { useSetState } from 'react-use'
-import {
-  evaluateExpression,
-  getRandomTarget,
-  generateSolutionEquation,
-  getDateKey,
-} from '@/lib/math-utils'
-import { calculateFeedback } from '@/lib/feedback-utils'
+import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@/lib/math'
+import { getDateKey } from '@vencura/lib'
+import { calculateFeedback } from '@/lib/feedback'
 import { useGameHistory } from '@/hooks/use-game-history'
 import { useMathlerInput } from '@/hooks/use-mathler-input'
 import { GuessRow } from './guess-row'

@@ -10,6 +10,11 @@ import {
 import { validateAddress } from '../common/address-validation'
 import type { ChainType } from '@vencura/types'
 import { WalletClientFactory } from './clients/wallet-client-factory'
+import type {
+  BalanceResult,
+  SignMessageResult,
+  SendTransactionResult,
+} from './clients/base-wallet-client'
 import * as schema from '../database/schema'
 import { eq, and } from 'drizzle-orm'
 
@@ -23,7 +28,10 @@ export class WalletService {
     private readonly walletClientFactory: WalletClientFactory,
   ) {}
 
-  async createWallet(userId: string, chainId: number | string) {
+  async createWallet(
+    userId: string,
+    chainId: number | string,
+  ): Promise<{ id: string; address: string; network: string; chainType: ChainType }> {
     // Validate chain is supported
     if (!isSupportedChain(chainId)) {
       throw new BadRequestException(
@@ -75,7 +83,9 @@ export class WalletService {
     }
   }
 
-  async getUserWallets(userId: string) {
+  async getUserWallets(
+    userId: string,
+  ): Promise<Array<{ id: string; address: string; network: string; chainType: ChainType }>> {
     const wallets = await this.db
       .select({
         id: schema.wallets.id,
@@ -104,7 +114,7 @@ export class WalletService {
     }))
   }
 
-  async getBalance(walletId: string, userId: string) {
+  async getBalance(walletId: string, userId: string): Promise<BalanceResult> {
     const [wallet] = await this.db
       .select()
       .from(schema.wallets)
@@ -122,7 +132,7 @@ export class WalletService {
     return await walletClient.getBalance(wallet.address)
   }
 
-  async signMessage(walletId: string, userId: string, message: string) {
+  async signMessage(walletId: string, userId: string, message: string): Promise<SignMessageResult> {
     const [wallet] = await this.db
       .select()
       .from(schema.wallets)
@@ -143,7 +153,12 @@ export class WalletService {
     return await walletClient.signMessage(wallet.address, externalServerKeyShares, message)
   }
 
-  async sendTransaction(walletId: string, userId: string, to: string, amount: number) {
+  async sendTransaction(
+    walletId: string,
+    userId: string,
+    to: string,
+    amount: number,
+  ): Promise<SendTransactionResult> {
     const [wallet] = await this.db
       .select()
       .from(schema.wallets)

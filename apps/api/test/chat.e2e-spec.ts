@@ -3,7 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common'
 import * as request from 'supertest'
 import { App } from 'supertest/types'
 import { AppModule } from '../src/app.module'
-import { getTestAuthToken } from './utils/dynamic-auth'
+import { getTestAuthToken } from './auth'
 
 describe('ChatController (e2e)', () => {
   let app: INestApplication<App>

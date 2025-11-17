@@ -3,8 +3,8 @@ import {
   getRandomTarget,
   generateSolutionEquation,
   generateEquationsForTarget,
-  getDateKey,
-} from './math-utils'
+} from './math'
+import { getDateKey } from '@vencura/lib'
 
 describe('evaluateExpression', () => {
   it('should evaluate simple addition', () => {

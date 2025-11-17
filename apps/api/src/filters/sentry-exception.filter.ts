@@ -1,7 +1,7 @@
 import { Catch, ExceptionFilter, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common'
 import { Request, Response } from 'express'
 import * as Sentry from '@sentry/node'
-import { sanitizeErrorMessage } from '../common/error-handler'
+import { sanitizeErrorMessage } from '@vencura/lib'
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -35,7 +35,8 @@ function normalizeExceptionMessage(exception: unknown, isProduction: boolean): s
   }
 
   // Sanitize error message to prevent information leakage in production
-  return sanitizeErrorMessage(message, isProduction)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  return sanitizeErrorMessage({ message, isProduction }) as string
 }
 
 /**

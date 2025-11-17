@@ -66,6 +66,23 @@ alwaysApply: false
   - See [React Rules](./react.mdc) for error boundary patterns
 
 ### Utility Libraries
+- **@vencura/lib**: Shared utility library for common operations
+  - **Async utilities**: `delay`, `fetchWithTimeout`
+    - Use `delay` for promise-based delays: `await delay(1000)`
+    - Use `fetchWithTimeout` for fetch calls with timeout (addresses security LOW-003)
+  - **Error utilities**: `getErrorMessage`, `formatZodError`, `sanitizeErrorMessage`, `isZodError`
+    - Use `getErrorMessage` to extract error messages from unknown errors: `getErrorMessage(error)`
+    - Use `formatZodError` for user-friendly zod error messages (RORO pattern for multiple params)
+    - Use `sanitizeErrorMessage` in production to prevent information leakage (RORO pattern)
+    - Use `isZodError` type guard: `isZodError(error)`
+  - **Date utilities**: `getDateKey`
+    - Use for YYYY-MM-DD date formatting: `getDateKey(date)` or `getDateKey()` for today
+  - **Environment utilities**: `validateEnv`
+    - Generic zod-based env validation helper
+  - **Zod utilities**: `formatZodErrors`
+    - Formats zod errors into readable string array
+  - Import from `@vencura/lib`: `import { delay, getErrorMessage } from '@vencura/lib'`
+  - **Prefer @vencura/lib over custom implementations** for these utilities
 - **react-use**: React hooks library
   - Use `useAsync`/`useAsyncFn` for one-off async operations
   - Prefer TanStack Query for data fetching
