@@ -80,15 +80,13 @@ Here's how data fetching logic is standardized and portable, ensuring reuse on t
 ```ts
 
 import { useQuery } from '@tanstack/react-query'
-import { createSupabaseClient } from '@worksapce/db'
 import { getMarkets } from '@/api/market'
 
 export function useMarkets() {
   return useQuery({
     queryKey: ['markets'],
     queryFn: async () => {
-      const supabase = await createSupabaseClient()
-      return getMarkets({ supabase })
+      return getMarkets()
     }
   })
 }

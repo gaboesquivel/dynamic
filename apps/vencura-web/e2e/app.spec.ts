@@ -81,7 +81,7 @@ test.describe('Vencura Web App', () => {
 })
 
 test.describe('Vencura Web - Authenticated State', () => {
-  test.skip('should display user info when authenticated', async ({ page }) => {
+  test.skip('should display user info when authenticated', async () => {
     // This test is skipped as it requires actual authentication
     // In a real scenario, you would:
     // 1. Mock the Dynamic SDK or use test credentials
@@ -89,11 +89,11 @@ test.describe('Vencura Web - Authenticated State', () => {
     // 3. Verify user info display
   })
 
-  test.skip('should display wallet dashboard when authenticated', async ({ page }) => {
+  test.skip('should display wallet dashboard when authenticated', async () => {
     // This test is skipped as it requires actual authentication
   })
 
-  test.skip('should allow creating a new wallet', async ({ page }) => {
+  test.skip('should allow creating a new wallet', async () => {
     // This test is skipped as it requires actual authentication and API access
   })
 })

@@ -1,7 +1,9 @@
 import { ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
 
 /**
  * Formats a zod error into a user-friendly error message.
+ * Uses zod-validation-error for better error formatting.
  * Follows RORO pattern (Receive an Object, Return an Object).
  *
  * @param params - Error formatting parameters
@@ -16,17 +18,13 @@ export function formatZodError({
   error: ZodError
   defaultMessage?: string
 }): string {
-  if (error.errors.length === 0) return defaultMessage
-
-  // Return the first error message for simplicity
-  // In production, you might want to combine multiple errors
-  const firstError = error.errors[0]
-  if (firstError) {
-    const path = firstError.path.length > 0 ? `${firstError.path.join('.')}: ` : ''
-    return `${path}${firstError.message}`
+  try {
+    const validationError = fromZodError(error)
+    return validationError.message
+  } catch {
+    // Fallback to default message if zod-validation-error fails
+    return defaultMessage
   }
-
-  return defaultMessage
 }
 
 /**

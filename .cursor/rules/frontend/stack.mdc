@@ -40,6 +40,10 @@ alwaysApply: false
   - Use for tool parameters in AI integrations
   - Integrate with TypeScript for type inference
   - **Exception**: NestJS DTOs use `class-validator` (per NestJS conventions)
+- **zod-validation-error**: Better Zod error messages
+  - Use `fromZodError` to format Zod errors into user-friendly messages
+  - Provides structured error information for better error handling
+  - Use when displaying validation errors to users
 
 ### Authentication & Actions
 - **@dynamic-labs/sdk-react-core**: Secure wallet authentication solution
@@ -53,11 +57,24 @@ alwaysApply: false
   - Provides type safety and error handling
   - Follow the ActionResult pattern with success/failure
 
+### Error Handling
+- **react-error-boundary**: Error boundary component library
+  - Use `ErrorBoundary` component to catch React errors
+  - Provides fallback UI when errors occur
+  - Use `useErrorHandler` hook for async error handling
+  - Wrap app sections that might fail independently
+  - See [React Rules](./react.mdc) for error boundary patterns
+
 ### Utility Libraries
 - **react-use**: React hooks library
   - Use `useAsync`/`useAsyncFn` for one-off async operations
   - Prefer TanStack Query for data fetching
   - Use for non-data-fetching async operations
+- **nanoid**: Unique ID generation
+  - Use for generating unique identifiers (IDs, keys, etc.)
+  - Smaller and faster than UUID
+  - URL-safe by default
+  - Use when you need unique IDs: `import { nanoid } from 'nanoid'`
 - **lodash**: Utility functions
   - **CRITICAL: Prefer lodash over custom implementations** for common operations
   - Use lodash for array manipulation (`isEmpty`, `uniq`, `groupBy`, `chunk`, `filter`, `map` when complex)
@@ -192,6 +209,7 @@ export function useUserBalance(address: string) {
 ### Validation with zod
 ```tsx
 import { z } from 'zod'
+import { fromZodError } from 'zod-validation-error'
 
 const userSchema = z.object({
   name: z.string().min(1),
@@ -199,6 +217,16 @@ const userSchema = z.object({
 })
 
 type User = z.infer<typeof userSchema>
+
+// Better error messages
+try {
+  userSchema.parse(invalidData)
+} catch (error) {
+  if (error instanceof z.ZodError) {
+    const validationError = fromZodError(error)
+    console.error(validationError.message) // User-friendly error message
+  }
+}
 ```
 
 ### Secure Wallet Authentication with Dynamic Labs
@@ -368,6 +396,31 @@ const debouncedFn = debounce(fn, delay)
 - **Combine related queries** into cohesive custom hooks
 - **Follow fractal component patterns** for consistent structure
 - **Mobile-first design** - Always design and develop mobile-first, then enhance for larger screens
+
+### Development Tools
+- **@tanstack/react-query-devtools**: TanStack Query development tools
+  - Add to provider components in development mode only
+  - Provides query inspection, cache debugging, and performance monitoring
+  - Use `ReactQueryDevtools` component conditionally: `{process.env.NODE_ENV === 'development' ? <ReactQueryDevtools /> : null}`
+  - Must be placed inside `QueryClientProvider` to work correctly
+
+### Optional Packages (Add When Needed)
+- **@tanstack/query-sync-storage-persister**: Persist queries to localStorage/sessionStorage
+  - Use for specific use cases where persisted cache improves UX
+  - Consider for offline-first applications or slow networks
+  - Not recommended for all apps - evaluate per use case
+- **@tanstack/virtual**: Virtual scrolling for large lists
+  - Use when rendering large lists (1000+ items) for performance
+  - Provides efficient rendering of long lists
+  - Add when needed for performance optimization
+- **@tanstack/react-table**: Powerful table component library
+  - Use when building complex data tables with sorting, filtering, pagination
+  - Provides headless table primitives for custom UI
+  - Add if tables are needed in the application
+- **@tanstack/react-form**: Form library from TanStack
+  - Alternative to react-hook-form
+  - Currently using react-hook-form in mathler (current approach is fine)
+  - Consider if TanStack Form fits better for specific use cases
 
 ### AI Integration
 - **@ai-sdk/react**: Use for AI chat functionality with streaming support

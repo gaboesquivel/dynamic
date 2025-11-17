@@ -429,46 +429,6 @@ The codebase has **12 well-documented ADRs**:
 
 #### 🎯 **High-Value Additions**
 
-2. **`@tanstack/react-query-devtools`**
-   - **Current**: Using TanStack Query
-   - **Opportunity**: Add devtools for better DX
-   - **Benefit**: Debug queries, cache inspection
-   - **Recommendation**: Add as dev dependency
-
-3. **`@tanstack/query-sync-storage-persister`**
-   - **Current**: Using TanStack Query
-   - **Opportunity**: Persist queries to localStorage/sessionStorage
-   - **Benefit**: Better UX with persisted cache
-   - **Recommendation**: Consider for specific use cases
-
-4. **`@tanstack/virtual`**
-   - **Opportunity**: Virtual scrolling for large lists
-   - **Benefit**: Performance optimization
-   - **Recommendation**: Add when needed for large data sets
-
-5. **`react-error-boundary`**
-   - **Opportunity**: Better error boundary handling
-   - **Benefit**: Improved error UX
-   - **Recommendation**: Consider adding
-
-6. **`@tanstack/react-table`**
-   - **Opportunity**: If building data tables
-   - **Benefit**: Powerful table component
-   - **Recommendation**: Add if tables are needed
-
-7. **`nanoid`** or **`uuid`**
-   - **Use Case**: ID generation
-   - **Recommendation**: Add if needed
-
-8. **`zod-validation-error`**
-   - **Use Case**: Better Zod error messages
-   - **Recommendation**: Consider for better error UX
-
-9. **`@tanstack/react-form`**
-   - **Use Case**: Form library from TanStack
-   - **Current**: Using react-hook-form in mathler
-   - **Recommendation**: Current approach is fine, but consider if TanStack Form fits better
-
 ### 5.6 Security & Monitoring Packages
 
 #### 🔒 **Security**

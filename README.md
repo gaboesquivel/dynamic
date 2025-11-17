@@ -78,10 +78,20 @@ Architectural decisions are documented in [Architecture Decision Records (ADRs)]
 
 ### Development Tools
 
+- **Next.js 16.0.0**: React framework for frontend applications (standardized across all Next.js apps)
+- **React 19.1.1**: Standardized React version across all frontend applications
 - **ESLint + Prettier**: Linting and formatting (shared config via `@workspace/eslint-config`)
 - **Zod**: Primary schema validation tool for runtime validation and type inference
   - Used for all schemas (environment variables, API responses, form validation, tool parameters)
   - Exception: NestJS DTOs use `class-validator` per NestJS conventions
+  - **zod-validation-error**: Used for better error messages when displaying validation errors to users
+- **TanStack Query**: Data fetching and caching solution
+  - **@tanstack/react-query-devtools**: Development tools for debugging queries (dev mode only)
+  - Query key factory pattern via `@lukemorales/query-key-factory`
+- **react-error-boundary**: Error boundary component library for catching React errors
+  - Provides fallback UI when errors occur
+  - Use for app-level, section-level, and feature-level error handling
+- **nanoid**: Unique ID generation library (smaller and faster than UUID)
 - **Lodash**: Preferred utility library for common operations
   - Prefer lodash over custom implementations for array/object manipulation, type checking, string transformations, and functional utilities
   - Import specific functions to reduce bundle size: `import { isEmpty, uniq, merge } from 'lodash'`

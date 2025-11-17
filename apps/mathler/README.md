@@ -20,12 +20,14 @@ A Mathler game built with Next.js - like Wordle but with numbers. Users have 6 g
 
 ## Tech Stack
 
-- Next.js 15
-- React 19
+- Next.js 16.0.0
+- React 19.1.1
 - TypeScript
 - Dynamic SDK
 - Tailwind CSS
 - Shadcn/ui components (via `@workspace/ui`)
+- react-error-boundary for error handling
+- zod-validation-error for better validation error messages
 
 ## Design System & Dependencies
 

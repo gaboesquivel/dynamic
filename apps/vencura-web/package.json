@@ -7,17 +7,17 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "lint:fix": "next lint --fix",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
-    "@dynamic-labs/ethereum": "*",
-    "@dynamic-labs/sdk-react-core": "*",
-    "@dynamic-labs/solana": "*",
+    "@dynamic-labs/ethereum": "^4.44.0",
+    "@dynamic-labs/sdk-react-core": "^4.44.0",
+    "@dynamic-labs/solana": "^4.44.0",
     "@tanstack/react-query": "^5.90.8",
     "@vencura/react": "workspace:*",
     "@vencura/types": "workspace:*",
@@ -25,22 +25,26 @@
     "@workspace/ui": "workspace:*",
     "lodash": "^4.17.21",
     "lucide-react": "^0.475.0",
-    "next": "^15.4.5",
+    "next": "^16.0.0",
     "next-themes": "^0.4.6",
     "nuqs": "^2.7.3",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-error-boundary": "^4.0.13",
     "react-use": "^17.6.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@types/lodash": "^4.17.20",
     "@types/node": "^20.19.9",
     "@types/react": "^19.1.9",
     "@types/react-dom": "^19.1.7",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.32.0",
     "typescript": "^5.9.2"
   }
 }

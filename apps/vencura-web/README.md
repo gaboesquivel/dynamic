@@ -20,12 +20,15 @@ Frontend application for interacting with the Vencura API - a multichain custodi
 
 ## Tech Stack
 
-- Next.js 15
-- React 19
+- Next.js 16.0.0
+- React 19.1.1
 - TypeScript
+- TanStack Query (with devtools in development mode)
 - Dynamic SDK
 - Tailwind CSS
 - Shadcn/ui components (via `@workspace/ui`)
+- react-error-boundary for error handling
+- zod-validation-error for better validation error messages
 
 ## Design System & Dependencies
 
@@ -181,6 +184,17 @@ For React applications, **[@vencura/react](../../packages/vencura-react/README.m
 - Query key factory for cache management
 
 This is the recommended approach for new React applications.
+
+### Development Tools
+
+**TanStack Query Devtools** are automatically enabled in development mode. The devtools provide:
+
+- Query inspection and debugging
+- Cache state visualization
+- Performance monitoring
+- Query invalidation testing
+
+The devtools are conditionally rendered only when `NODE_ENV === 'development'` and are placed inside the `QueryClientProvider` for proper functionality.
 
 ### API Endpoints Used
 

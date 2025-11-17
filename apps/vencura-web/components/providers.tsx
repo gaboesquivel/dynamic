@@ -5,6 +5,7 @@ import { ThemeProvider as NextThemesProvider } from 'next-themes'
 import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core'
 import { EthereumWalletConnectors } from '@dynamic-labs/ethereum'
 import { SolanaWalletConnectors } from '@dynamic-labs/solana'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { VencuraProvider } from '@vencura/react'
 import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import { useVencuraHeaders } from '@/hooks/use-vencura-headers'
@@ -18,6 +19,7 @@ function VencuraProviderWrapper({ children }: { children: React.ReactNode }) {
   return (
     <VencuraProvider baseUrl={baseUrl} headers={headers}>
       {children}
+      {process.env.NODE_ENV === 'development' ? <ReactQueryDevtools initialIsOpen={false} /> : null}
     </VencuraProvider>
   )
 }

@@ -18,7 +18,7 @@ alwaysApply: false
 
 ## Database Access
 - Use the repository pattern for database operations
-- Use Drizzle or Supabase SDK for database interactions
+- Use Drizzle for database interactions
 - Optimize database queries for performance
 
 ## AI/Streaming Integration
