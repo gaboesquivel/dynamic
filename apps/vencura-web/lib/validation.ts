@@ -1,3 +1,4 @@
+import { isEmpty } from 'lodash'
 import { z } from 'zod'
 import type { ChainType } from '@vencura/types'
 
@@ -41,11 +42,10 @@ export function validateAddressInput({
   address: string
   chainType?: ChainType
 }): { valid: boolean; error?: string } {
-  if (!address.trim()) {
+  const trimmed = address.trim()
+  if (isEmpty(trimmed)) {
     return { valid: false, error: 'Address is required' }
   }
-
-  const trimmed = address.trim()
 
   // Basic format validation based on chain type
   if (chainType === 'solana') {

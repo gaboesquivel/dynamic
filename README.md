@@ -79,7 +79,12 @@ Architectural decisions are documented in [Architecture Decision Records (ADRs)]
 ### Development Tools
 
 - **ESLint + Prettier**: Linting and formatting (shared config via `@workspace/eslint-config`)
-- **Zod**: Runtime validation and type inference
+- **Zod**: Primary schema validation tool for runtime validation and type inference
+  - Used for all schemas (environment variables, API responses, form validation, tool parameters)
+  - Exception: NestJS DTOs use `class-validator` per NestJS conventions
+- **Lodash**: Preferred utility library for common operations
+  - Prefer lodash over custom implementations for array/object manipulation, type checking, string transformations, and functional utilities
+  - Import specific functions to reduce bundle size: `import { isEmpty, uniq, merge } from 'lodash'`
 - **DrizzleORM**: Type-safe database ORM
 - **Pulumi**: Infrastructure as Code (TypeScript)
 

@@ -2,52 +2,58 @@ import { z } from 'zod'
 import { tool } from 'ai'
 import { WalletService } from '../../wallet/wallet.service'
 
+const getWalletsParams = z.object({})
+const createWalletParams = z.object({
+  chainId: z.union([z.number(), z.string()]).describe('Chain ID or Dynamic network ID'),
+})
+const getBalanceParams = z.object({
+  walletId: z.string().describe('The wallet ID'),
+})
+const sendTransactionParams = z.object({
+  walletId: z.string().describe('The wallet ID'),
+  to: z.string().describe('Recipient address'),
+  amount: z.number().positive().describe('Amount to send'),
+})
+const signMessageParams = z.object({
+  walletId: z.string().describe('The wallet ID'),
+  message: z.string().describe('Message to sign'),
+})
+
 export function createWalletTools(walletService: WalletService, userId: string) {
   return {
-    // @ts-expect-error - AI SDK v5 type definitions have issues with tool function
     getWallets: tool({
       description: 'Get all wallets for the authenticated user',
-      parameters: z.object({}),
+      parameters: getWalletsParams,
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
       execute: async () => walletService.getUserWallets(userId),
     }),
-    // @ts-expect-error - AI SDK v5 type definitions have issues with tool function
     createWallet: tool({
       description:
         'Create a new custodial wallet on a specific chain. Provide chainId as a number (e.g., 421614 for Arbitrum Sepolia) or Dynamic network ID string (e.g., "solana-mainnet" for Solana).',
-      parameters: z.object({
-        chainId: z.union([z.number(), z.string()]).describe('Chain ID or Dynamic network ID'),
-      }),
-      execute: async ({ chainId }: { chainId: number | string }) =>
+      parameters: createWalletParams,
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      execute: async ({ chainId }: z.infer<typeof createWalletParams>) =>
         walletService.createWallet(userId, chainId),
     }),
-    // @ts-expect-error - AI SDK v5 type definitions have issues with tool function
     getBalance: tool({
       description: 'Get the balance of a specific wallet',
-      parameters: z.object({
-        walletId: z.string().describe('The wallet ID'),
-      }),
-      execute: async ({ walletId }: { walletId: string }) =>
+      parameters: getBalanceParams,
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      execute: async ({ walletId }: z.infer<typeof getBalanceParams>) =>
         walletService.getBalance(walletId, userId),
     }),
-    // @ts-expect-error - AI SDK v5 type definitions have issues with tool function
     sendTransaction: tool({
       description: 'Send a transaction from a wallet to another address',
-      parameters: z.object({
-        walletId: z.string().describe('The wallet ID'),
-        to: z.string().describe('Recipient address'),
-        amount: z.number().positive().describe('Amount to send'),
-      }),
-      execute: async ({ walletId, to, amount }: { walletId: string; to: string; amount: number }) =>
+      parameters: sendTransactionParams,
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      execute: async ({ walletId, to, amount }: z.infer<typeof sendTransactionParams>) =>
         walletService.sendTransaction(walletId, userId, to, amount),
     }),
-    // @ts-expect-error - AI SDK v5 type definitions have issues with tool function
     signMessage: tool({
       description: 'Sign a message with a wallet private key',
-      parameters: z.object({
-        walletId: z.string().describe('The wallet ID'),
-        message: z.string().describe('Message to sign'),
-      }),
-      execute: async ({ walletId, message }: { walletId: string; message: string }) =>
+      parameters: signMessageParams,
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      execute: async ({ walletId, message }: z.infer<typeof signMessageParams>) =>
         walletService.signMessage(walletId, userId, message),
     }),
   }

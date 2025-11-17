@@ -1,5 +1,5 @@
 import { Parser } from 'expr-eval'
-import { uniq } from 'lodash'
+import { isEmpty, uniq } from 'lodash'
 
 /**
  * Singleton parser instance configured for basic arithmetic only.
@@ -328,7 +328,7 @@ export function generateSolutionEquation(target: number, seed?: number): string 
   const arr = Array.from(candidates)
 
   // Fallback if no valid equations found (shouldn't happen in practice)
-  if (!arr.length) return `${target}+0`
+  if (isEmpty(arr)) return `${target}+0`
 
   // Use seeded random to ensure same puzzle for same date and target
   // Combine dateSeed with target using string concatenation to avoid collisions

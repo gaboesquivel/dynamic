@@ -50,6 +50,19 @@ The following ESLint rules enforce these codestyle guidelines:
 - `import/no-default-export: "error"` - Enforces named exports (with Next.js exceptions)
 - `react/jsx-no-leaked-render: ["error", { validStrategies: ["ternary"] }]` - Prefers ternaries over && in JSX
 
+## Utility Libraries
+- **Prefer lodash over custom implementations** for common operations
+  - Use lodash for array manipulation (`isEmpty`, `uniq`, `groupBy`, `chunk`)
+  - Use lodash for object operations (`merge`, `pick`, `omit`, `isEmpty`)
+  - Use lodash for type checking (`isString`, `isNumber`, `isEmpty`, `isPlainObject`)
+  - Use lodash for string transformations (`camelCase`, `kebabCase`, `startCase`)
+  - Use lodash for functional utilities (`debounce`, `throttle`, `memoize`)
+  - Import specific functions: `import { isEmpty, uniq } from 'lodash'`
+- **Use zod for schema validation** (except NestJS DTOs which use class-validator)
+  - All schemas should use zod for runtime validation and type inference
+  - NestJS DTOs are the exception - they correctly use `class-validator` per NestJS conventions
+  - Use zod for environment variables, API responses, form validation, and tool parameters
+
 ## Error Handling
 - Fail fast: Handle errors early using guard clauses & early returns
 - Place the happy path last for improved readability
