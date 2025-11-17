@@ -19,7 +19,7 @@
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "env": ["NODE_ENV", "CI"]
+      "env": ["NODE_ENV", "CI", "NEXT_RUNTIME", "NEXT_PUBLIC_SENTRY_DSN", "SENTRY_ORG", "SENTRY_PROJECT"]
     },
     "check-types": {
       "dependsOn": ["^check-types"]

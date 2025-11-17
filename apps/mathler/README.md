@@ -99,11 +99,20 @@ Create a `.env.local` file in the `apps/mathler` directory (you can copy from `.
 # Get your Dynamic environment ID from https://app.dynamic.xyz/
 # Required for authentication to work properly
 NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id
+
+# Optional: Sentry error tracking
+NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
 ```
 
 **Required Environment Variables:**
 
 - `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`: Your Dynamic environment ID from the [Dynamic Dashboard](https://app.dynamic.xyz/). Required for authentication to work properly.
+
+**Optional Environment Variables:**
+
+- `NEXT_PUBLIC_SENTRY_DSN`: Sentry DSN URL for error tracking (optional, defaults to disabled)
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`: Environment name for Sentry (optional, defaults to `NODE_ENV`)
 
 **Getting Your Dynamic Environment ID:**
 

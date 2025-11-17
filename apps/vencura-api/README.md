@@ -75,6 +75,10 @@ SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
 
 # Backward compatibility: ARBITRUM_SEPOLIA_RPC_URL still works
 ARBITRUM_SEPOLIA_RPC_URL=https://arbitrum-sepolia.infura.io/v3/your_key
+
+# Optional: Sentry error tracking
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+SENTRY_ENVIRONMENT=production
 ```
 
 **Required Environment Variables:**
@@ -89,6 +93,11 @@ ARBITRUM_SEPOLIA_RPC_URL=https://arbitrum-sepolia.infura.io/v3/your_key
 - `RPC_URL_<DYNAMIC_NETWORK_ID>`: Custom RPC URL using Dynamic network ID (e.g., `RPC_URL_solana-mainnet`)
 - `SOLANA_RPC_URL`: Custom Solana RPC URL (applies to all Solana networks)
 - `ARBITRUM_SEPOLIA_RPC_URL`: Backward compatibility for Arbitrum Sepolia (maps to `RPC_URL_421614`)
+
+**Optional Error Tracking:**
+
+- `SENTRY_DSN`: Sentry DSN URL for error tracking (optional, defaults to disabled)
+- `SENTRY_ENVIRONMENT`: Environment name for Sentry (optional, defaults to `NODE_ENV`)
 
 **Note**: If no custom RPC URL is provided, Vencura uses Dynamic's default public RPC URLs or viem/Solana defaults. Custom RPCs are only needed for production environments requiring higher reliability or custom networks.
 

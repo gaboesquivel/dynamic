@@ -89,6 +89,10 @@ NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id
 # Vencura API URL
 # Default: http://localhost:3000 (for local development)
 NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# Optional: Sentry error tracking
+NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
+NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
 ```
 
 **Required Environment Variables:**
@@ -98,6 +102,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 **Optional Environment Variables:**
 
 - `NEXT_PUBLIC_API_URL`: The URL of the Vencura API backend. Defaults to `http://localhost:3000` if not provided.
+- `NEXT_PUBLIC_SENTRY_DSN`: Sentry DSN URL for error tracking (optional, defaults to disabled)
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`: Environment name for Sentry (optional, defaults to `NODE_ENV`)
 
 **Getting Your Dynamic Environment ID:**
 

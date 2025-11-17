@@ -2,9 +2,17 @@ import { NestFactory } from '@nestjs/core'
 import { ValidationPipe } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { AppModule } from './app.module'
+import { initSentry } from './config/sentry.config'
+import { SentryExceptionFilter } from './filters/sentry-exception.filter'
 
 async function bootstrap() {
+  // Initialize Sentry before creating NestJS app
+  initSentry()
+
   const app = await NestFactory.create(AppModule)
+
+  // Add Sentry exception filter globally
+  app.useGlobalFilters(new SentryExceptionFilter())
 
   app.useGlobalPipes(
     new ValidationPipe({

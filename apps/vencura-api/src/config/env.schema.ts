@@ -25,6 +25,10 @@ export const envSchema = z.object({
   ARBITRUM_SEPOLIA_RPC_URL: z.string().url().optional(),
   SOLANA_RPC_URL: z.string().url().optional(),
 
+  // Sentry error tracking (optional)
+  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_ENVIRONMENT: z.string().optional(),
+
   // Dynamic RPC_URL_* variables (validated as URLs when present)
   // Note: These are collected dynamically, so we validate them in the config function
 })
@@ -48,6 +52,8 @@ export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } =
     OPEN_AI_KEY: env.OPEN_AI_KEY,
     ARBITRUM_SEPOLIA_RPC_URL: env.ARBITRUM_SEPOLIA_RPC_URL,
     SOLANA_RPC_URL: env.SOLANA_RPC_URL,
+    SENTRY_DSN: env.SENTRY_DSN,
+    SENTRY_ENVIRONMENT: env.SENTRY_ENVIRONMENT,
   }
 
   // Validate required fields
