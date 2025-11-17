@@ -163,6 +163,8 @@ For project-specific setup, see individual project READMEs linked in [Projects](
 This monorepo includes smart contracts for both EVM and Solana chains:
 
 - **EVM Contracts** (`contracts/evm/`): Built with Foundry, includes TestToken contract for testing and faucet purposes
+  - **Deployed on Arbitrum Sepolia**: DNMC (Dynamic Arcade Token), Mocked USDC, and Mocked USDT tokens
+  - See [EVM Contracts README](./contracts/evm/README.md) for deployment addresses and block explorer links
 - **Solana Contracts** (`contracts/solana/`): Built with Anchor framework, includes TestToken program matching EVM functionality
 
 Both implementations provide open minting/burning functionality for testing environments. See the respective README files for detailed documentation.

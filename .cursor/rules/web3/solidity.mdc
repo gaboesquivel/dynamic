@@ -10,6 +10,13 @@ alwaysApply: false
 - Use custom errors instead of revert strings (when validation is needed)
 - For test contracts with intentionally open access (e.g., faucet tokens), custom errors may not be necessary
 
+## Foundry Dependencies
+
+- **Never manually edit files in `lib/` directory**: The `lib/` directory contains third-party dependencies (e.g., OpenZeppelin Contracts) managed by Foundry
+- **Update dependencies via Foundry**: Use `forge update` or `pnpm run deps:update` to update dependencies
+- **Formatting protection**: The `lib/` directory is excluded from formatting via `foundry.toml` (`[fmt] exclude = ["lib/**"]`) and `.prettierignore`
+- **Dependency management**: All dependencies are installed and updated through Foundry's dependency system (`forge install`, `forge update`)
+
 ## Contract Structure
 ```solidity
 // SPDX-License-Identifier: MIT
@@ -58,3 +65,14 @@ contract GasOptimized {
     }
 }
 ```
+
+## Test Token Patterns
+
+For test tokens and faucet contracts (e.g., DNMC, mocked USDC/USDT):
+
+- **Reuse existing contracts**: Use `TestToken.sol` with separate deployment scripts rather than creating duplicate contracts
+- **Open minting/burning**: Test tokens may have intentionally open access controls for faucet functionality
+- **Configurable decimals**: Support different decimal values (6 for stablecoins, 18 for utility tokens)
+- **Deployment scripts**: Create separate scripts for each token (e.g., `DNMC.s.sol`, `USDC.s.sol`, `USDT.s.sol`) that configure the same base contract
+- **Environment variables**: Use `vm.envOr()` and `vm.envUint()` for configuration with sensible defaults
+- **Documentation**: Clearly mark mocked/test tokens as such in documentation to avoid confusion with real tokens

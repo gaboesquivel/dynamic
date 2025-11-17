@@ -17,6 +17,9 @@ contracts/**/*.sol
 contracts/**/*.rs
 contracts/solana/**/*.ts
 
+# Foundry lib dependencies (should never be manually edited)
+contracts/evm/lib/**
+
 # Lock files
 pnpm-lock.yaml
 package-lock.json
