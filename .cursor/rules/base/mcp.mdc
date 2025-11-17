@@ -89,8 +89,13 @@ When using Vercel MCP, remember our **portable-by-default** architectural princi
 5. **Test deployments**: Always verify deployments work correctly after using Vercel MCP
 6. **Maintain portability**: When using Vercel features, consider if they're essential or just convenient
 
+## Package Manager
+
+All MCP servers use `pnpm dlx` for command execution, consistent with the project's package manager choice. This ensures consistency across the development environment.
+
 ## References
 
 - See [MCP Servers Usage Guide](../../docs/mcp-servers.md) for detailed documentation
 - Vercel MCP tools: https://vercel.com/docs/mcp/vercel-mcp/tools
 - Cursor MCP documentation: https://cursor.com/docs/context/model-context-protocol
+- [Cursor Rules README](../../README.md) for general rules information

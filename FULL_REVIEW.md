@@ -463,15 +463,6 @@ The codebase has **12 well-documented ADRs**:
    - **Use Case**: React performance debugging
    - **Recommendation**: Consider for performance optimization
 
-3. **`@storybook/react`**
-   - **Use Case**: Component development
-   - **Recommendation**: Consider if building component library
-
-4. **`msw`** (Mock Service Worker)
-   - **Use Case**: API mocking in tests
-   - **Current**: No mocks policy
-   - **Recommendation**: Only if needed for UI-only tests
-
 ---
 
 ## 6. Recommendations Summary

@@ -4,7 +4,9 @@ This document describes how we use Model Context Protocol (MCP) servers in our d
 
 ## Overview
 
-MCP servers extend AI assistants (like Cursor's Composer) with specialized capabilities, allowing them to interact with external services and tools directly. This enables more powerful AI-assisted development workflows.
+MCP servers extend AI assistants (like Cursor's Composer 1) with specialized capabilities, allowing them to interact with external services and tools directly. This enables more powerful AI-assisted development workflows.
+
+All MCP servers are configured to use `pnpm dlx` for command execution, consistent with our project's package manager choice.
 
 ## Configured MCP Servers
 
@@ -81,6 +83,8 @@ Vercel has made significant improvements in 2024 to support backend frameworks l
 
 **Note**: Vercel is a deployment convenience - the stack remains portable to any Linux platform. Our default approach avoids Vercel-specific features to maintain portability, but we can leverage them pragmatically when scaling/performance needs justify it from a product/business perspective.
 
+**For custodial wallet security**: While Vercel is excellent for rapid development and deployment, Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it preferred for production workloads requiring strict data governance.
+
 ## Using MCP Servers with Cursor Composer 1
 
 ### Setup
@@ -120,6 +124,9 @@ Check the latest issues in the repository
 Deploy this project to Vercel
 Show me the build logs for the latest deployment
 Check if mydomain.com is available
+List all deployments for the vencura-api project
+Get details about the production deployment
+Create a shareable link for the protected preview deployment
 ```
 
 ## Authentication Setup
@@ -147,6 +154,38 @@ export VERCEL_API_TOKEN=your_vercel_api_token
 3. **Keep API keys secure**: Never commit API keys to version control
 4. **Use appropriate MCP for the task**: Each MCP server has specific capabilities - use the right one for the job
 5. **Portability first**: When using Vercel MCP, remember our portable-by-default principle - avoid vendor-specific features unless justified
+6. **Combine MCP servers**: Use multiple MCP servers together for complex workflows (e.g., GitHub + Vercel for deployment workflows)
+7. **Test deployments**: Always verify deployments work correctly after using Vercel MCP
+8. **Document workflows**: When establishing new MCP-based workflows, document them for team reference
+
+## Vercel MCP Tools Reference
+
+Vercel MCP provides the following tools (see [full documentation](https://vercel.com/docs/mcp/vercel-mcp/tools)):
+
+### Documentation Tools
+- `search_vercel_docs`: Search Vercel documentation
+- `get_vercel_docs_content`: Get specific documentation content
+
+### Project Management
+- `list_projects`: List all Vercel projects
+- `get_project`: Get project details
+
+### Deployment Management
+- `list_deployments`: List deployments for a project
+- `get_deployment`: Get deployment details
+- `get_deployment_build_logs`: Get build logs for debugging
+
+### Domain Management
+- `check_domain_availability_and_price`: Check domain availability
+- `buy_domain`: Purchase domains
+
+### Access Management
+- `get_access_to_vercel_url`: Create shareable links for protected deployments
+- `web_fetch_vercel_url`: Fetch content from Vercel deployments
+
+### CLI Tools
+- `use_vercel_cli`: Get help with Vercel CLI commands
+- `deploy_to_vercel`: Deploy the current project
 
 ## Resources
 

@@ -11,12 +11,12 @@ This monorepo follows a modular architecture with clear separation between appli
 **Critical architectural principle**: Our stack is designed for portability and runs on any Linux distribution:
 
 - **Default approach**: Avoid vendor-specific features to maintain portability
-- **Pragmatic exceptions**: Can leverage vendor features (e.g., Vercel edge functions) when scaling/performance needs justify from product/business perspective
+- **Pragmatic exceptions**: Can leverage vendor features (e.g., Vercel edge functions, optimizations) when scaling/performance needs justify from product/business perspective
 - **Platform-agnostic**: Can be deployed to any containerized platform (Docker, Kubernetes, etc.)
 - **Vercel as convenience**: Vercel is chosen for rapid deployment and excellent developer experience, not as a requirement
 - **All core components** can be migrated to any platform without code changes
 
-**For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it preferred for production workloads requiring strict data governance.
+**For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it preferred for production workloads requiring strict data governance. See [ADR 007](./.adrs/007-vencura-api-infrastructure.md) and [ADR 010](./.adrs/010-vencura-infra-orchestration.md) for detailed infrastructure decisions.
 
 ### Architecture Structure
 
@@ -110,12 +110,13 @@ Architectural decisions are documented in [Architecture Decision Records (ADRs)]
   - Prefer lodash over custom implementations for array/object manipulation, type checking, string transformations, and functional utilities
   - Import specific functions to reduce bundle size: `import { isEmpty, uniq, merge } from 'lodash'`
 - **DrizzleORM**: Type-safe database ORM
-- **Pulumi**: Infrastructure as Code (TypeScript)
+- **Pulumi**: Infrastructure as Code (TypeScript) - See [Infrastructure](./infra/README.md) for details
 - **Vercel**: Primary deployment platform with 2024 backend improvements:
   - Zero-configuration NestJS support
   - Fluid Compute with Active CPU pricing
   - Significantly reduced cold starts
   - Native support for long-running backend applications
+  - MCP integration for AI-assisted deployment workflows
 
 ### AI-Assisted Development
 
