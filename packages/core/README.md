@@ -56,7 +56,7 @@ The SDK uses a contract-first approach:
 
 1. **API Contracts** (`@vencura/types`) define API endpoints using ts-rest with Zod schemas
 2. **Client** (`@vencura/core`) provides a type-safe client using `@ts-rest/core`
-3. **Backend** (`apps/vencura-api`) implements the API contracts using `@ts-rest/nest`
+3. **Backend** (`apps/api`) implements the API contracts using `@ts-rest/nest`
 4. **Frontend** (`@vencura/react`) uses React hooks with full type inference
 
 This ensures:
@@ -79,5 +79,5 @@ This package has no build step - it exports TypeScript source files directly. Th
 
 ## Related Packages
 
-- **[@vencura/types](../vencura-types/README.md)** - Shared API contracts and types (API contracts, not blockchain contracts)
-- **[@vencura/react](../vencura-react/README.md)** - React hooks for Vencura API using TanStack Query
+- **[@vencura/types](../types/README.md)** - Shared API contracts and types (API contracts, not blockchain contracts)
+- **[@vencura/react](../react/README.md)** - React hooks for Vencura API using TanStack Query

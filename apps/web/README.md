@@ -73,13 +73,13 @@ See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for deta
 pnpm install
 
 # Or from this directory
-cd apps/vencura-web
+cd apps/web
 pnpm install
 ```
 
 ### Environment Variables
 
-Create a `.env.local` file in the `apps/vencura-web` directory (you can copy from `.env.example`):
+Create a `.env.local` file in the `apps/web` directory (you can copy from `.env.example`):
 
 ```env
 # Dynamic SDK Configuration
@@ -122,7 +122,7 @@ NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
 pnpm dev
 
 # Or from this directory
-cd apps/vencura-ui
+cd apps/web
 pnpm dev
 ```
 
@@ -172,17 +172,17 @@ vencura-ui/
 
 ## API Integration
 
-The frontend communicates with the Vencura API backend. See [Vencura API README](../vencura/README.md) for backend documentation.
+The frontend communicates with the Vencura API backend. See [Vencura API README](../api/README.md) for backend documentation.
 
 ### TypeScript SDK
 
-A fully typed TypeScript SDK (`@vencura/core`) is available for interacting with the Vencura API. The SDK is auto-generated from the Swagger/OpenAPI specification. See [@vencura/core README](../../packages/vencura-core/README.md) for usage details.
+A fully typed TypeScript SDK (`@vencura/core`) is available for interacting with the Vencura API. The SDK is auto-generated from the Swagger/OpenAPI specification. See [@vencura/core README](../../packages/core/README.md) for usage details.
 
 **Note**: This UI currently uses a custom API client, but you can use `@vencura/core` for type-safe API interactions.
 
 ### React Hooks
 
-For React applications, **[@vencura/react](../../packages/vencura-react/README.md)** provides React hooks built on TanStack Query, offering:
+For React applications, **[@vencura/react](../../packages/react/README.md)** provides React hooks built on TanStack Query, offering:
 
 - Automatic caching and refetching
 - Optimistic updates

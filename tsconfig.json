@@ -1,5 +1,5 @@
 {
-  "extends": "@workspace/typescript-config/base.json",
-  "include": ["packages/typescript-config/reset.d.ts"]
+  "extends": "@workspace/typescript/base.json",
+  "include": ["config/typescript/reset.d.ts"]
 }
 

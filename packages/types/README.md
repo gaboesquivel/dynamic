@@ -99,5 +99,5 @@ This package uses a contract-first approach where:
 ## Related Packages
 
 - `@vencura/core` - TypeScript SDK using these types
-- `apps/vencura-api` - NestJS backend implementing these API contracts
+- `apps/api` - NestJS backend implementing these API contracts
 - `@vencura/react` - React hooks using these types

@@ -315,7 +315,7 @@ import type {
 } from '@vencura/react'
 ```
 
-For complete type definitions, see [@vencura/types](../vencura-types/README.md) and [@vencura/core](../vencura-core/README.md).
+For complete type definitions, see [@vencura/types](../types/README.md) and [@vencura/core](../core/README.md).
 
 ## Architecture
 
@@ -397,4 +397,4 @@ const createWallet = useCreateWallet({
 
 ## Related Packages
 
-- [@vencura/core](../vencura-core/README.md) - TypeScript SDK for Vencura API
+- [@vencura/core](../core/README.md) - TypeScript SDK for Vencura API

@@ -25,16 +25,19 @@ This monorepo follows a modular architecture with clear separation between appli
 ```
 dynamic/
 ├── apps/              # Applications
-│   ├── vencura-api/   # NestJS backend API (multichain custodial wallet platform)
-│   ├── vencura-web/   # Next.js frontend for Vencura API (multichain support)
+│   ├── api/           # NestJS backend API (multichain custodial wallet platform)
+│   ├── web/           # Next.js frontend for Vencura API (multichain support)
+│   ├── docs/          # Documentation site
 │   └── mathler/       # Next.js Mathler game (Wordle with numbers)
 ├── packages/          # Shared packages
-│   ├── vencura-core/  # TypeScript SDK for Vencura API (auto-generated)
-│   ├── vencura-react/ # React hooks for Vencura API using TanStack Query
-│   ├── vencura-ai/    # AI chatbot component and SDK
-│   ├── ui/            # Shared Shadcn/ui component library
-│   ├── eslint-config/ # Shared ESLint configuration
-│   └── typescript-config/ # Shared TypeScript configuration
+│   ├── core/          # TypeScript SDK for Vencura API (auto-generated)
+│   ├── react/         # React hooks for Vencura API using TanStack Query
+│   ├── ai/            # AI chatbot component and SDK
+│   ├── types/         # Shared API contracts and types
+│   └── ui/            # Shared Shadcn/ui component library
+├── config/            # Shared configurations
+│   ├── eslint/        # Shared ESLint configuration
+│   └── typescript/    # Shared TypeScript configuration
 ├── contracts/         # Smart contracts
 │   ├── evm/           # EVM contracts (Foundry)
 │   └── solana/        # Solana programs (Anchor)
@@ -42,12 +45,12 @@ dynamic/
     └── vencura/       # Pulumi infrastructure for Vencura API
 ```
 
-**Applications** (`apps/`) are deployable services with their own dependencies and configurations. **Packages** (`packages/`) provide shared code, configurations, and utilities consumed by applications. **Infrastructure** (`infra/`) contains infrastructure-as-code definitions using Pulumi.
+**Applications** (`apps/`) are deployable services with their own dependencies and configurations. **Packages** (`packages/`) provide shared code and utilities consumed by applications. **Config** (`config/`) contains shared configuration packages for ESLint and TypeScript. **Infrastructure** (`infra/`) contains infrastructure-as-code definitions using Pulumi.
 
 See individual project READMEs for detailed documentation:
 
-- **[Vencura API](./apps/vencura-api/README.md)** - Backend API documentation
-- **[Vencura Web](./apps/vencura-web/README.md)** - Frontend application documentation
+- **[Vencura API](./apps/api/README.md)** - Backend API documentation
+- **[Vencura Web](./apps/web/README.md)** - Frontend application documentation
 - **[Mathler](./apps/mathler/README.md)** - Mathler game documentation
 - **[EVM Contracts](./contracts/evm/README.md)** - EVM smart contracts (Foundry)
 - **[Solana Contracts](./contracts/solana/README.md)** - Solana programs (Anchor)
@@ -84,48 +87,7 @@ Architectural decisions are documented in [Architecture Decision Records (ADRs)]
 - [010: Vencura Infrastructure Orchestration](./.adrs/010-vencura-infra-orchestration.md)
 - [011: Vencura API ORM Selection](./.adrs/011-vencura-api-orm.md)
 
-## Tooling
-
-### Monorepo Management
-
-- **Turborepo**: Build system and task orchestration
-- **pnpm**: Package manager with workspace support
-- **TypeScript**: Shared configuration via `@workspace/typescript-config`
-
-### Development Tools
-
-- **Next.js 16.0.0**: React framework for frontend applications (standardized across all Next.js apps)
-- **React 19.1.1**: Standardized React version across all frontend applications
-- **ESLint + Prettier**: Linting and formatting (shared config via `@workspace/eslint-config`)
-- **@total-typescript/ts-reset**: Enhanced TypeScript type safety for built-in APIs
-  - Makes `JSON.parse()` return `unknown` instead of `any` (requires validation)
-  - Makes `fetch().json()` return `unknown` instead of `any` (requires validation)
-  - Improves `.filter(Boolean)` typing and other common patterns
-  - Automatically applied via shared TypeScript configuration
-- **Zod**: Primary schema validation tool for runtime validation and type inference
-  - Used for all schemas (environment variables, API responses, form validation, tool parameters)
-  - Exception: NestJS DTOs use `class-validator` per NestJS conventions
-  - **zod-validation-error**: Used for better error messages when displaying validation errors to users
-- **TanStack Query**: Data fetching and caching solution
-  - **@tanstack/react-query-devtools**: Development tools for debugging queries (dev mode only)
-  - Query key factory pattern via `@lukemorales/query-key-factory`
-- **react-error-boundary**: Error boundary component library for catching React errors
-  - Provides fallback UI when errors occur
-  - Use for app-level, section-level, and feature-level error handling
-- **nanoid**: Unique ID generation library (smaller and faster than UUID)
-- **Lodash**: Preferred utility library for common operations
-  - Prefer lodash over custom implementations for array/object manipulation, type checking, string transformations, and functional utilities
-  - Import specific functions to reduce bundle size: `import { isEmpty, uniq, merge } from 'lodash'`
-- **DrizzleORM**: Type-safe database ORM
-- **Pulumi**: Infrastructure as Code (TypeScript) - See [Infrastructure](./infra/README.md) for details
-- **Vercel**: Primary deployment platform with 2024 backend improvements:
-  - Zero-configuration NestJS support
-  - Fluid Compute with Active CPU pricing
-  - Significantly reduced cold starts
-  - Native support for long-running backend applications
-  - MCP integration for AI-assisted deployment workflows
-
-### AI-Assisted Development
+## AI-Assisted Development
 
 This project leverages AI tools throughout the development workflow:
 
@@ -141,15 +103,15 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 
 ### Applications
 
-- **[Vencura API](./apps/vencura-api/README.md)** - NestJS backend for multichain custodial wallet management
-- **[Vencura Web](./apps/vencura-web/README.md)** - Next.js frontend for Vencura API
+- **[Vencura API](./apps/api/README.md)** - NestJS backend for multichain custodial wallet management
+- **[Vencura Web](./apps/web/README.md)** - Next.js frontend for Vencura API
 - **[Mathler](./apps/mathler/README.md)** - Next.js Mathler game
 
 ### Packages
 
-- **[@vencura/core](./packages/vencura-core/README.md)** - TypeScript SDK (auto-generated)
-- **[@vencura/react](./packages/vencura-react/README.md)** - React hooks with TanStack Query
-- **[@vencura/ai](./packages/vencura-ai/README.md)** - AI chatbot component and SDK for wallet operations
+- **[@vencura/core](./packages/core/README.md)** - TypeScript SDK (auto-generated)
+- **[@vencura/react](./packages/react/README.md)** - React hooks with TanStack Query
+- **[@vencura/ai](./packages/ai/README.md)** - AI chatbot component and SDK for wallet operations
 - **[UI Package](./packages/ui/README.md)** - Shared Shadcn/ui components
 
 ### Contracts

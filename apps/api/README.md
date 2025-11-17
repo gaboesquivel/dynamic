@@ -24,7 +24,7 @@ Vencura is a backend API that enables users to create and manage custodial walle
 - **RPC Configuration**: Uses Dynamic's default RPC URLs with optional per-chain overrides
 - **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production)
 - **API Documentation**: Interactive Swagger UI at `/api` (disabled by default, enable with `ENABLE_SWAGGER_UI=true`)
-- **TypeScript SDK**: Auto-generated `@vencura/core` SDK from Swagger/OpenAPI specification (see [@vencura/core README](../../packages/vencura-core/README.md))
+- **TypeScript SDK**: Auto-generated `@vencura/core` SDK from Swagger/OpenAPI specification (see [@vencura/core README](../../packages/core/README.md))
 - **Security**:
   - AES-256-GCM encryption for private key storage
   - Rate limiting on all endpoints (wallet creation: 10/min, transactions: 20/min, signing: 30/min)

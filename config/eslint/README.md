@@ -101,7 +101,7 @@ export default [...baseConfig]
 ### Next.js App
 
 ```js
-// apps/vencura-ui/eslint.config.js
+// apps/web/eslint.config.js
 import nextConfig from '@workspace/eslint-config/next-js'
 
 export default [...nextConfig]
