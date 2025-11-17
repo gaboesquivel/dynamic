@@ -24,35 +24,35 @@ export function createWalletTools(walletService: WalletService, userId: string) 
     getWallets: tool({
       description: 'Get all wallets for the authenticated user',
       parameters: getWalletsParams,
-      // @ts-ignore TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
       execute: async () => walletService.getUserWallets(userId),
     }),
     createWallet: tool({
       description:
         'Create a new custodial wallet on a specific chain. Provide chainId as a number (e.g., 421614 for Arbitrum Sepolia) or Dynamic network ID string (e.g., "solana-mainnet" for Solana).',
       parameters: createWalletParams,
-      // @ts-ignore TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
       execute: async ({ chainId }: z.infer<typeof createWalletParams>) =>
         walletService.createWallet(userId, chainId),
     }),
     getBalance: tool({
       description: 'Get the balance of a specific wallet',
       parameters: getBalanceParams,
-      // @ts-ignore TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
       execute: async ({ walletId }: z.infer<typeof getBalanceParams>) =>
         walletService.getBalance(walletId, userId),
     }),
     sendTransaction: tool({
       description: 'Send a transaction from a wallet to another address',
       parameters: sendTransactionParams,
-      // @ts-ignore TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
       execute: async ({ walletId, to, amount }: z.infer<typeof sendTransactionParams>) =>
         walletService.sendTransaction(walletId, userId, to, amount),
     }),
     signMessage: tool({
       description: 'Sign a message with a wallet private key',
       parameters: signMessageParams,
-      // @ts-ignore TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
+      // @ts-expect-error TS2769 - AI SDK v5 tool() function has type inference issues with execute parameter
       execute: async ({ walletId, message }: z.infer<typeof signMessageParams>) =>
         walletService.signMessage(walletId, userId, message),
     }),

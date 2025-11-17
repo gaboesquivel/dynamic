@@ -13,6 +13,7 @@ The Vencura codebase demonstrates a **well-architected, modern monorepo** with s
 **Overall Assessment:** ⭐⭐⭐⭐⭐ (5/5)
 
 **Key Strengths:**
+
 - Comprehensive Cursor rules with clear patterns
 - Well-documented architecture decisions (ADRs)
 - Modern tooling stack (Turborepo, pnpm, Drizzle ORM)
@@ -20,6 +21,7 @@ The Vencura codebase demonstrates a **well-architected, modern monorepo** with s
 - Clear separation of concerns (apps/packages/infra)
 
 **Areas for Improvement:**
+
 - Consider additional utility packages to reduce boilerplate
 - Some potential package consolidation opportunities
 - Enhanced testing utilities could be beneficial
@@ -33,6 +35,7 @@ The Vencura codebase demonstrates a **well-architected, modern monorepo** with s
 The codebase has **excellent rule coverage** across all domains:
 
 #### ✅ **Base Rules**
+
 - **TypeScript Rules** (`base/typescript.mdc`): Comprehensive
   - Interface vs type guidelines with clear exceptions
   - RORO pattern enforcement
@@ -47,6 +50,7 @@ The codebase has **excellent rule coverage** across all domains:
   - Zod preference
 
 #### ✅ **Frontend Rules**
+
 - **React Rules** (`frontend/react.mdc`): Excellent state management guidance
   - Clear decision tree for state management (nuqs vs useSetState vs TanStack Query)
   - Component composition patterns
@@ -76,6 +80,7 @@ The codebase has **excellent rule coverage** across all domains:
   - Mobile-first design
 
 #### ✅ **Backend Rules**
+
 - **NestJS Rules** (`backend/nestjs.mdc`): Framework-appropriate
   - DTO validation with class-validator (NestJS standard)
   - Zod for other schemas
@@ -88,6 +93,7 @@ The codebase has **excellent rule coverage** across all domains:
   - Real API integration testing
 
 #### ✅ **Web3 Rules**
+
 - **Viem Rules** (`web3/viem.mdc`): Address validation patterns
 - **Wagmi Rules** (`web3/wagmi.mdc`): React hooks patterns
 - **Multichain Rules** (`web3/multichain.mdc`): Chain-specific validation
@@ -96,6 +102,7 @@ The codebase has **excellent rule coverage** across all domains:
 ### 1.2 Rule Quality Assessment
 
 **Strengths:**
+
 1. **Clear Exceptions**: Rules document when exceptions apply (NestJS classes, Next.js default exports)
 2. **Anti-Patterns**: Rules include "don't do this" examples
 3. **Decision Trees**: State management rules include clear decision trees
@@ -103,6 +110,7 @@ The codebase has **excellent rule coverage** across all domains:
 5. **Consistency**: Rules are consistent across domains
 
 **Recommendations:**
+
 1. ✅ **Consider adding**: Rule for error boundary patterns in React
 2. ✅ **Consider adding**: Rule for API response caching strategies
 3. ✅ **Consider adding**: Rule for Web3 transaction retry logic
@@ -141,6 +149,7 @@ dynamic/
 ```
 
 **Assessment:** ✅ **Excellent structure**
+
 - Clear separation: apps vs packages vs infra
 - Shared packages properly organized
 - Infrastructure as code included
@@ -163,6 +172,7 @@ The codebase has **12 well-documented ADRs**:
 12. **ADR 012**: Vencura AI Architecture ✅
 
 **Assessment:** ✅ **Excellent documentation**
+
 - Decisions are well-reasoned
 - Alternatives considered
 - Implementation details included
@@ -170,6 +180,7 @@ The codebase has **12 well-documented ADRs**:
 ### 2.3 Package Dependencies
 
 **Workspace Packages:**
+
 - `@workspace/eslint-config`: Shared ESLint config ✅
 - `@workspace/typescript-config`: Shared TypeScript config ✅
 - `@workspace/ui`: Shared UI components ✅
@@ -179,6 +190,7 @@ The codebase has **12 well-documented ADRs**:
 - `@vencura/ai`: AI SDK ✅
 
 **Assessment:** ✅ **Well-organized**
+
 - Clear workspace package structure
 - Proper dependency management
 - Shared configs reduce duplication
@@ -199,29 +211,35 @@ The codebase has **12 well-documented ADRs**:
 ### 3.1 Code Patterns
 
 #### ✅ **RORO Pattern (Receive Object, Return Object)**
+
 - **Status**: Well-documented and enforced
 - **Example**: `validateResponse({ data, schema, errorMessage })`
 - **Assessment**: Excellent pattern for function clarity
 
 #### ✅ **Query Key Factory Pattern**
+
 - **Status**: Enforced via `@lukemorales/query-key-factory`
 - **Assessment**: Reduces boilerplate, improves type safety
 
 #### ✅ **Server Components First**
+
 - **Status**: Strongly emphasized in Next.js rules
 - **Assessment**: Modern, performance-focused approach
 
 #### ✅ **Zod-First Validation**
+
 - **Status**: Used everywhere except NestJS DTOs
 - **Assessment**: Consistent, type-safe validation
 
 #### ✅ **Repository Pattern**
+
 - **Status**: Used in NestJS backend
 - **Assessment**: Good separation of concerns
 
 ### 3.2 State Management Patterns
 
 **Decision Tree:**
+
 1. URL-shareable state → `nuqs` ✅
 2. Grouped state → `useSetState` ✅
 3. Loading/error from async → TanStack Query ✅
@@ -253,18 +271,21 @@ The codebase has **12 well-documented ADRs**:
 ### 4.1 Build & Development Tools
 
 #### ✅ **Turborepo**
+
 - **Version**: 2.6.1
 - **Usage**: Build orchestration, caching
 - **Assessment**: Excellent choice for monorepo
 - **Configuration**: Well-configured with proper task dependencies
 
 #### ✅ **pnpm**
+
 - **Version**: 10.4.1
 - **Usage**: Package manager
 - **Assessment**: Best choice for monorepo (per ADR 005)
 - **Workspace Config**: Properly configured
 
 #### ✅ **TypeScript**
+
 - **Version**: 5.7.3 (root), varies in packages
 - **Usage**: Type safety across codebase
 - **Assessment**: Modern version, good type safety
@@ -273,12 +294,14 @@ The codebase has **12 well-documented ADRs**:
 ### 4.2 Linting & Formatting
 
 #### ✅ **ESLint**
+
 - **Version**: 9.18.0+
 - **Usage**: Code quality enforcement
 - **Configuration**: Shared via `@workspace/eslint-config`
 - **Assessment**: Modern flat config, well-configured
 
 #### ✅ **Prettier**
+
 - **Version**: 3.4.2+
 - **Usage**: Code formatting
 - **Assessment**: Standard, reliable
@@ -288,12 +311,14 @@ The codebase has **12 well-documented ADRs**:
 ### 4.3 Database & ORM
 
 #### ✅ **Drizzle ORM**
+
 - **Version**: 0.36.4
 - **Usage**: Type-safe database queries
 - **Assessment**: Excellent choice (per ADR 011)
 - **Benefits**: Lightweight, type-safe, no code generation
 
 #### ✅ **Drizzle Kit**
+
 - **Version**: 0.30.0
 - **Usage**: Migrations
 - **Assessment**: Good migration tooling
@@ -301,6 +326,7 @@ The codebase has **12 well-documented ADRs**:
 ### 4.4 Infrastructure as Code
 
 #### ✅ **Pulumi**
+
 - **Usage**: Infrastructure provisioning
 - **Assessment**: Modern IaC, TypeScript-native
 - **Structure**: Well-organized in `infra/vencura/`
@@ -308,21 +334,25 @@ The codebase has **12 well-documented ADRs**:
 ### 4.5 Testing Tools
 
 #### ✅ **Jest**
+
 - **Version**: 29.7.0
 - **Usage**: Unit and E2E tests
 - **Assessment**: Standard, reliable
 
 #### ✅ **Playwright**
+
 - **Version**: 1.56.1
 - **Usage**: E2E tests for frontend
 - **Assessment**: Modern, reliable
 
 #### ✅ **Supertest**
+
 - **Version**: 7.0.0
 - **Usage**: API testing
 - **Assessment**: Standard for NestJS
 
 **Recommendation:** Consider adding testing utilities:
+
 - `@testing-library/react` (already in mathler, consider standardizing)
 - `@testing-library/jest-dom` (already in mathler)
 - `msw` (Mock Service Worker) for API mocking in tests (if needed)
@@ -344,6 +374,7 @@ The codebase has **12 well-documented ADRs**:
 #### ✅ **Core Dependencies (Well-Chosen)**
 
 **Backend (vencura-api):**
+
 - `@nestjs/*`: Modern NestJS stack ✅
 - `drizzle-orm`: Type-safe ORM ✅
 - `viem`: Modern Ethereum library ✅
@@ -353,6 +384,7 @@ The codebase has **12 well-documented ADRs**:
 - `@dynamic-labs/*`: Wallet SDK ✅
 
 **Frontend (vencura-web):**
+
 - `next`: 15.4.5 (latest) ✅
 - `react`: 19.1.1 (latest) ✅
 - `@tanstack/react-query`: 5.90.8 ✅
@@ -363,6 +395,7 @@ The codebase has **12 well-documented ADRs**:
 - `@dynamic-labs/*`: Wallet authentication ✅
 
 **Shared Packages:**
+
 - `@lukemorales/query-key-factory`: Query key management ✅
 - `@ts-rest/core`: Type-safe API client ✅
 
@@ -387,6 +420,7 @@ The codebase has **12 well-documented ADRs**:
    - **Note**: This is acceptable for runtime dependencies, but consider if shared utilities could reduce duplication
 
 #### ✅ **No Major Red Flags**
+
 - No deprecated packages detected
 - No known security vulnerabilities in key packages
 - Modern, well-maintained packages
@@ -401,36 +435,36 @@ The codebase has **12 well-documented ADRs**:
    - **Benefit**: Debug queries, cache inspection
    - **Recommendation**: Add as dev dependency
 
-4. **`@tanstack/query-sync-storage-persister`**
+3. **`@tanstack/query-sync-storage-persister`**
    - **Current**: Using TanStack Query
    - **Opportunity**: Persist queries to localStorage/sessionStorage
    - **Benefit**: Better UX with persisted cache
    - **Recommendation**: Consider for specific use cases
 
-10. **`@tanstack/virtual`**
-    - **Opportunity**: Virtual scrolling for large lists
-    - **Benefit**: Performance optimization
-    - **Recommendation**: Add when needed for large data sets
+4. **`@tanstack/virtual`**
+   - **Opportunity**: Virtual scrolling for large lists
+   - **Benefit**: Performance optimization
+   - **Recommendation**: Add when needed for large data sets
 
-11. **`react-error-boundary`**
-    - **Opportunity**: Better error boundary handling
-    - **Benefit**: Improved error UX
-    - **Recommendation**: Consider adding
+5. **`react-error-boundary`**
+   - **Opportunity**: Better error boundary handling
+   - **Benefit**: Improved error UX
+   - **Recommendation**: Consider adding
 
-13. **`@tanstack/react-table`**
-    - **Opportunity**: If building data tables
-    - **Benefit**: Powerful table component
-    - **Recommendation**: Add if tables are needed
+6. **`@tanstack/react-table`**
+   - **Opportunity**: If building data tables
+   - **Benefit**: Powerful table component
+   - **Recommendation**: Add if tables are needed
 
-1. **`nanoid`** or **`uuid`**
+7. **`nanoid`** or **`uuid`**
    - **Use Case**: ID generation
    - **Recommendation**: Add if needed
 
-6. **`zod-validation-error`**
+8. **`zod-validation-error`**
    - **Use Case**: Better Zod error messages
    - **Recommendation**: Consider for better error UX
 
-7. **`@tanstack/react-form`**
+9. **`@tanstack/react-form`**
    - **Use Case**: Form library from TanStack
    - **Current**: Using react-hook-form in mathler
    - **Recommendation**: Current approach is fine, but consider if TanStack Form fits better
@@ -572,6 +606,7 @@ The codebase has **12 well-documented ADRs**:
 
 **Summary:**
 The Vencura codebase is **exceptionally well-architected** with:
+
 - Comprehensive rules and patterns
 - Modern tooling choices
 - Clear architecture decisions
@@ -579,6 +614,7 @@ The Vencura codebase is **exceptionally well-architected** with:
 - Good separation of concerns
 
 **Key Recommendations:**
+
 1. Fix `@dynamic-labs/*` version specifiers
 2. Add `@tanstack/react-query-devtools` for better DX
 3. Consider standardizing form handling and date libraries
@@ -592,6 +628,7 @@ The Vencura codebase is **exceptionally well-architected** with:
 ## Appendix: Package Versions Summary
 
 ### Backend (vencura-api)
+
 - NestJS: 11.0.17
 - Drizzle ORM: 0.36.4
 - Viem: 2.21.45
@@ -599,6 +636,7 @@ The Vencura codebase is **exceptionally well-architected** with:
 - Lodash: 4.17.21
 
 ### Frontend (vencura-web)
+
 - Next.js: 15.4.5
 - React: 19.1.1
 - TanStack Query: 5.90.8
@@ -606,11 +644,13 @@ The Vencura codebase is **exceptionally well-architected** with:
 - Lodash: 4.17.21
 
 ### Shared Packages
+
 - TypeScript: 5.7.3 (root), varies in packages
 - ESLint: 9.18.0+
 - Prettier: 3.4.2+
 - Turborepo: 2.6.1
 - pnpm: 10.4.1
+
 ```
 
 This review covers:
@@ -622,3 +662,4 @@ This review covers:
 - Actionable improvements
 
 Save this as `FULL_REVIEW.md` in the root directory.
+```
