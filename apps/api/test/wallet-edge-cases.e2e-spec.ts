@@ -1,68 +1,48 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import type { App } from 'supertest/types'
-import { AppModule } from '../src/app.module'
 import { getTestAuthToken } from './auth'
 import { TEST_CHAINS, TEST_MESSAGES } from './fixtures'
 import { createTestWallet, getOrCreateTestWallet } from './helpers'
 
+const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
+
 describe('WalletController Edge Cases (e2e)', () => {
-  let app: INestApplication<App>
   let authToken: string
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile()
-
-    app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-      }),
-    )
-    await app.init()
-
     authToken = await getTestAuthToken()
-  })
-
-  afterAll(async () => {
-    await app.close()
   })
 
   describe('Wallet Creation Edge Cases', () => {
     it('should return 400 for unsupported chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 999999 })
         .expect(400))
 
     it('should return 400 for negative chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: -1 })
         .expect(400))
 
     it('should return 400 for zero chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 0 })
         .expect(400))
 
     it('should return 400 for empty string chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: '' })
         .expect(400))
 
     it('should return 400 for null chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: null })
@@ -72,12 +52,11 @@ describe('WalletController Edge Cases (e2e)', () => {
   describe('Balance Query Edge Cases', () => {
     it('should return balance of 0 for new wallet', async () => {
       const wallet = await createTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .get(`/wallets/${wallet.id}/balance`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -89,13 +68,13 @@ describe('WalletController Edge Cases (e2e)', () => {
     })
 
     it('should return 404 for invalid UUID format', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .get('/wallets/invalid-uuid')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404))
 
     it('should return 404 for empty wallet ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .get('/wallets/')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404))
@@ -104,12 +83,11 @@ describe('WalletController Edge Cases (e2e)', () => {
   describe('Message Signing Edge Cases', () => {
     it('should handle empty message', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ message: TEST_MESSAGES.EMPTY })
@@ -122,12 +100,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should handle long message', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ message: TEST_MESSAGES.LONG })
@@ -140,12 +117,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should handle special characters in message', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ message: TEST_MESSAGES.SPECIAL_CHARS })
@@ -158,12 +134,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should return 400 for non-string message', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ message: 12345 })
@@ -174,12 +149,11 @@ describe('WalletController Edge Cases (e2e)', () => {
   describe('Transaction Sending Edge Cases', () => {
     it('should return 400 for invalid EVM address format', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -191,12 +165,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should return 400 for address that is too short', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -208,12 +181,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should return 400 for negative amount', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -225,12 +197,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should return 400 for zero amount', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -242,12 +213,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should return 400 for very large amount', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -259,12 +229,11 @@ describe('WalletController Edge Cases (e2e)', () => {
 
     it('should return 400 for non-numeric amount', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -277,7 +246,7 @@ describe('WalletController Edge Cases (e2e)', () => {
 
   describe('Malformed Request Bodies', () => {
     it('should return 400 for malformed JSON in wallet creation', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .set('Content-Type', 'application/json')
@@ -285,7 +254,7 @@ describe('WalletController Edge Cases (e2e)', () => {
         .expect(400))
 
     it('should return 400 for extra fields in wallet creation', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -301,7 +270,7 @@ describe('WalletController Edge Cases (e2e)', () => {
       process.env.NODE_ENV = 'production'
 
       // Test that error messages don't leak sensitive information
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 999999 })
@@ -316,7 +285,7 @@ describe('WalletController Edge Cases (e2e)', () => {
     })
 
     it('should include X-Request-ID in error responses', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 999999 })
@@ -328,7 +297,7 @@ describe('WalletController Edge Cases (e2e)', () => {
 
   describe('Rate Limiting', () => {
     it('should include rate limit headers in responses', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .get('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -341,7 +310,7 @@ describe('WalletController Edge Cases (e2e)', () => {
     it('should enforce rate limits on wallet creation', async () => {
       // Create multiple wallets rapidly to test rate limiting
       const requests = Array.from({ length: 15 }, () =>
-        request(app.getHttpServer())
+        request(TEST_SERVER_URL)
           .post('/wallets')
           .set('Authorization', `Bearer ${authToken}`)
           .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA }),

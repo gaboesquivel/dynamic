@@ -11,23 +11,6 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     
-    services:
-      anvil:
-        image: foundryorg/foundry:latest
-        ports:
-          - 8545:8545
-        options: >-
-          --health-cmd "curl -X POST http://localhost:8545 -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"id\":1}'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        env:
-          ANVIL_HOST: 0.0.0.0
-          ANVIL_PORT: 8545
-        # Start Anvil in the container
-        entrypoint: /bin/sh
-        args: -c "anvil --host 0.0.0.0 --port 8545"
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,12 +40,10 @@ jobs:
           pnpm run test:e2e:ci
         env:
           NODE_ENV: test
-          USE_LOCAL_BLOCKCHAIN: 'true'
-          RPC_URL_421614: 'http://localhost:8545'
-          RPC_URL_84532: 'http://localhost:8545'
           DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
           DYNAMIC_API_TOKEN: ${{ secrets.DYNAMIC_API_TOKEN }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          ARB_TESTNET_GAS_FAUCET_KEY: ${{ secrets.ARB_TESTNET_GAS_FAUCET_KEY }}
 
       - name: Run unit tests
         run: pnpm run test --continue || echo "Unit tests skipped if not configured"

@@ -4,7 +4,6 @@ import { EncryptionService } from '../common/encryption.service'
 import {
   getChainMetadata,
   getDynamicNetworkId,
-  getDynamicCompatibleChainId,
   isSupportedChain,
   getChainType,
 } from '../common/chains'
@@ -53,38 +52,29 @@ export class WalletService {
     userId: string,
     chainId: number | string,
   ): Promise<{ id: string; address: string; network: string; chainType: ChainType }> {
-    // Map local chain IDs to Dynamic-compatible chain IDs (e.g., 31337 -> 421614)
-    // This ensures Dynamic SDK operations use supported chain IDs while RPC can point to localhost
-    const compatibleChainId = getDynamicCompatibleChainId(chainId)
-
-    // Validate chain is supported (using compatible chain ID)
-    if (!isSupportedChain(compatibleChainId)) {
+    // Validate chain is supported
+    if (!isSupportedChain(chainId)) {
       throw new BadRequestException(
         `Unsupported chain: ${chainId}. Please provide a valid chain ID or Dynamic network ID.`,
       )
     }
 
-    // Get chain metadata and Dynamic network ID (using compatible chain ID)
-    const chainMetadata = getChainMetadata(compatibleChainId)
-    if (!chainMetadata) throw new BadRequestException(`Invalid chain: ${compatibleChainId}`)
+    // Get chain metadata and Dynamic network ID
+    const chainMetadata = getChainMetadata(chainId)
+    if (!chainMetadata) throw new BadRequestException(`Invalid chain: ${chainId}`)
 
-    const dynamicNetworkId = getDynamicNetworkId(compatibleChainId)
+    const dynamicNetworkId = getDynamicNetworkId(chainId)
     if (!dynamicNetworkId)
-      throw new BadRequestException(
-        `Could not determine Dynamic network ID for chain: ${compatibleChainId}`,
-      )
+      throw new BadRequestException(`Could not determine Dynamic network ID for chain: ${chainId}`)
 
-    const chainType = getChainType(compatibleChainId)
+    const chainType = getChainType(chainId)
     if (!chainType)
-      throw new BadRequestException(
-        `Could not determine chain type for chain: ${compatibleChainId}`,
-      )
+      throw new BadRequestException(`Could not determine chain type for chain: ${chainId}`)
 
-    // Get appropriate wallet client (using compatible chain ID)
-    // Note: RPC URL will still point to localhost if configured via RPC_URL_421614=http://localhost:8545
-    const walletClient = this.walletClientFactory.createWalletClient(compatibleChainId)
+    // Get appropriate wallet client
+    const walletClient = this.walletClientFactory.createWalletClient(chainId)
     if (!walletClient)
-      throw new BadRequestException(`Wallet client not available for chain: ${compatibleChainId}`)
+      throw new BadRequestException(`Wallet client not available for chain: ${chainId}`)
 
     // Create wallet using chain-specific client
     const wallet = await walletClient.createWallet()

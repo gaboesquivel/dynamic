@@ -1,38 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import type { App } from 'supertest/types'
-import { AppModule } from '../src/app.module'
 import { getTestAuthToken } from './auth'
 
+const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
+
 describe('ChatController (e2e)', () => {
-  let app: INestApplication<App>
   let authToken: string
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile()
-
-    app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-      }),
-    )
-    await app.init()
-
     authToken = await getTestAuthToken()
-  })
-
-  afterAll(async () => {
-    await app.close()
   })
 
   describe('POST /chat', () => {
     it('should return 401 for unauthorized access', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/chat')
         .send({
           messages: [{ role: 'user', content: 'Hello' }],
@@ -40,14 +20,14 @@ describe('ChatController (e2e)', () => {
         .expect(401))
 
     it('should return 400 for invalid request body', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/chat')
         .set('Authorization', `Bearer ${authToken}`)
         .send({})
         .expect(400))
 
     it('should return 400 for missing messages', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/chat')
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -56,7 +36,7 @@ describe('ChatController (e2e)', () => {
         .expect(400))
 
     it('should return tools list', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .get('/chat/tools')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -69,6 +49,6 @@ describe('ChatController (e2e)', () => {
         }))
 
     it('should return 401 for tools endpoint without auth', async () =>
-      request(app.getHttpServer()).get('/chat/tools').expect(401))
+      request(TEST_SERVER_URL).get('/chat/tools').expect(401))
   })
 })

@@ -1,12 +1,12 @@
 import request from 'supertest'
-import { INestApplication } from '@nestjs/common'
-import { isNumber } from 'lodash'
 import { getTestAuthToken } from './auth'
-import type { App } from 'supertest/types'
 import { delay } from '@vencura/lib'
 import type { Address } from 'viem'
-import { createWalletClient, http, parseEther, privateKeyToAccount } from 'viem'
-import { foundry } from 'viem/chains'
+import { createWalletClient, createPublicClient, http } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
+import { arbitrumSepolia } from 'viem/chains'
+
+const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
 export interface TestWallet {
   id: string
@@ -21,18 +21,18 @@ export interface TestWallet {
  *
  * For most tests, use `getOrCreateTestWallet()` instead, which reuses existing wallets.
  *
- * Note: Wallets are automatically funded when using local blockchain (USE_LOCAL_BLOCKCHAIN=true).
+ * Note: Wallets are automatically funded with minimum ETH required for transactions.
  */
 export async function createTestWallet({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
   chainId,
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   chainId: number | string
 }): Promise<TestWallet> {
-  const response = await request(app.getHttpServer())
+  const response = await request(baseUrl)
     .post('/wallets')
     .set('Authorization', `Bearer ${authToken}`)
     .send({ chainId })
@@ -42,41 +42,60 @@ export async function createTestWallet({
 }
 
 /**
- * Fund a wallet with ETH from Anvil's default account or testnet faucet.
- * Only works when using local Anvil blockchain or when FAUCET_PRIVATE_KEY is set.
+ * Fund a wallet with minimum ETH required for transactions on Arbitrum Sepolia.
+ * Uses ARB_TESTNET_GAS_FAUCET_KEY to send only the minimum amount needed.
  *
  * @param address - Wallet address to fund
- * @param amount - Amount of ETH to send (default: 1 ETH)
- * @param rpcUrl - RPC URL (default: http://localhost:8545 for Anvil)
+ * @param rpcUrl - RPC URL for Arbitrum Sepolia (defaults to env or public RPC)
  * @returns Success status and transaction hash if successful
  */
 export async function fundWalletWithGas({
   address,
-  amount = parseEther('1'),
-  rpcUrl = 'http://localhost:8545',
+  rpcUrl,
 }: {
   address: `0x${string}`
-  amount?: bigint
   rpcUrl?: string
 }): Promise<{ success: boolean; txHash?: string; error?: string }> {
   try {
-    // Check if using local Anvil (default account) or testnet (FAUCET_PRIVATE_KEY)
-    const faucetPrivateKey =
-      process.env.FAUCET_PRIVATE_KEY ||
-      // Anvil's default account private key (well-known for local testing)
-      '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+    const faucetPrivateKey = process.env.ARB_TESTNET_GAS_FAUCET_KEY
+    if (!faucetPrivateKey) {
+      return {
+        success: false,
+        error: 'ARB_TESTNET_GAS_FAUCET_KEY environment variable is required',
+      }
+    }
+
+    const effectiveRpcUrl =
+      rpcUrl || process.env.RPC_URL_421614 || 'https://sepolia-rollup.arbitrum.io/rpc'
 
     const account = privateKeyToAccount(faucetPrivateKey as `0x${string}`)
 
-    const client = createWalletClient({
-      account,
-      chain: foundry, // Use foundry chain for Anvil (works with any EVM chain when RPC is overridden)
-      transport: http(rpcUrl),
+    const publicClient = createPublicClient({
+      chain: arbitrumSepolia,
+      transport: http(effectiveRpcUrl),
     })
 
-    const hash = await client.sendTransaction({
+    const walletClient = createWalletClient({
+      account,
+      chain: arbitrumSepolia,
+      transport: http(effectiveRpcUrl),
+    })
+
+    // Estimate gas for a simple token transfer transaction (~65,000 gas for ERC20)
+    // Use a standard transfer as a baseline
+    const gasEstimate = 65_000n // Base estimate for ERC20 transfer
+
+    // Get current gas price from the network
+    const gasPrice = await publicClient.getGasPrice()
+
+    // Calculate minimum ETH: (gasLimit * gasPrice) * 1.2 (20% buffer)
+    const gasCost = gasEstimate * gasPrice
+    const amountWithBuffer = (gasCost * 120n) / 100n
+
+    const hash = await walletClient.sendTransaction({
+      account,
       to: address,
-      value: amount,
+      value: amountWithBuffer,
     })
 
     return { success: true, txHash: hash }
@@ -91,65 +110,46 @@ export async function fundWalletWithGas({
 
 /**
  * Get or create a test wallet, reusing existing wallets when available.
- * Automatically funds wallets when using local blockchain.
+ * Automatically funds wallets with minimum ETH required for transactions.
  *
- * IMPORTANT: For local blockchain testing, use Arbitrum Sepolia (421614) as the chainId.
- * Dynamic SDK doesn't support localhost chains, so we use Arbitrum Sepolia chain ID
- * while RPC URLs point to localhost:8545. Set RPC_URL_421614=http://localhost:8545
- * in your .env file to route transactions to Anvil.
+ * Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614).
  *
- * @param app - NestJS application instance
+ * @param baseUrl - Base URL for test server (defaults to TEST_SERVER_URL env var or http://localhost:3077)
  * @param authToken - Dynamic auth token (API key in test mode)
- * @param chainId - Chain ID or Dynamic network ID (defaults to 421614 for local testing)
+ * @param chainId - Chain ID or Dynamic network ID (defaults to 421614 for Arbitrum Sepolia)
  * @returns Existing wallet if found, otherwise creates a new one
  */
 export async function getOrCreateTestWallet({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
-  chainId = 421614, // Default to Arbitrum Sepolia for local testing
+  chainId = 421614, // Default to Arbitrum Sepolia
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   chainId?: number | string
 }): Promise<TestWallet> {
-  const effectiveChainId =
-    process.env.USE_LOCAL_BLOCKCHAIN !== 'false' && isNumber(chainId) && chainId === 31337
-      ? 421614
-      : chainId
-
   const wallets = (
-    await request(app.getHttpServer())
-      .get('/wallets')
-      .set('Authorization', `Bearer ${authToken}`)
-      .expect(200)
+    await request(baseUrl).get('/wallets').set('Authorization', `Bearer ${authToken}`).expect(200)
   ).body as TestWallet[]
 
-  const existingWallet = wallets.find(w => w.network === String(effectiveChainId))
+  const existingWallet = wallets.find(w => w.network === String(chainId))
 
   if (existingWallet) {
-    if (process.env.USE_LOCAL_BLOCKCHAIN !== 'false' && existingWallet.chainType === 'evm') {
+    // Only auto-fund Arbitrum Sepolia wallets (chain ID 421614)
+    if (existingWallet.chainType === 'evm' && String(chainId) === '421614') {
       await fundWalletWithGas({
         address: existingWallet.address as `0x${string}`,
-        amount: parseEther('1'),
-        rpcUrl:
-          process.env.RPC_URL_421614 ||
-          process.env[`RPC_URL_${effectiveChainId}`] ||
-          'http://localhost:8545',
       })
     }
     return existingWallet
   }
 
-  const wallet = await createTestWallet({ app, authToken, chainId: effectiveChainId })
+  const wallet = await createTestWallet({ baseUrl, authToken, chainId })
 
-  if (process.env.USE_LOCAL_BLOCKCHAIN !== 'false' && wallet.chainType === 'evm') {
+  // Only auto-fund Arbitrum Sepolia wallets (chain ID 421614)
+  if (wallet.chainType === 'evm' && String(chainId) === '421614') {
     await fundWalletWithGas({
       address: wallet.address as `0x${string}`,
-      amount: parseEther('1'),
-      rpcUrl:
-        process.env.RPC_URL_421614 ||
-        process.env[`RPC_URL_${effectiveChainId}`] ||
-        'http://localhost:8545',
     })
   }
 
@@ -161,18 +161,17 @@ export async function getOrCreateTestWallet({
  * The TestToken contract has an open mint function, so any wallet can call it.
  * Uses a test wallet created via Dynamic API to call the mint function.
  *
- * For local blockchain testing, use Arbitrum Sepolia (421614) as chainId.
- * Set RPC_URL_421614=http://localhost:8545 to route transactions to Anvil.
+ * Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614).
  */
 export async function mintTestTokenViaFaucet({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
   tokenAddress,
   recipientAddress,
   amount,
-  chainId = 421614, // Default to Arbitrum Sepolia for local testing
+  chainId = 421614, // Default to Arbitrum Sepolia
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   tokenAddress: Address
   recipientAddress: Address
@@ -183,14 +182,15 @@ export async function mintTestTokenViaFaucet({
     // Get or create a test wallet via Dynamic API to use for minting
     // The mint function is open, so any wallet can call it
     const minterWallet = await getOrCreateTestWallet({
-      app,
+      baseUrl,
       authToken,
       chainId,
     })
 
     // Encode the mint function call using @vencura/evm/node utilities
     const { encodeFunctionData } = await import('viem')
-    const { testnetTokenAbi } = await import('@vencura/evm/abis')
+    // Import testnetTokenAbi - it's exported from @vencura/evm/abis
+    const { testnetTokenAbi } = await import('@vencura/evm/abis/asset/TestnetToken')
     const mintData = encodeFunctionData({
       abi: testnetTokenAbi,
       functionName: 'mint',
@@ -198,7 +198,7 @@ export async function mintTestTokenViaFaucet({
     })
 
     // Send transaction to call mint function on the token contract
-    const response = await request(app.getHttpServer())
+    const response = await request(baseUrl)
       .post(`/wallets/${minterWallet.id}/send`)
       .set('Authorization', `Bearer ${authToken}`)
       .send({
@@ -228,14 +228,14 @@ export async function mintTestTokenViaFaucet({
  * @deprecated Use mintTestTokenViaFaucet instead
  */
 export async function mintTestTokenViaAPI({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
   tokenAddress,
   recipientAddress,
   amount,
   chainId = 421614,
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   tokenAddress: Address
   recipientAddress: Address
@@ -243,7 +243,7 @@ export async function mintTestTokenViaAPI({
   chainId?: number
 }): Promise<{ success: boolean; txHash?: string; error?: string }> {
   return mintTestTokenViaFaucet({
-    app,
+    baseUrl,
     authToken,
     tokenAddress,
     recipientAddress,
@@ -270,15 +270,15 @@ export async function waitForTransaction({
  * Used for balance delta assertions in tests.
  */
 export async function getInitialBalance({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
   walletId,
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   walletId: string
 }): Promise<number> {
-  const response = await request(app.getHttpServer())
+  const response = await request(baseUrl)
     .get(`/wallets/${walletId}/balance`)
     .set('Authorization', `Bearer ${authToken}`)
     .expect(200)
@@ -291,21 +291,21 @@ export async function getInitialBalance({
  * Accounts for account reuse - tests should assert deltas, not absolute values.
  */
 export async function assertBalanceDelta({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
   walletId,
   expectedDelta,
   initialBalance,
   tolerance = 0.0001,
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   walletId: string
   expectedDelta: number
   initialBalance: number
   tolerance?: number
 }): Promise<void> {
-  const currentBalance = await getInitialBalance({ app, authToken, walletId })
+  const currentBalance = await getInitialBalance({ baseUrl, authToken, walletId })
   const actualDelta = currentBalance - initialBalance
   const deltaDifference = Math.abs(actualDelta - expectedDelta)
 
@@ -322,17 +322,17 @@ export async function assertBalanceDelta({
  */
 /**
  * Mint test tokens with balance tracking.
- * For local blockchain testing, use Arbitrum Sepolia (421614) as chainId.
+ * Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614).
  */
 export async function mintTestTokenWithBalanceTracking({
-  app,
+  baseUrl = TEST_SERVER_URL,
   authToken,
   tokenAddress,
   recipientAddress,
   amount,
-  chainId = 421614, // Default to Arbitrum Sepolia for local testing
+  chainId = 421614, // Default to Arbitrum Sepolia
 }: {
-  app: INestApplication<App>
+  baseUrl?: string
   authToken: string
   tokenAddress: Address
   recipientAddress: Address
@@ -348,7 +348,7 @@ export async function mintTestTokenWithBalanceTracking({
   // Note: Token balance reads require a generic read endpoint
   // For now, we return the transaction result without balance tracking
   const result = await mintTestTokenViaFaucet({
-    app,
+    baseUrl,
     authToken,
     tokenAddress,
     recipientAddress,

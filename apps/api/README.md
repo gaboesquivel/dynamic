@@ -78,10 +78,10 @@ This API uses environment-specific configuration files following [ADR 014: Envir
 **File Structure:**
 
 - `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- `.env.development` - Development configuration (committed, non-sensitive) - Local Anvil blockchain
+- `.env.development` - Development configuration (committed, non-sensitive) - Testnet networks
 - `.env.staging` - Staging configuration (committed, non-sensitive) - Testnet networks
 - `.env.production` - Production configuration (committed, non-sensitive) - Mainnet networks
-- `.env.test` - Test configuration (committed, non-sensitive) - Local Anvil blockchain (for CI/CD)
+- `.env.test` - Test configuration (committed, non-sensitive) - Arbitrum Sepolia testnet (for CI/CD)
 - `.env-example` - Template for `.env` file (shows required sensitive variables)
 
 **Setup for Local Development:**
@@ -106,10 +106,12 @@ cp .env-example .env
 
 **Environment-Specific Configuration:**
 
-- **Development** (`.env.development`): Uses local Anvil blockchain (`USE_LOCAL_BLOCKCHAIN=true`)
-- **Staging** (`.env.staging`): Uses testnet networks (`USE_LOCAL_BLOCKCHAIN=false`)
-- **Production** (`.env.production`): Uses mainnet networks (`USE_LOCAL_BLOCKCHAIN=false`)
-- **Test** (`.env.test`): Uses local Anvil blockchain for CI/CD (`USE_LOCAL_BLOCKCHAIN=true`)
+- **Development** (`.env.development`): Uses testnet networks (Arbitrum Sepolia)
+- **Staging** (`.env.staging`): Uses testnet networks
+- **Production** (`.env.production`): Uses mainnet networks
+- **Test** (`.env.test`): Uses Arbitrum Sepolia testnet for CI/CD
+
+**Note**: We explored local blockchain testing (Anvil) but removed it because Dynamic SDK doesn't support localhost chains. Dynamic SDK requires real network IDs that it recognizes (e.g., 421614 for Arbitrum Sepolia), so we cannot use local chains even with RPC URL overrides. The SDK validates chain IDs and rejects localhost/Anvil chain IDs, making local testing incompatible with Dynamic SDK integration. In the future, we may explore custom blockchain solutions (e.g., private testnets, custom L2s) to avoid gas costs while maintaining Dynamic SDK compatibility.
 
 **Optional RPC Configuration:**
 
@@ -374,9 +376,22 @@ Dynamic user metadata (via frontend `useUserUpdateRequest()` hook) can be used f
 
 The API includes comprehensive **blackbox E2E tests** that use the real Dynamic SDK. All tests hit real Dynamic SDK endpoints with real API keys - NO MOCKS are used for core functionality.
 
-### Testing Strategy
+### Testing Architecture
 
-Our testing strategy emphasizes **blackbox testing** using local chains for automation. This approach ensures end-to-end validation while maintaining fast, reliable test execution.
+**Separate Process Architecture**: Tests run the API server as a separate Node process (similar to Playwright), eliminating Jest module loading issues with Dynamic SDK ESM modules. This approach:
+
+- **No Jest Module Loading**: Jest never loads AppModule or Dynamic SDK, avoiding ESM import resolution issues
+- **True E2E**: Tests hit real HTTP endpoints on a running server
+- **Simpler Tests**: No NestJS TestingModule setup required
+- **Consistent**: Matches Playwright pattern used in other apps
+- **Faster**: Server starts once, all tests reuse it
+- **More Realistic**: Tests actual production-like server
+
+The test server is automatically started before all tests via Jest's `globalSetup` and stopped after all tests via `globalTeardown`.
+
+### Testing Philosophy
+
+Our testing strategy emphasizes **blackbox testing** using testnet networks for automation. This approach ensures end-to-end validation while maintaining fast, reliable test execution.
 
 #### Blackbox Testing Philosophy
 
@@ -425,12 +440,12 @@ All transaction signing uses the real Dynamic SDK (no mocks):
 - **Transaction Signing**: Uses Dynamic SDK's `signTransaction()` method for both EVM and Solana
 - **Real API Keys**: All tests use actual credentials from environment variables
 
-**Automated Gas Faucet**: Transaction tests use an automated gas faucet infrastructure. By default, tests use a local Anvil blockchain where wallets are automatically funded. This eliminates the need for manual wallet funding and makes tests faster and more reliable. For testnet testing, you can set `USE_LOCAL_BLOCKCHAIN=false` and optionally provide `FAUCET_PRIVATE_KEY` for automated funding.
+**Automated Gas Faucet**: Transaction tests use an automated gas faucet infrastructure that funds wallets with minimum ETH required for transactions on Arbitrum Sepolia testnet. The faucet calculates the exact gas needed (with a 20% buffer) and sends only that amount, not the full balance. This eliminates the need for manual wallet funding and makes tests more efficient.
 
 ### Running Tests
 
 ```bash
-# E2E tests with local Anvil blockchain (default, fastest)
+# E2E tests on Arbitrum Sepolia testnet
 pnpm run test:e2e
 
 # E2E tests in watch mode
@@ -439,9 +454,6 @@ pnpm run test:e2e:watch
 # E2E tests for CI (with coverage)
 pnpm run test:e2e:ci
 
-# E2E tests on testnet (requires manual funding or FAUCET_PRIVATE_KEY)
-pnpm run test:e2e:testnet
-
 # Unit tests
 pnpm run test
 
@@ -449,11 +461,10 @@ pnpm run test
 pnpm run test:cov
 ```
 
-**Prerequisites for Local Blockchain Tests**:
+**Prerequisites for Tests**:
 
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) must be installed
-- Anvil will start automatically before tests run
-- Wallets are automatically funded with ETH from Anvil's default account
+- `ARB_TESTNET_GAS_FAUCET_KEY` environment variable must be set with a funded Arbitrum Sepolia account private key
+- Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614)
 
 ### Test Setup
 
@@ -470,12 +481,16 @@ E2E tests automatically initialize the database schema and use test environment 
 - `DYNAMIC_API_TOKEN` - Your Dynamic API token
 - `ENCRYPTION_KEY` - Encryption key (32+ characters)
 
+**Required Environment Variables for Tests:**
+
+- `ARB_TESTNET_GAS_FAUCET_KEY` - Private key for Arbitrum Sepolia gas faucet (required for automated wallet funding)
+
 **Optional Environment Variables:**
 
-- `USE_LOCAL_BLOCKCHAIN` - Use local Anvil blockchain (default: `true`). Set to `false` to use testnet.
-- `FAUCET_PRIVATE_KEY` - Private key for testnet faucet (only needed if `USE_LOCAL_BLOCKCHAIN=false` and you want automated funding)
-- `RPC_URL_<CHAIN_ID>` - Override RPC URLs for specific chains. For local testing, set `RPC_URL_421614=http://localhost:8545` to point Arbitrum Sepolia to Anvil.
+- `RPC_URL_<CHAIN_ID>` - Override RPC URLs for specific chains (e.g., `RPC_URL_421614` for Arbitrum Sepolia)
 - `TEST_AUTH_TOKEN` - Pre-configured JWT token for testing (optional). In test mode (`NODE_ENV=test`), the API key is used directly for authentication.
+- `TEST_SERVER_PORT` - Port for test server (default: `3077`). The test server runs on this port during test execution.
+- `TEST_SERVER_URL` - Full URL for test server (default: `http://localhost:3077`). Tests use this URL to make HTTP requests.
 
 **Database Initialization:**
 
@@ -484,14 +499,12 @@ E2E tests automatically initialize the database schema and use test environment 
 - Each test suite gets a fresh PGLite database instance
 - Schema initialization happens automatically in `DatabaseModule` when `NODE_ENV=test`
 
-**Local Blockchain Setup:**
+**Testnet Setup:**
 
-- Install [Foundry](https://book.getfoundry.sh/getting-started/installation) to get Anvil
-- Anvil starts automatically before tests run
-- Wallets are automatically funded with ETH (no manual funding needed)
-- **Important**: Use Arbitrum Sepolia (421614) as the chain ID for local testing. Dynamic SDK doesn't support localhost chains, so we use Arbitrum Sepolia chain ID while RPC URLs point to localhost:8545
-- Point Arbitrum Sepolia to Anvil by setting `RPC_URL_421614=http://localhost:8545`
-- The WalletService automatically maps local chain IDs (like 31337) to Arbitrum Sepolia (421614) for Dynamic SDK compatibility
+- Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614)
+- Wallets are automatically funded with minimum ETH required for transactions
+- The gas faucet calculates gas costs dynamically and sends only the necessary amount
+- All test tokens (DNMC, USDC, USDT) are deployed on Arbitrum Sepolia
 
 ### Test Structure
 
@@ -515,7 +528,7 @@ The test suite covers all requirements from the backend specification:
 - ✅ **Wallet Creation**: Tests verify wallets are created via Dynamic SDK for both EVM and Solana chains
 - ✅ **getBalance()**: Tests verify balance queries work correctly for all supported chains
 - ✅ **signMessage()**: Tests verify message signing works via Dynamic SDK for both chain types
-- ✅ **sendTransaction()**: Tests use real transactions with automated gas funding (local Anvil) or testnet (with optional faucet)
+- ✅ **sendTransaction()**: Tests use real transactions on Arbitrum Sepolia testnet with automated gas funding (minimum ETH required)
 
 All tests verify that:
 

@@ -1,13 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import type { App } from 'supertest/types'
-import { AppModule } from '../src/app.module'
 import { getTestAuthToken } from './auth'
 import { TEST_CHAINS, TEST_ADDRESSES, TEST_TOKEN_ADDRESSES, TEST_TOKEN_DECIMALS } from './fixtures'
 import { getOrCreateTestWallet, mintTestTokenViaFaucet, waitForTransaction } from './helpers'
 import { encodeFunctionData, parseUnits, type Address } from 'viem'
 import { testnetTokenAbi } from '@vencura/evm/abis'
+
+const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
 /**
  * E2E tests for ERC20 token operations via the generic transaction endpoint.
@@ -25,34 +23,15 @@ import { testnetTokenAbi } from '@vencura/evm/abis'
  * - Error handling (insufficient balance, invalid addresses, etc.)
  */
 describe('WalletController ERC20 Token Operations (e2e)', () => {
-  let app: INestApplication<App>
   let authToken: string
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile()
-
-    app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-      }),
-    )
-    await app.init()
-
     authToken = await getTestAuthToken()
-  })
-
-  afterAll(async () => {
-    await app.close()
   })
 
   describe('ERC20 Token Transfer', () => {
     it('should transfer ERC20 tokens between addresses', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -60,7 +39,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
       // Mint tokens to the wallet first
       const mintAmount = parseUnits('100', TEST_TOKEN_DECIMALS.DNMC)
       const mintResult = await mintTestTokenViaFaucet({
-        app,
         authToken,
         tokenAddress: TEST_TOKEN_ADDRESSES.DNMC as Address,
         recipientAddress: wallet.address as Address,
@@ -82,7 +60,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -98,7 +76,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should return error when transferring more tokens than balance', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -111,7 +88,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -126,7 +103,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should return 400 for invalid token address format', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -138,7 +114,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -151,7 +127,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should return 400 for invalid recipient address in transfer', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -159,7 +134,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
       // Mint tokens first
       const mintAmount = parseUnits('100', TEST_TOKEN_DECIMALS.DNMC)
       await mintTestTokenViaFaucet({
-        app,
         authToken,
         tokenAddress: TEST_TOKEN_ADDRESSES.DNMC as Address,
         recipientAddress: wallet.address as Address,
@@ -180,7 +154,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [invalidAddress as Address, transferAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -198,7 +172,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
   describe('ERC20 Token Approval', () => {
     it('should approve ERC20 tokens for spending', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -211,7 +184,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, approveAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -227,7 +200,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should approve maximum amount (2^256 - 1)', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -240,7 +212,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, maxAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -256,7 +228,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should approve zero amount to revoke approval', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -269,7 +240,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, approveAmount],
       })
 
-      await request(app.getHttpServer())
+      await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -288,7 +259,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, BigInt(0)],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -306,7 +277,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
   describe('ERC20 Token Minting', () => {
     it('should mint ERC20 tokens via contract call', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -319,7 +289,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [wallet.address as Address, mintAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -337,14 +307,12 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should mint tokens using helper function', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       const mintAmount = parseUnits('30', TEST_TOKEN_DECIMALS.DNMC)
       const mintResult = await mintTestTokenViaFaucet({
-        app,
         authToken,
         tokenAddress: TEST_TOKEN_ADDRESSES.DNMC as Address,
         recipientAddress: wallet.address as Address,
@@ -363,7 +331,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
   describe('ERC20 Token Operations with Different Tokens', () => {
     it('should transfer USDC tokens (6 decimals)', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -378,7 +345,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
       })
 
       // This will fail if wallet doesn't have USDC, but we test the API accepts the call
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -421,14 +388,13 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
   describe('ERC20 Token Operation Error Handling', () => {
     it('should return 400 for missing data parameter when calling token contract', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       // Sending to token contract without data (just native token transfer)
       // This is valid but won't interact with the token contract
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -443,12 +409,11 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should return 400 for invalid contract call data', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -461,7 +426,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should return 400 for malformed function call data', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -469,7 +433,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
       // Valid hex but invalid function call
       const invalidData = '0x1234567890abcdef'
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -491,7 +455,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${nonExistentWalletId}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -504,7 +468,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should return 401 for missing authorization token', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -516,7 +479,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .send({
           to: TEST_TOKEN_ADDRESSES.DNMC,
@@ -530,7 +493,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
   describe('ERC20 Token Operation Transaction Verification', () => {
     it('should return valid transaction hash for successful token transfer', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -538,7 +500,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
       // Mint tokens first
       const mintAmount = parseUnits('100', TEST_TOKEN_DECIMALS.DNMC)
       await mintTestTokenViaFaucet({
-        app,
         authToken,
         tokenAddress: TEST_TOKEN_ADDRESSES.DNMC as Address,
         recipientAddress: wallet.address as Address,
@@ -556,7 +517,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -573,7 +534,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
 
     it('should handle multiple token operations in sequence', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -581,7 +541,6 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
       // Mint tokens
       const mintAmount = parseUnits('200', TEST_TOKEN_DECIMALS.DNMC)
       const mintResult = await mintTestTokenViaFaucet({
-        app,
         authToken,
         tokenAddress: TEST_TOKEN_ADDRESSES.DNMC as Address,
         recipientAddress: wallet.address as Address,
@@ -600,7 +559,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, approveAmount],
       })
 
-      const approveResponse = await request(app.getHttpServer())
+      const approveResponse = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -621,7 +580,7 @@ describe('WalletController ERC20 Token Operations (e2e)', () => {
         args: [TEST_ADDRESSES.EVM as Address, transferAmount],
       })
 
-      const transferResponse = await request(app.getHttpServer())
+      const transferResponse = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({

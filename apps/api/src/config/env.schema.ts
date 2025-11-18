@@ -37,15 +37,8 @@ export const envSchema = z.object({
     .transform(val => val === 'true')
     .pipe(z.boolean()),
 
-  // Testing: Local blockchain configuration (optional, default: true for development/test, false for staging/production)
-  USE_LOCAL_BLOCKCHAIN: z
-    .string()
-    .default('true')
-    .transform(val => val === 'true')
-    .pipe(z.boolean()),
-
-  // Testing: Faucet private key for testnet funding (optional)
-  FAUCET_PRIVATE_KEY: z.string().min(1).optional(),
+  // Testing: Arbitrum Sepolia gas faucet private key (required for tests)
+  ARB_TESTNET_GAS_FAUCET_KEY: z.string().min(1).optional(),
 
   // Dynamic RPC_URL_* variables (validated as URLs when present)
   // Note: These are collected dynamically, so we validate them in the config function
@@ -69,10 +62,6 @@ export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } =
     // Set defaults for optional fields (matching Next.js behavior)
     PORT: env.PORT || '3077',
     ENABLE_SWAGGER_UI: env.ENABLE_SWAGGER_UI || 'false',
-    // Set default for USE_LOCAL_BLOCKCHAIN based on NODE_ENV (like Next.js)
-    USE_LOCAL_BLOCKCHAIN:
-      env.USE_LOCAL_BLOCKCHAIN ||
-      (nodeEnv === 'development' || nodeEnv === 'test' ? 'true' : 'false'),
   }
 
   // Use @lib's validateEnvOrThrow for NestJS pattern

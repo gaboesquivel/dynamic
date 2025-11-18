@@ -87,16 +87,24 @@ Mock transaction sending in tests.
 
 ## Decision
 
-We will use **Option A: Local Anvil Blockchain** as the primary approach, with **Option B: Testnet Faucet** as an optional fallback.
+We initially chose **Option A: Local Anvil Blockchain** but later migrated to **Option B: Testnet Faucet** as the exclusive approach.
 
-**Main reasons:**
+**Why we moved away from local blockchain:**
 
-- Fast and reliable testing eliminates manual intervention and improves developer experience
-- Automated wallet funding makes tests fully automated without setup overhead
-- Already have Foundry in codebase for contract development, so no additional dependencies
-- CI/CD friendly - works consistently in any environment
-- Still tests real Dynamic SDK integration (only blockchain is local)
-- Optional testnet mode available when needed for integration testing
+- **Dynamic SDK limitation**: Dynamic SDK doesn't support localhost chains. The SDK validates chain IDs and rejects localhost/Anvil chain IDs (e.g., 31337), making local testing incompatible with Dynamic SDK integration.
+- **Cannot override**: Even with RPC URL overrides pointing to localhost, Dynamic SDK still requires real network IDs that it recognizes (e.g., 421614 for Arbitrum Sepolia).
+- **Integration requirement**: Since we use Dynamic SDK for wallet operations, we must use chains that Dynamic SDK supports.
+
+**Current approach: Testnet-only with automated faucet**
+
+- Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614)
+- Automated gas faucet calculates minimum ETH required and sends only that amount
+- Uses `ARB_TESTNET_GAS_FAUCET_KEY` environment variable for funding
+- More efficient than fixed amounts - only sends what's needed
+
+**Future considerations:**
+
+- We may explore custom blockchain solutions (e.g., private testnets, custom L2s) to avoid gas costs while maintaining Dynamic SDK compatibility
 
 ## Implementation Details
 
@@ -104,58 +112,52 @@ We will use **Option A: Local Anvil Blockchain** as the primary approach, with *
 
 **Gas Faucet Implementation:**
 
-- Uses TypeScript/Viem (not Foundry/Cast CLI) for consistency with API codebase
-- `fundWalletWithGas()` function in `test/helpers.ts` uses Viem's `createWalletClient`
-- Uses Anvil's default account private key (well-known for local testing)
-- Falls back to `FAUCET_PRIVATE_KEY` environment variable for testnet mode
-
-**Anvil Lifecycle:**
-
-- `test/setup-anvil.ts` manages Anvil startup/shutdown
-- Anvil starts automatically before tests run (via Jest `beforeAll` hook)
-- Health checks verify Anvil is ready before tests proceed
-- Graceful handling if Anvil is already running
+- Uses TypeScript/Viem for consistency with API codebase
+- `fundWalletWithGas()` function in `test/helpers.ts` uses Viem's `createWalletClient` and `createPublicClient`
+- Uses `ARB_TESTNET_GAS_FAUCET_KEY` environment variable (required)
+- Calculates minimum ETH required: estimates gas (~65,000 for ERC20 transfer), gets current gas price, adds 20% buffer
+- Sends only the calculated minimum amount, not a fixed amount
 
 **Wallet Auto-Funding:**
 
-- `getOrCreateTestWallet()` helper automatically funds wallets when using local blockchain
+- `getOrCreateTestWallet()` helper automatically funds wallets on Arbitrum Sepolia
 - Only funds EVM chains (Solana support can be added later)
-- Default funding amount: 1 ETH (configurable)
-- Uses RPC URL overrides to point test chains to Anvil
+- Funding amount: Calculated dynamically based on current gas prices
+- Uses Arbitrum Sepolia RPC (from env or default public RPC)
 
 ### Configuration
 
 **Environment Variables:**
 
-- `USE_LOCAL_BLOCKCHAIN` (default: `true`) - Enable/disable local Anvil blockchain
-- `FAUCET_PRIVATE_KEY` (optional) - Private key for testnet faucet (only if `USE_LOCAL_BLOCKCHAIN=false`)
-- `RPC_URL_<CHAIN_ID>` - Override RPC URLs. Set to `http://localhost:8545` for local Anvil
+- `ARB_TESTNET_GAS_FAUCET_KEY` (required) - Private key for Arbitrum Sepolia gas faucet
+- `RPC_URL_<CHAIN_ID>` (optional) - Override RPC URLs. Defaults to public Arbitrum Sepolia RPC
 
 **Test Scripts:**
 
-- `pnpm run test:e2e` - Uses local Anvil (default)
-- `pnpm run test:e2e:testnet` - Uses testnet (requires manual funding or `FAUCET_PRIVATE_KEY`)
+- `pnpm run test:e2e` - Runs tests on Arbitrum Sepolia testnet
+- All test scripts use testnet exclusively
 
 ### Integration Points
 
 **Test Setup:**
 
-- `test/setup.ts` - Starts Anvil before tests, stops after tests
+- `test/setup.ts` - Test environment setup (no Anvil startup)
 - `test/helpers.ts` - Contains `fundWalletWithGas()` and updated `getOrCreateTestWallet()`
-- `test/setup-anvil.ts` - Anvil lifecycle management
 
 **RPC Configuration:**
 
-- Tests override RPC URLs via `RPC_URL_<CHAIN_ID>` environment variables
-- Local mode: Point test chains to `http://localhost:8545` (Anvil)
-- Testnet mode: Use default testnet RPCs or custom URLs
+- Tests use Arbitrum Sepolia RPC (from `RPC_URL_421614` env var or default public RPC)
+- All tests run against Arbitrum Sepolia testnet (chain ID: 421614)
 
 ### Wallet Funding Flow
 
 1. Test creates wallet via Dynamic SDK (real API)
-2. `getOrCreateTestWallet()` helper checks if using local blockchain
-3. If local: Auto-funds from Anvil default account using Viem
-4. If testnet: Uses `FAUCET_PRIVATE_KEY` if provided, otherwise requires manual funding
+2. `getOrCreateTestWallet()` helper automatically funds wallets
+3. `fundWalletWithGas()` calculates minimum ETH required:
+   - Estimates gas for ERC20 transfer (~65,000 gas)
+   - Gets current gas price from Arbitrum Sepolia
+   - Calculates: `(gasLimit * gasPrice) * 1.2` (20% buffer)
+4. Sends calculated amount from `ARB_TESTNET_GAS_FAUCET_KEY` account
 5. Tests proceed with funded wallet
 
 ## Technical Decisions
@@ -172,30 +174,29 @@ We will use **Option A: Local Anvil Blockchain** as the primary approach, with *
 - Consistent with existing codebase patterns
 - Foundry scripts remain for contract deployment (one-time), not runtime operations
 
-### Why Local Blockchain as Default?
+### Why Testnet-Only?
 
-**Decision**: Use local Anvil blockchain as default, with testnet as optional fallback.
+**Decision**: Use Arbitrum Sepolia testnet exclusively, with automated gas faucet.
 
 **Rationale:**
 
-- Faster and more reliable for development and CI/CD
-- Eliminates manual setup and external dependencies
-- Still tests real Dynamic SDK integration (only blockchain is local)
-- Testnet mode available when needed for integration testing
+- **Dynamic SDK requirement**: Dynamic SDK doesn't support localhost chains, so we must use real testnets
+- **Real integration testing**: Tests run against actual testnet infrastructure, catching real-world issues
+- **Efficient funding**: Faucet calculates minimum ETH required, reducing gas costs
+- **Simpler setup**: No need for Foundry/Anvil installation or local blockchain management
+- **CI/CD compatible**: Works consistently in any environment with just an RPC endpoint
 
 ## Notes
 
-- Foundry must be installed for local blockchain tests (already required for contracts)
-- Anvil starts automatically before tests run
-- Wallets are automatically funded with 1 ETH (configurable)
-- Testnet mode available via `USE_LOCAL_BLOCKCHAIN=false`
-- Solana support can be added later using `solana-test-validator`
-- Dynamic SDK still uses real APIs - only the blockchain is local
-- Token deployment uses Foundry scripts (separate concern from runtime gas faucet)
+- `ARB_TESTNET_GAS_FAUCET_KEY` must be set with a funded Arbitrum Sepolia account
+- Wallets are automatically funded with minimum ETH required (calculated dynamically)
+- All tests run against Arbitrum Sepolia testnet (chain ID: 421614)
+- Test tokens (DNMC, USDC, USDT) are deployed on Arbitrum Sepolia
+- Dynamic SDK integration requires real network IDs, not localhost chains
 
 ## Future Enhancements
 
-- Support Solana local validator for Solana tests
-- Configurable funding amounts per test
-- Token deployment automation for local Anvil
-- Integration with CI/CD for automated testnet testing when needed
+- Explore custom blockchain solutions (private testnets, custom L2s) to avoid gas costs while maintaining Dynamic SDK compatibility
+- Support Solana testnet with automated SOL funding
+- Configurable funding amounts per test type
+- Token metadata database integration for multichain support

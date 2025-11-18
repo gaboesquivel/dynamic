@@ -1,12 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import type { App } from 'supertest/types'
-import { AppModule } from '../src/app.module'
 import { getTestAuthToken } from './auth'
 import { TEST_CHAINS, TEST_ADDRESSES, TEST_TOKEN_ADDRESSES, TEST_TOKEN_DECIMALS } from './fixtures'
 import { getOrCreateTestWallet, mintTestTokenViaFaucet, waitForTransaction } from './helpers'
 import { parseUnits } from 'viem'
+
+const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
 /**
  * Transaction sending tests for EVM and Solana wallets.
@@ -16,40 +14,21 @@ import { parseUnits } from 'viem'
  * endpoint to call the mint function on TestToken contracts (which allow anyone to mint).
  */
 describe('WalletController Transactions (e2e)', () => {
-  let app: INestApplication<App>
   let authToken: string
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile()
-
-    app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-      }),
-    )
-    await app.init()
-
     authToken = await getTestAuthToken()
-  })
-
-  afterAll(async () => {
-    await app.close()
   })
 
   describe('EVM Transaction Sending', () => {
     it('should send real transaction on Arbitrum Sepolia', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      // Wallet must be manually funded with ETH - test will fail if insufficient balance
-      const response = await request(app.getHttpServer())
+      // Wallet is automatically funded with minimum ETH required via ARB_TESTNET_GAS_FAUCET_KEY
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -67,13 +46,12 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should send real transaction on Base Sepolia', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.BASE_SEPOLIA,
       })
 
-      // Wallet must be manually funded with ETH - test will fail if insufficient balance
-      const response = await request(app.getHttpServer())
+      // Wallet is automatically funded with minimum ETH required via ARB_TESTNET_GAS_FAUCET_KEY
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -81,7 +59,7 @@ describe('WalletController Transactions (e2e)', () => {
           amount: 0.0001, // Small amount to minimize gas costs
         })
 
-      // Test expects success - wallet must be manually funded
+      // Test expects success - wallet is automatically funded
       expect(response.status).toBe(200)
       expect(response.body).toHaveProperty('transactionHash')
       expect(response.body.transactionHash).toMatch(/^0x[a-fA-F0-9]{64}$/)
@@ -89,12 +67,11 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should return 400 for invalid EVM address format', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -106,15 +83,14 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should return error for insufficient balance', async () => {
       // Create a fresh wallet (not reused) to test insufficient balance
-      // This test specifically tests error handling, so we want a wallet without balance
-      const { createTestWallet } = await import('./helpers')
+      // Note: This wallet will still be auto-funded, but we send a very large amount
+      const { createTestWallet } = await import('./helpers.js')
       const wallet = await createTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -128,7 +104,6 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should mint ERC20 tokens to test wallet via faucet', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
@@ -137,7 +112,6 @@ describe('WalletController Transactions (e2e)', () => {
       // The mint function is open, so any wallet can call it
       const mintAmount = parseUnits('10', TEST_TOKEN_DECIMALS.DNMC)
       const mintResult = await mintTestTokenViaFaucet({
-        app,
         authToken,
         tokenAddress: TEST_TOKEN_ADDRESSES.DNMC as `0x${string}`,
         recipientAddress: wallet.address as `0x${string}`,
@@ -159,13 +133,12 @@ describe('WalletController Transactions (e2e)', () => {
   describe('Solana Transaction Sending', () => {
     it('should send real transaction on Solana Devnet', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.SOLANA.DEVNET,
       })
 
       // Wallet must be manually funded with SOL - test will fail if insufficient balance
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -183,12 +156,11 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should return 400 for invalid Solana address format', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.SOLANA.DEVNET,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -200,12 +172,11 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should return 400 for EVM address when using Solana wallet', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.SOLANA.DEVNET,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -219,12 +190,11 @@ describe('WalletController Transactions (e2e)', () => {
   describe('Cross-Chain Address Validation', () => {
     it('should return 400 for Solana address when using EVM wallet', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -238,13 +208,12 @@ describe('WalletController Transactions (e2e)', () => {
   describe('Transaction Hash Validation', () => {
     it('should return valid EVM transaction hash format when transaction succeeds', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      // Wallet must be manually funded with ETH - test will fail if insufficient balance
-      const response = await request(app.getHttpServer())
+      // Wallet is automatically funded with minimum ETH required via ARB_TESTNET_GAS_FAUCET_KEY
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -252,7 +221,7 @@ describe('WalletController Transactions (e2e)', () => {
           amount: 0.0001,
         })
 
-      // Test expects success - wallet must be manually funded
+      // Test expects success - wallet is automatically funded
       expect(response.status).toBe(200)
       const txHash = response.body.transactionHash
       expect(txHash).toMatch(/^0x[a-fA-F0-9]{64}$/)
@@ -261,13 +230,13 @@ describe('WalletController Transactions (e2e)', () => {
 
     it('should return valid Solana transaction signature format when transaction succeeds', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.SOLANA.DEVNET,
       })
 
+      // Note: Solana wallets are not auto-funded yet (only EVM wallets on Arbitrum Sepolia)
       // Wallet must be manually funded with SOL - test will fail if insufficient balance
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({

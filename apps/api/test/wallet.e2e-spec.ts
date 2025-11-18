@@ -1,11 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing'
-import { INestApplication, ValidationPipe } from '@nestjs/common'
 import request from 'supertest'
-import type { App } from 'supertest/types'
-import { AppModule } from '../src/app.module'
 import { getTestAuthToken } from './auth'
 import { TEST_CHAINS, TEST_ADDRESSES, TEST_MESSAGES } from './fixtures'
 import { createTestWallet, getOrCreateTestWallet } from './helpers'
+
+const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
 /**
  * E2E tests for WalletController.
@@ -20,36 +18,16 @@ import { createTestWallet, getOrCreateTestWallet } from './helpers'
  * - Transaction sending tests are in wallet-transactions.e2e-spec.ts (mocked for now)
  */
 describe('WalletController (e2e)', () => {
-  let app: INestApplication<App>
   let authToken: string
 
   beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile()
-
-    app = moduleFixture.createNestApplication()
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        transform: true,
-      }),
-    )
-    await app.init()
-
     // Get real Dynamic auth token (uses real Dynamic API)
     authToken = await getTestAuthToken()
   })
 
-  afterAll(async () => {
-    if (app) {
-      await app.close()
-    }
-  })
-
   describe('GET /wallets', () => {
     it('should return empty list when user has no wallets', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .get('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -60,13 +38,12 @@ describe('WalletController (e2e)', () => {
     it('should return user wallets after creating one', async () => {
       // Create a wallet first
       await createTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       // Then get wallets
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .get('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -83,7 +60,7 @@ describe('WalletController (e2e)', () => {
 
   describe('POST /wallets', () => {
     it('should create a wallet on Arbitrum Sepolia using Dynamic SDK', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
@@ -100,7 +77,7 @@ describe('WalletController (e2e)', () => {
         }))
 
     it('should create a wallet on Base Sepolia', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.BASE_SEPOLIA })
@@ -113,7 +90,7 @@ describe('WalletController (e2e)', () => {
         }))
 
     it('should return 400 for unsupported chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 999999 })
@@ -123,7 +100,7 @@ describe('WalletController (e2e)', () => {
         }))
 
     it('should return 400 for invalid chain ID format', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 'invalid-chain-id' })
@@ -136,7 +113,7 @@ describe('WalletController (e2e)', () => {
         data: 'x'.repeat(11 * 1024),
       }
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .set('Content-Length', String(JSON.stringify(largePayload).length))
@@ -148,7 +125,7 @@ describe('WalletController (e2e)', () => {
     })
 
     it('should include X-Request-ID header in wallet creation response', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
@@ -159,7 +136,7 @@ describe('WalletController (e2e)', () => {
     })
 
     it('should create a wallet on Solana devnet using Dynamic SDK', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.SOLANA.DEVNET })
@@ -177,14 +154,14 @@ describe('WalletController (e2e)', () => {
         }))
 
     it('should return 400 for invalid chain ID', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: 99999 })
         .expect(400))
 
     it('should return 400 for missing chainId', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({})
@@ -195,13 +172,12 @@ describe('WalletController (e2e)', () => {
     it('should return balance for existing wallet created via Dynamic SDK', async () => {
       // Get or create a wallet (via Dynamic SDK)
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       // Then get balance (queries blockchain using wallet address from Dynamic SDK)
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .get(`/wallets/${wallet.id}/balance`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
@@ -215,7 +191,7 @@ describe('WalletController (e2e)', () => {
 
     it('should return 404 for non-existent wallet', async () => {
       const fakeWalletId = '00000000-0000-0000-0000-000000000000'
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .get(`/wallets/${fakeWalletId}/balance`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(404)
@@ -224,13 +200,12 @@ describe('WalletController (e2e)', () => {
     it('should return 401 for unauthorized access to balance endpoint', async () => {
       // Create a wallet first
       const wallet = await createTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       // Attempt to get balance without Authorization header
-      return request(app.getHttpServer()).get(`/wallets/${wallet.id}/balance`).expect(401)
+      return request(TEST_SERVER_URL).get(`/wallets/${wallet.id}/balance`).expect(401)
     })
   })
 
@@ -238,13 +213,12 @@ describe('WalletController (e2e)', () => {
     it('should sign a message using Dynamic SDK', async () => {
       // Get or create a wallet (via Dynamic SDK)
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       // Then sign message using Dynamic SDK's signMessage
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ message: TEST_MESSAGES.SIMPLE })
@@ -260,12 +234,11 @@ describe('WalletController (e2e)', () => {
 
     it('should return 400 for missing message', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({})
@@ -274,7 +247,7 @@ describe('WalletController (e2e)', () => {
 
     it('should return 404 for non-existent wallet', async () => {
       const fakeWalletId = '00000000-0000-0000-0000-000000000000'
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${fakeWalletId}/sign`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ message: TEST_MESSAGES.SIMPLE })
@@ -284,13 +257,12 @@ describe('WalletController (e2e)', () => {
     it('should return 401 for unauthorized access to sign endpoint', async () => {
       // Get or create a wallet
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
       // Attempt to sign without Authorization header
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/sign`)
         .send({ message: TEST_MESSAGES.SIMPLE })
         .expect(401)
@@ -300,12 +272,11 @@ describe('WalletController (e2e)', () => {
   describe('POST /wallets/:id/send', () => {
     it('should return 400 for invalid address format', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -317,12 +288,11 @@ describe('WalletController (e2e)', () => {
 
     it('should return 400 for missing to address', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -333,12 +303,11 @@ describe('WalletController (e2e)', () => {
 
     it('should return 400 for missing amount', async () => {
       const wallet = await getOrCreateTestWallet({
-        app,
         authToken,
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      const response = await request(app.getHttpServer())
+      const response = await request(TEST_SERVER_URL)
         .post(`/wallets/${wallet.id}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -351,7 +320,7 @@ describe('WalletController (e2e)', () => {
 
     it('should return 404 for non-existent wallet', async () => {
       const fakeWalletId = '00000000-0000-0000-0000-000000000000'
-      return request(app.getHttpServer())
+      return request(TEST_SERVER_URL)
         .post(`/wallets/${fakeWalletId}/send`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({
@@ -364,10 +333,10 @@ describe('WalletController (e2e)', () => {
 
   describe('Authentication', () => {
     it('should return 401 for missing authorization header', async () =>
-      request(app.getHttpServer()).get('/wallets').expect(401))
+      request(TEST_SERVER_URL).get('/wallets').expect(401))
 
     it('should return 401 for invalid token', async () =>
-      request(app.getHttpServer())
+      request(TEST_SERVER_URL)
         .get('/wallets')
         .set('Authorization', 'Bearer invalid-token')
         .expect(401))

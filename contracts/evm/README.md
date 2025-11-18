@@ -168,12 +168,12 @@ pnpm run contracts:evm:deploy:anvil
 
 ### Integration with API Tests
 
-Anvil is automatically used by the API E2E tests for automated gas faucet functionality:
+API E2E tests use the deployed mock tokens on Arbitrum Sepolia:
 
-- **API tests start Anvil automatically** before running (see `apps/api/test/setup-anvil.ts`)
-- **Wallets are auto-funded** with ETH from Anvil's default account
-- **Point test chains to Anvil** by setting `RPC_URL_<CHAIN_ID>=http://localhost:8545` in API `.env`
-- **No manual funding required** - tests run faster and more reliably
+- **API tests run against Arbitrum Sepolia testnet** (chain ID: 421614)
+- **Wallets are auto-funded** with minimum ETH required using `ARB_TESTNET_GAS_FAUCET_KEY`
+- **Test tokens**: DNMC, USDC, and USDT are deployed on Arbitrum Sepolia and used in tests
+- **No local blockchain**: Tests use real testnet because Dynamic SDK doesn't support localhost chains
 
 See [API Test Documentation](../apps/api/test/README.md) for details on automated gas faucet.
 

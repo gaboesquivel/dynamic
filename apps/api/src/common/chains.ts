@@ -198,26 +198,6 @@ export function getDynamicNetworkId(chainId: number | string): string | undefine
 }
 
 /**
- * Get a Dynamic-compatible chain ID for local blockchain testing.
- * Maps local chain IDs (e.g., 31337 for Anvil) to Arbitrum Sepolia (421614)
- * when using local blockchain, since Dynamic SDK doesn't support localhost chains.
- *
- * This ensures:
- * - Dynamic SDK operations use a supported chain ID (Arbitrum Sepolia)
- * - RPC URLs can still point to localhost:8545 for actual transactions
- * - Database stores the compatible chain ID, not the local one
- *
- * @param chainId - The chain ID to check (may be local like 31337)
- * @returns A Dynamic-compatible chain ID (421614 for local chains when USE_LOCAL_BLOCKCHAIN=true)
- */
-export function getDynamicCompatibleChainId(chainId: number | string): number | string {
-  if (process.env.USE_LOCAL_BLOCKCHAIN !== 'false' && isNumber(chainId)) {
-    if ([31337, 1337].includes(chainId)) return 421614 // Map local chains to Arbitrum Sepolia
-  }
-  return chainId
-}
-
-/**
  * Check if chain is supported
  */
 export function isSupportedChain(chainId: number | string): boolean {

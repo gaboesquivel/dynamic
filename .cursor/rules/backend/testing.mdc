@@ -14,7 +14,7 @@ alwaysApply: false
 - All API calls use actual credentials from environment variables
 - Tests verify end-to-end functionality with real infrastructure
 
-**Automated Gas Faucet**: Transaction tests use automated gas faucet infrastructure. By default, tests use local Anvil blockchain where wallets are automatically funded. This eliminates the need for manual funding and makes tests faster and more reliable.
+**Automated Gas Faucet**: Transaction tests use automated gas faucet infrastructure that funds wallets with minimum ETH required for transactions on Arbitrum Sepolia testnet. The faucet calculates the exact gas needed (with a 20% buffer) and sends only that amount. Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614) because Dynamic SDK doesn't support localhost chains.
 
 ## Test Structure
 
@@ -170,9 +170,8 @@ Tests require these environment variables to use real APIs:
 - `DYNAMIC_ENVIRONMENT_ID` - Dynamic environment ID
 - `DYNAMIC_API_TOKEN` - Dynamic API token (used directly for authentication in test mode)
 - `ENCRYPTION_KEY` - Encryption key (32+ characters)
-- `USE_LOCAL_BLOCKCHAIN` (optional, default: `true`) - Use local Anvil blockchain for tests
-- `FAUCET_PRIVATE_KEY` (optional) - Private key for testnet faucet (only if `USE_LOCAL_BLOCKCHAIN=false`)
-- `RPC_URL_<CHAIN_ID>` (optional) - Override RPC URLs. Set `RPC_URL_421614=http://localhost:8545` for local Anvil
+- `ARB_TESTNET_GAS_FAUCET_KEY` (required) - Private key for Arbitrum Sepolia gas faucet
+- `RPC_URL_<CHAIN_ID>` (optional) - Override RPC URLs. Defaults to public Arbitrum Sepolia RPC
 - `TEST_AUTH_TOKEN` (optional) - Pre-configured JWT token for testing (not needed in test mode, API key is used)
 
 ### Test Authentication
@@ -183,29 +182,28 @@ When `NODE_ENV=test`:
 - Consistent test user (`test-user-${environmentId}`) is used for all tests
 - This eliminates network calls and makes tests faster and more reliable
 
-### Local Blockchain Testing Strategy
+### Testnet-Only Testing Strategy
 
-When testing with local blockchain (Anvil):
-- **Use Arbitrum Sepolia (421614) as chain ID**: Dynamic SDK doesn't support localhost chains
-- **Set RPC_URL_421614=http://localhost:8545**: Route transactions to Anvil
-- **WalletService automatically maps** local chain IDs (31337) to Arbitrum Sepolia (421614)
-- This allows testing wallet signing functionality locally while using a chain ID Dynamic supports
+Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614):
+- **Why no local blockchain**: Dynamic SDK doesn't support localhost chains. The SDK validates chain IDs and rejects localhost/Anvil chain IDs, making local testing incompatible with Dynamic SDK integration.
+- **All tests use Arbitrum Sepolia**: Tests use real testnet infrastructure for authentic integration testing
+- **Automated gas faucet**: Wallets are automatically funded with minimum ETH required (calculated dynamically)
 
 ### Test Helpers
 
 Use test helpers from `test/helpers.ts`:
 
 - `getTestAuthToken()` - Get real Dynamic auth token
-- `getOrCreateTestWallet()` - Get or create test wallet (auto-funded with local blockchain)
+- `getOrCreateTestWallet()` - Get or create test wallet (auto-funded with minimum ETH)
 - `createTestWallet()` - Create new test wallet via API
-- `fundWalletWithGas()` - Fund wallet with ETH (uses Anvil default account or FAUCET_PRIVATE_KEY)
+- `fundWalletWithGas()` - Fund wallet with minimum ETH required (uses ARB_TESTNET_GAS_FAUCET_KEY)
 - `TEST_CHAINS` - Test chain IDs (from `test/fixtures.ts`)
 - `TEST_ADDRESSES` - Test addresses for validation (from `test/fixtures.ts`)
 
 ## Running Tests
 
 ```bash
-# E2E tests with local Anvil blockchain (default, automated gas faucet)
+# E2E tests on Arbitrum Sepolia testnet (automated gas faucet)
 pnpm run test:e2e
 
 # E2E tests in watch mode
@@ -214,9 +212,6 @@ pnpm run test:e2e:watch
 # E2E tests for CI (with coverage)
 pnpm run test:e2e:ci
 
-# E2E tests on testnet (requires manual funding or FAUCET_PRIVATE_KEY)
-pnpm run test:e2e:testnet
-
 # Unit tests
 pnpm run test
 
@@ -224,7 +219,7 @@ pnpm run test
 pnpm run test:cov
 ```
 
-**Prerequisites**: Install [Foundry](https://book.getfoundry.sh/getting-started/installation) for Anvil support. Anvil starts automatically before tests run.
+**Prerequisites**: `ARB_TESTNET_GAS_FAUCET_KEY` environment variable must be set with a funded Arbitrum Sepolia account private key.
 
 ## Best Practices
 
@@ -236,38 +231,30 @@ pnpm run test:cov
 6. **Isolation**: Each test should be independent and not rely on others
 7. **Documentation**: Add comments explaining what each test verifies
 
-## Local Blockchain Testing
+## Testnet Testing
 
-### Anvil Integration
+### Arbitrum Sepolia Integration
 
-Tests use local Anvil blockchain by default for faster, more reliable testing:
+Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614):
 
-- **Anvil starts automatically** before tests run (see `test/setup-anvil.ts`)
-- **Wallets are auto-funded** with ETH from Anvil's default account
-- **No manual setup required** - just run `pnpm run test:e2e`
-- **Point test chains to Anvil** by setting `RPC_URL_<CHAIN_ID>=http://localhost:8545`
-
-### Testnet Mode
-
-For testnet testing, set `USE_LOCAL_BLOCKCHAIN=false`:
-
-- Tests will use actual testnet RPCs
-- Optionally provide `FAUCET_PRIVATE_KEY` for automated funding
-- Otherwise, wallets must be manually funded
+- **Tests use real testnet**: All tests run against Arbitrum Sepolia, not local blockchain
+- **Automated funding**: Wallets are automatically funded with minimum ETH required
+- **Gas calculation**: Faucet calculates gas costs dynamically based on current network conditions
+- **Efficient**: Only sends the minimum amount needed, not a fixed amount
 
 ### Example: Auto-Funded Wallet
 
 ```typescript
 it('should send transaction with auto-funded wallet', async () => {
-  // Wallet is automatically funded when using local blockchain
+  // Wallet is automatically funded with minimum ETH required
   const wallet = await getOrCreateTestWallet({
-    app,
+    baseUrl: TEST_SERVER_URL,
     authToken,
-    chainId: 421614, // Will be funded with 1 ETH automatically
+    chainId: 421614, // Arbitrum Sepolia - will be funded automatically
   })
 
   // Transaction will succeed without manual funding
-  const response = await request(app.getHttpServer())
+  const response = await request(TEST_SERVER_URL)
     .post(`/wallets/${wallet.id}/send`)
     .set('Authorization', `Bearer ${authToken}`)
     .send({
@@ -282,4 +269,5 @@ it('should send transaction with auto-funded wallet', async () => {
 
 ## Future Work
 
-- Support Solana local validator for Solana tests
+- Explore custom blockchain solutions (private testnets, custom L2s) to avoid gas costs while maintaining Dynamic SDK compatibility
+- Support Solana testnet with automated SOL funding

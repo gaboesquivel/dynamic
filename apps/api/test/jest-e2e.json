@@ -14,10 +14,8 @@
       }
     }]
   },
-  "transformIgnorePatterns": [
-    "node_modules/(?!.*(@vencura))",
-    "node_modules/@dynamic-labs-wallet/.*"
-  ],
+  "globalSetup": "<rootDir>/setup-server.ts",
+  "globalTeardown": "<rootDir>/teardown-server.ts",
   "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
   "testTimeout": 120000,
   "moduleNameMapper": {
