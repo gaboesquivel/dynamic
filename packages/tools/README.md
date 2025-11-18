@@ -71,6 +71,10 @@ function App() {
 }
 ```
 
+## Related Packages
+
+- [@vencura/ui](../ui/README.md) - Shared UI components (dev tools may integrate with UI components)
+
 ## License
 
 PROPRIETARY

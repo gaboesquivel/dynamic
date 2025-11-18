@@ -61,14 +61,21 @@ See individual project READMEs for detailed documentation:
 
 This project follows strict coding standards enforced through Cursor rules and documented in Architecture Decision Records (ADRs).
 
+### Key Patterns
+
+- **Mobile-First Design**: All frontend components follow mobile-first responsive design. See [Mobile-First Rules](.cursor/rules/frontend/mobile-first.mdc) for guidelines.
+- **RORO Pattern**: Functions with multiple parameters use Receive Object, Return Object pattern. Single-parameter functions use direct parameters. See [TypeScript Rules](.cursor/rules/base/typescript.mdc).
+- **Type Inference**: Always enforce type inference - define return types in functions when needed, never in consumers. See [TypeScript Rules](.cursor/rules/base/typescript.mdc).
+- **Functional Code**: Prefer functional and declarative programming patterns. See [TypeScript Rules](.cursor/rules/base/typescript.mdc).
+
 ### Cursor Rules
 
 Code standards are defined in [`.cursor/rules/`](.cursor/rules/) organized by domain:
 
-- **Base**: [TypeScript](./.cursor/rules/base/typescript.mdc), [General](./.cursor/rules/base/general.mdc)
-- **Frontend**: [React](./.cursor/rules/frontend/react.mdc), [Next.js](./.cursor/rules/frontend/nextjs.mdc), [React Hooks](./.cursor/rules/frontend/react-hooks.mdc), [ShadcnUI](./.cursor/rules/frontend/shadcnui.mdc), [Stack](./.cursor/rules/frontend/stack.mdc)
-- **Backend**: [NestJS](./.cursor/rules/backend/nestjs.mdc)
-- **Web3**: [Viem](./.cursor/rules/web3/viem.mdc), [Wagmi](./.cursor/rules/web3/wagmi.mdc), [Solana](./.cursor/rules/web3/solana.mdc), [Multichain](./.cursor/rules/web3/multichain.mdc), [Solidity](./.cursor/rules/web3/solidity.mdc), [Ponder](./.cursor/rules/web3/ponder.mdc), [Cosmos](./.cursor/rules/web3/cosmos.mdc)
+- **Base**: [TypeScript](.cursor/rules/base/typescript.mdc), [Environment](.cursor/rules/base/environment.mdc), [General](.cursor/rules/base/general.mdc)
+- **Frontend**: [React](.cursor/rules/frontend/react.mdc), [Next.js](.cursor/rules/frontend/nextjs.mdc), [React Hooks](.cursor/rules/frontend/react-hooks.mdc), [Mobile-First](.cursor/rules/frontend/mobile-first.mdc), [ShadcnUI](.cursor/rules/frontend/shadcnui.mdc), [Stack](.cursor/rules/frontend/stack.mdc)
+- **Backend**: [NestJS](.cursor/rules/backend/nestjs.mdc), [Testing](.cursor/rules/backend/testing.mdc)
+- **Web3**: [Viem](.cursor/rules/web3/viem.mdc), [Wagmi](.cursor/rules/web3/wagmi.mdc), [Solana](.cursor/rules/web3/solana.mdc), [Multichain](.cursor/rules/web3/multichain.mdc), [Solidity](.cursor/rules/web3/solidity.mdc), [Ponder](.cursor/rules/web3/ponder.mdc), [Cosmos](.cursor/rules/web3/cosmos.mdc)
 
 See [`.cursor/README.md`](.cursor/README.md) for more information on rules and MCP configuration.
 
@@ -98,11 +105,9 @@ This project leverages AI tools throughout the development workflow:
 
 - **[v0.dev](https://v0.dev)**: UI component generation via MCP integration (configured in [`.cursor/mcp.json`](.cursor/mcp.json))
 - **Cursor Rules**: Automated code standards enforcement (see [Standards & Conventions](#standards--conventions))
-- **Composer 1 Agent**: Planning and building workflow for complex features
-- **Sourcery.ai**: Automated code reviews and quality checks
-- **MCP Servers**: Enhanced AI capabilities via Model Context Protocol (see [MCP Servers Guide](./docs/mcp-servers.md))
+- **MCP Servers**: Enhanced AI capabilities via Model Context Protocol (see [`.cursor/README.md`](.cursor/README.md))
 
-See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration details and [MCP Servers Guide](./docs/mcp-servers.md) for usage documentation.
+See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration details.
 
 ## Projects
 
@@ -114,12 +119,14 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 
 ### Packages
 
-- **[@vencura/core](./packages/core/README.md)** - TypeScript SDK (auto-generated)
-- **[@vencura/react](./packages/react/README.md)** - React hooks with TanStack Query
+- **[@vencura/core](./packages/core/README.md)** - TypeScript SDK for Vencura API (contract-first with ts-rest)
+- **[@vencura/react](./packages/react/README.md)** - React hooks with TanStack Query for Vencura API
+- **[@vencura/types](./packages/types/README.md)** - Shared API contracts and types (Zod schemas, ts-rest contracts)
 - **[@vencura/ai](./packages/ai/README.md)** - AI chatbot component and SDK for wallet operations
-- **[@vencura/evm](./packages/evm/README.md)** - EVM token contract interactions with Wagmi v2 and Viem v2
+- **[@vencura/evm](./packages/evm/README.md)** - EVM token contract ABIs and utilities
+- **[@vencura/lib](./packages/lib/README.md)** - Shared utility library (error handling, async utilities, env validation)
 - **[@vencura/tools](./packages/tools/README.md)** - Development tools enabled by feature flags
-- **[UI Package](./packages/ui/README.md)** - Shared Shadcn/ui components
+- **[@vencura/ui](./packages/ui/README.md)** - Shared Shadcn/ui component library
 
 ### Contracts
 
@@ -128,9 +135,17 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 
 ### Live Deployments
 
+#### Production (main branch)
+
 - **[API Swagger Interface](https://vencura-api.vercel.app/api)**: Interactive OpenAPI documentation for the Vencura API.
 - **[Vencura Wallet UI](https://vencura-web.vercel.app)**: Web application for accessing and managing the Vencura multichain custodial wallet.
 - **[Mathler Game Example](https://vencura-mathler.vercel.app)**: Mathler game demo built with Next.js.
+
+#### Staging (develop branch)
+
+- **[API Swagger Interface (Staging)](https://vencura-api-dev.vercel.app/api)**: Interactive OpenAPI documentation for the Vencura API staging environment.
+- **[Vencura Wallet UI (Staging)](https://vencura-web-dev.vercel.app)**: Web application for accessing and managing the Vencura multichain custodial wallet staging environment.
+- **[Mathler Game Example (Staging)](https://vencura-mathler-dev.vercel.app)**: Mathler game demo staging environment built with Next.js.
 
 ## Getting Started
 
@@ -170,22 +185,38 @@ cd apps/api && pnpm run test:e2e  # E2E tests with automated gas faucet
 
 ### Environment Setup
 
-This monorepo uses environment-specific configuration files. See [Environment Strategy](./docs/environment-strategy.md) for detailed setup instructions.
+This monorepo uses environment-specific configuration files following a unified strategy. See [ADR 014: Environment Strategy](.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](.cursor/rules/base/environment.mdc) for implementation patterns.
 
 **Quick Start:**
 
-1. Copy example env files: `cp apps/api/.env.development.example apps/api/.env.development`
-2. Fill in your values (Dynamic environment ID, API token, etc.)
+1. Copy example env files for each app:
+   ```bash
+   cp apps/api/.env-example apps/api/.env
+   cp apps/web/.env-example apps/web/.env
+   ```
+2. Fill in your values (Dynamic environment ID, API token, etc.) in `.env` files
 3. Start local development: `pnpm dev:local`
 
-**Environments:**
+**Environment Files:**
 
-- **Development**: `.env.development` - Local Anvil blockchain
-- **Staging**: `.env.staging` - Testnet networks
-- **Production**: `.env.production` - Mainnet networks
-- **Test**: `.env.test` - Local Anvil blockchain (for CI/CD)
+All apps use the same environment file structure:
 
-For project-specific setup, see individual project READMEs linked in [Projects](#projects).
+- **`.env`** - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
+- **`.env.development`** - Development configuration (committed, non-sensitive) - Local Anvil blockchain
+- **`.env.staging`** - Staging configuration (committed, non-sensitive) - Testnet networks
+- **`.env.production`** - Production configuration (committed, non-sensitive) - Mainnet networks
+- **`.env.test`** - Test configuration (committed, non-sensitive) - Local Anvil blockchain (for CI/CD)
+
+**Loading Priority:**
+
+1. `.env` (highest priority, sensitive data, never committed)
+2. `.env.<NODE_ENV>` (development/staging/production/test based on NODE_ENV)
+3. `.env` fallback (lowest priority)
+
+For project-specific setup, see individual project READMEs:
+- [Vencura API](./apps/api/README.md#environment-variables)
+- [Vencura Web](./apps/web/README.md#environment-variables)
+- [Mathler](./apps/mathler/README.md#environment-variables)
 
 ### Deployment and Branching
 

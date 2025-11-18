@@ -2,7 +2,9 @@
 
 ## Overview
 
-All Dynamic test accounts for EVM flows are created via the Ventura API, which calls the Dynamic SDK. This ensures a single integration point and consistent test behavior.
+All Dynamic test accounts for EVM flows are created via the Vencura API, which calls the Dynamic SDK. This ensures a single integration point and consistent test behavior.
+
+See [ADR 013: Vencura API Test Gas Faucet](../../.adrs/013-vencura-api-test-gas-faucet.md) for the complete architecture decision on automated gas faucet infrastructure.
 
 ## Account Creation
 

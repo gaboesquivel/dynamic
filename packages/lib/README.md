@@ -232,6 +232,20 @@ import { delay, getErrorMessage, getDateKey, getEnvHelper, validateEnv } from '@
 - **nanoid**: Use directly for unique ID generation (not wrapped in @vencura/lib)
 - **Native JavaScript**: Use for simple operations (array.map, Object.keys, etc.)
 
+## Related Packages
+
+- [@vencura/types](../types/README.md) - Shared API contracts and types
+- [apps/api](../../apps/api/README.md) - NestJS backend using these utilities
+- [@vencura/react](../react/README.md) - React hooks using these utilities
+
+## Coding Standards
+
+This package follows the monorepo's coding standards:
+
+- **RORO Pattern**: Multi-parameter functions use Receive Object, Return Object pattern. See [TypeScript Rules](../../.cursor/rules/base/typescript.mdc).
+- **Type Inference**: All functions MUST have explicit return types - consumers should never need type casting. See [TypeScript Rules](../../.cursor/rules/base/typescript.mdc).
+- **Zod Validation**: Always prefer Zod-based solutions for validation. See [TypeScript Rules](../../.cursor/rules/base/typescript.mdc).
+
 ## License
 
 PROPRIETARY

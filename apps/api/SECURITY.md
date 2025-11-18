@@ -12,8 +12,9 @@ This document outlines the comprehensive security architecture for the Vencura c
 - [Encryption and Key Management](#encryption-and-key-management)
 - [Authentication and Authorization](#authentication-and-authorization)
 - [Network Security](#network-security)
-- [Google Cloud Security](#google-cloud-security)
+- [Infrastructure Security](#infrastructure-security)
 - [Deployment Security](#deployment-security)
+- [Alternative Deployment Options](#alternative-deployment-options)
 - [Compliance and Audit](#compliance-and-audit)
 - [Incident Response](#incident-response)
 
@@ -26,10 +27,12 @@ Vencura implements multiple layers of security:
 1. **Authentication Layer**: Dynamic Labs JWT-based authentication
 2. **Application Layer**: User isolation and authorization checks
 3. **Encryption Layer**: AES-256-GCM encryption for private keys
-4. **Database Layer**: Encrypted at rest, private network access only
-5. **Network Layer**: VPC isolation, private IP only
-6. **Infrastructure Layer**: Least privilege IAM, service accounts
-7. **Secrets Layer**: Google Cloud Secret Manager
+4. **Database Layer**: Portable database (PGLite for dev, Postgres for prod)
+5. **Network Layer**: Vercel Edge Network with Cloudflare DDoS protection
+6. **Infrastructure Layer**: Vercel's security model with team access controls
+7. **Secrets Layer**: Vercel environment variables (portable to any secrets manager)
+
+**Current Deployment**: All systems are deployed on Vercel. The architecture is designed to be **portable by default** - all security measures work on any platform. See [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) for details.
 
 ### Current Security Measures
 
@@ -39,7 +42,8 @@ Vencura implements multiple layers of security:
 - **Key Derivation**: Scrypt with salt from encryption key
 - **Storage Format**: Encrypted data stored as `iv:authTag:encrypted` hex string
 - **Implementation**: `EncryptionService` in `src/common/encryption.service.ts`
-- **Key Storage**: Encryption key stored in Google Cloud Secret Manager, never in code
+- **Key Storage**: Encryption key stored in Vercel environment variables, never in code
+- **Portability**: Can migrate to any secrets manager (Google Cloud Secret Manager, AWS Secrets Manager, etc.)
 
 #### Authentication
 
@@ -51,32 +55,38 @@ Vencura implements multiple layers of security:
 
 #### Database Security
 
-- **Encryption at Rest**: Enabled by default in Cloud SQL
-- **Network Access**: Private IP only, no public IP
-- **Connection**: Unix socket via Cloud SQL Proxy
+- **Development**: PGLite (embedded PostgreSQL, portable)
+- **Production**: External Postgres (can be any provider - Cloud SQL, RDS, Railway, etc.)
+- **Encryption at Rest**: Database provider dependent (enabled by default on managed services)
+- **Connection**: Standard Postgres connection strings (portable)
 - **SSL/TLS**: Required for all connections
 - **Access Control**: Database user with minimal privileges
+- **Portability**: Standard Postgres - works with any provider
 
 #### Secrets Management
 
-- **Provider**: Google Cloud Secret Manager
-- **Replication**: Automatic multi-region replication
-- **Access**: Service account-based with IAM conditions
-- **Rotation**: Supported via secret versions
+- **Provider**: Vercel environment variables (current deployment)
+- **Access Control**: Vercel team permissions and environment-specific configuration
+- **Environment Separation**: Production and preview environments have separate secrets
+- **Rotation**: Update environment variables in Vercel dashboard
+- **Portability**: Standard environment variables - can migrate to any secrets manager
 - **Secrets Stored**:
   - `ENCRYPTION_KEY`: Master encryption key for private keys
   - `DYNAMIC_ENVIRONMENT_ID`: Dynamic environment identifier
   - `DYNAMIC_API_TOKEN`: Dynamic API authentication token
-  - `ARBITRUM_SEPOLIA_RPC_URL`: Blockchain RPC endpoint
-  - `DATABASE_URL`: Database connection string with credentials
+  - `RPC_URL_<CHAIN_ID>`: Blockchain RPC endpoints (per-chain configuration)
+  - `DATABASE_URL`: Database connection string with credentials (if using external Postgres)
+- **Future Option**: Google Cloud Secret Manager available if enhanced security needed (see [Alternative Deployment Options](#alternative-deployment-options))
 
 #### Infrastructure Security
 
-- **Service Accounts**: Separate accounts for Cloud Run and CI/CD
-- **IAM Roles**: Least privilege principle
-- **VPC Isolation**: Dedicated VPC, not default network
-- **Private Networking**: All internal communication via private IP
-- **No SSH Access**: Containerized deployment, no shell access
+- **Deployment Platform**: Vercel (current)
+- **Access Controls**: Vercel team permissions with role-based access
+- **Deployment Protection**: Preview/production guardrails
+- **Compliance**: SOC 2 Type II, ISO 27001 certified
+- **Automatic Updates**: Vercel handles security updates automatically
+- **No SSH Access**: Serverless deployment, no shell access
+- **Portability**: Can migrate to any platform without code changes
 
 #### Application Security Headers
 
@@ -117,17 +127,17 @@ Zero trust means "never trust, always verify." Vencura implements zero trust at 
 
 #### 1. Network Zero Trust
 
-- **Private IP Only**: Cloud SQL uses private IP only, no public endpoint
-- **VPC Isolation**: Dedicated VPC separate from default network
-- **VPC Connector**: Serverless VPC Access with `private-ranges-only` egress
-- **Firewall Rules**: Explicit deny-all, allow only required traffic
-- **Private Service Connection**: Direct connection to Cloud SQL via private network
+- **Edge Network**: Vercel's global edge network (100+ locations)
+- **DDoS Protection**: Cloudflare provides DDoS protection in front of the service
+- **Automatic SSL/TLS**: All traffic encrypted with automatic certificate management
+- **WAF/Firewall**: Vercel's built-in protection against common attacks
+- **Portability**: Can add Cloudflare or other CDN/WAF on any platform
 
 #### 2. Identity Zero Trust
 
-- **No User Accounts**: No human users with direct GCP access
-- **Service Accounts Only**: All operations use service accounts
-- **Workload Identity Federation**: GitHub Actions authenticate via WIF, no long-lived credentials
+- **Team Access**: Vercel team permissions control deployment access
+- **GitHub Integration**: Deployments authenticated via GitHub OAuth
+- **No Long-Lived Credentials**: GitHub integration eliminates need for API keys
 - **JWT Verification**: Every API request requires valid Dynamic JWT token
 - **User Isolation**: Database queries always filtered by authenticated user ID
 
@@ -228,26 +238,26 @@ Example from `WalletService`:
 
 #### Encryption Key
 
-- **Location**: Google Cloud Secret Manager
-- **Naming**: `vencura-{env}-encryption-key`
-- **Access**: Cloud Run service account only
-- **Rotation**: Create new secret version, update Cloud Run config
+- **Location**: Vercel environment variables (current)
+- **Access**: Vercel team members with appropriate permissions
+- **Rotation**: Update environment variable in Vercel dashboard, redeploy
 - **Minimum Length**: 32 characters (enforced by application)
+- **Portability**: Can migrate to any secrets manager (Google Cloud Secret Manager, AWS Secrets Manager, etc.)
 
 #### Key Rotation Procedure
 
 1. Generate new encryption key (32+ characters, cryptographically random)
-2. Create new secret version in Secret Manager
-3. Update Cloud Run service to use new secret version
+2. Update environment variable in Vercel dashboard
+3. Redeploy application (automatic on next push or manual)
 4. **Important**: Old wallets remain encrypted with old key
 5. **Migration**: Optionally re-encrypt wallets with new key (requires decryption with old key)
 
 #### Dynamic API Keys
 
-- **Environment ID**: Stored in Secret Manager
-- **API Token**: Stored in Secret Manager
-- **Rotation**: Update secret version, restart Cloud Run service
-- **Access**: Cloud Run service account only
+- **Environment ID**: Stored in Vercel environment variables
+- **API Token**: Stored in Vercel environment variables
+- **Rotation**: Update environment variable in Vercel dashboard, redeploy
+- **Access**: Vercel team members with appropriate permissions
 
 ## Encryption and Key Management
 
@@ -291,12 +301,13 @@ The `EncryptionService` provides symmetric encryption using AES-256-GCM:
 
 ### Database Encryption
 
-#### Cloud SQL Encryption
+#### Database Provider Encryption
 
-- **Encryption at Rest**: Enabled by default
-- **Google-Managed Keys**: Uses Google-managed encryption keys
-- **Automatic**: No configuration required
+- **Encryption at Rest**: Enabled by default on managed Postgres providers
+- **Provider-Managed Keys**: Uses provider-managed encryption keys
+- **Automatic**: No configuration required for managed services
 - **Transparent**: Application code unchanged
+- **Portability**: Works with any Postgres provider (Cloud SQL, RDS, Railway, etc.)
 
 #### Application-Level Encryption
 
@@ -370,161 +381,77 @@ if (!wallet) {
 
 ## Network Security
 
-### VPC Architecture
+### Vercel Edge Network
 
-#### Network Isolation
+#### Global Distribution
 
-- **Dedicated VPC**: Separate VPC for Vencura, not default network
-- **Private Subnet**: 10.0.0.0/24 for Cloud SQL
-- **VPC Connector**: 10.8.0.0/28 for serverless VPC access
-- **No Internet Gateway**: No direct internet access from VPC
+- **Edge Locations**: 100+ locations worldwide
+- **Automatic CDN**: Static assets cached globally
+- **Edge Functions**: Serverless functions at the edge for ultra-low latency
+- **Automatic Scaling**: Handles traffic spikes without configuration
 
-#### Private IP Configuration
+#### DDoS Protection
 
-- **Cloud SQL**: Private IP only, no public IP
-- **VPC Connector**: Egress set to `private-ranges-only`
-- **Cloud Run**: Connects to Cloud SQL via Unix socket
-- **Private Service Connection**: Direct connection to Cloud SQL
+- **Cloudflare Integration**: Cloudflare provides DDoS protection in front of the service
+- **Automatic Mitigation**: Built-in protection against common attacks
+- **WAF/Firewall**: Vercel's built-in protection
+- **Portability**: Can add Cloudflare or other CDN/WAF on any platform
 
-#### Firewall Rules
+#### SSL/TLS
 
-- **Default Deny**: All traffic denied by default
-- **Explicit Allow**: Only required traffic allowed
-- **Cloud SQL Access**: Only from VPC Connector
-- **No Public Access**: No public IPs or internet-facing endpoints
+- **Automatic Certificates**: SSL/TLS certificates provisioned and renewed automatically
+- **HTTPS Enforcement**: All traffic encrypted by default
+- **Certificate Management**: No manual certificate management required
 
 ### Network Security Best Practices
 
-1. **Separate Projects**: Dev and prod in separate GCP projects
-2. **VPC Peering**: Avoid if possible, use private service connections
-3. **Network Monitoring**: Enable VPC Flow Logs
-4. **DDoS Protection**: Cloud Armor for Cloud Run (if needed)
-5. **WAF**: Consider Web Application Firewall for additional protection
+1. **Environment Separation**: Separate Vercel projects for dev and prod
+2. **Custom Domains**: Use custom domains with proper DNS configuration
+3. **Monitoring**: Use Vercel Analytics and monitoring tools
+4. **DDoS Protection**: Cloudflare provides additional protection
+5. **WAF**: Vercel's built-in WAF provides additional protection
 
-## Google Cloud Security
+## Infrastructure Security
 
-### Project Organization
+### Vercel Infrastructure Security
 
-#### Separate Projects
+#### Access Controls
 
-**Recommended**: Use separate GCP projects for dev and prod:
+- **Team Permissions**: Role-based access control (Owner, Member, Developer, Viewer)
+- **Project-Level Access**: Fine-grained permissions per project
+- **Environment Variables**: Protected by team permissions
+- **Deployment Protection**: Preview/production guardrails prevent accidental deployments
 
-- **Benefits**:
-  - Complete isolation between environments
-  - Separate billing and quotas
-  - Independent IAM policies
-  - Isolated audit logs
-  - Easier compliance and security reviews
+#### Compliance and Certifications
 
-- **Implementation**:
-  - Dev project: `vencura-dev` or similar
-  - Prod project: `vencura-prod` or similar
-  - Different project IDs in Pulumi stacks
+- **SOC 2 Type II**: Vercel is SOC 2 Type II certified
+- **ISO 27001**: Vercel is ISO 27001 certified
+- **GDPR**: Vercel is GDPR compliant
+- **HIPAA**: Available for enterprise customers
 
-#### Current Setup
+#### Automatic Security Updates
 
-The infrastructure supports separate projects via Pulumi stacks:
+- **Platform Updates**: Vercel handles security updates automatically
+- **Dependency Scanning**: Built-in dependency scanning
+- **Vulnerability Management**: Automatic vulnerability detection and patching
 
-- `dev` stack: Development environment
-- `prod` stack: Production environment
+#### Monitoring and Logging
 
-Each stack can target a different GCP project.
+- **Deployment Logs**: Comprehensive logging for all deployments
+- **Function Logs**: Real-time logs for serverless functions
+- **Analytics**: Built-in analytics and monitoring
+- **Error Tracking**: Integration with error tracking services (Sentry)
 
-### Service Account Management
+### Portability
 
-#### Service Account Hierarchy
+All infrastructure security measures are **portable by default**:
 
-1. **Cloud Run Service Account**:
-   - Purpose: Runtime identity for Cloud Run service
-   - Permissions:
-     - `roles/secretmanager.secretAccessor` (scoped to specific secrets)
-     - `roles/cloudsql.client` (Cloud SQL connection only)
-   - Naming: `vencura-{env}-cloud-run-sa`
+- **Standard Environment Variables**: Works with any secrets manager
+- **Standard Database Connections**: Works with any Postgres provider
+- **Standard Application Code**: No vendor-specific code
+- **Migration Path**: Can migrate to any platform without code changes
 
-2. **CI/CD Service Account**:
-   - Purpose: GitHub Actions deployment
-   - Permissions:
-     - `roles/artifactregistry.writer` (push images)
-     - `roles/run.admin` (deploy services)
-     - `roles/secretmanager.secretAccessor` (read secrets for deployment)
-   - Naming: `vencura-{env}-cicd-sa`
-
-#### IAM Best Practices
-
-- **Least Privilege**: Minimum permissions required
-- **Service Account per Environment**: Separate accounts for dev/prod
-- **IAM Conditions**: Limit secret access to specific secrets
-- **No Project-Level Roles**: Avoid broad permissions
-- **Regular Audits**: Review IAM bindings regularly
-
-### Workload Identity Federation
-
-#### GitHub Actions Authentication
-
-- **Method**: Workload Identity Federation (WIF)
-- **Provider**: GitHub OIDC provider
-- **Service Account**: CI/CD service account
-- **Benefits**:
-  - No long-lived credentials
-  - Automatic token rotation
-  - Fine-grained access control
-  - Audit trail
-
-#### Setup Requirements
-
-1. **WIF Provider**: Created in GCP (one-time setup)
-   - Pool: `vencura-github-pool`
-   - Provider: `github` (OIDC provider for GitHub Actions)
-   - Resource name format: `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/vencura-github-pool/providers/github`
-2. **WIF Service Account**: CI/CD service account with WIF binding
-   - Service account: `vencura-dev-cicd-sa@PROJECT_ID.iam.gserviceaccount.com`
-   - Permissions: `roles/editor`, `roles/artifactregistry.writer`, `roles/run.admin`, `roles/secretmanager.admin`, `roles/servicenetworking.serviceAgent`
-3. **GitHub Secrets**:
-   - `WIF_PROVIDER`: Full WIF provider resource name (from Step 5 setup)
-   - `WIF_SERVICE_ACCOUNT`: Service account email (from Step 5 setup)
-
-**Setup Instructions**: See [infra/README.md](../../infra/README.md#step-5-set-up-workload-identity-federation-on-your-computer) for detailed setup steps.
-
-### Secret Manager
-
-#### Secret Organization
-
-- **Naming Convention**: `vencura-{env}-{secret-name}`
-- **Replication**: Automatic multi-region
-- **Access Control**: IAM-based with conditions
-- **Versioning**: Supports multiple versions for rotation
-
-#### Secret Access
-
-- **Service Account Binding**: Each secret has IAM member for service account
-- **IAM Conditions**: Can limit access by IP, time, etc.
-- **Audit Logging**: All secret access logged
-- **Monitoring**: Alert on unusual access patterns
-
-### Audit Logging
-
-#### Recommended Logging
-
-1. **Admin Activity Logs**: All admin actions
-2. **Data Access Logs**: Database and secret access
-3. **System Event Logs**: System-level events
-4. **Access Transparency**: Cloud SQL access logs
-
-#### Log Retention
-
-- **Default**: 30 days (free tier)
-- **Recommended**: 1 year for production
-- **Compliance**: Adjust based on requirements
-
-### Organization Policies
-
-#### Recommended Policies
-
-1. **Domain Restriction**: Restrict to company domain
-2. **Resource Location**: Restrict resource creation to specific regions
-3. **Service Account Key Creation**: Disable user-managed keys
-4. **Compute Engine VM**: Restrict VM creation
-5. **Storage Bucket**: Require uniform bucket-level access
+See [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) for detailed portability documentation.
 
 ## Deployment Security
 
@@ -559,56 +486,46 @@ Each stack can target a different GCP project.
    git config --global commit.gpgsign true
    ```
 
-### Signed Production Deployments
+### Vercel Deployment Security
 
-#### Container Image Signing
+#### Git-Based Deployments
 
-**Recommended**: Sign Docker images before deployment:
-
-1. **Cosign Integration**:
-   - Sign images with Cosign
-   - Store signatures in Artifact Registry
-   - Verify signatures before deployment
-
-2. **Workflow Integration**:
-
-   ```yaml
-   - name: Sign container image
-     run: |
-       cosign sign --yes ${{ env.image }}
-
-   - name: Verify signature before deploy
-     run: |
-       cosign verify ${{ env.image }}
-   ```
-
-3. **Policy Enforcement**:
-   - Only deploy signed images
-   - Reject unsigned images
-   - Audit signature verification
+- **GitHub Integration**: Automatic deployments from GitHub
+- **Branch Protection**: Protected branches require PR review
+- **Preview Deployments**: Every PR gets instant production-like preview URL
+- **Zero-Downtime Deployments**: Atomic deployments with instant rollback capability
 
 #### Deployment Verification
 
-- **Infrastructure as Code**: All changes via Pulumi (auditable)
-- **Preview Before Apply**: `pulumi preview` shows changes
-- **Approval Required**: Production deployments require manual trigger
-- **Health Checks**: Verify deployment success
+- **Automatic Builds**: Vercel automatically builds and tests on every push
+- **Preview URLs**: Test changes before merging to production
+- **Instant Rollback**: One-click rollback to previous deployment
+- **Health Checks**: Automatic health checks after deployment
 
-### Infrastructure as Code
+#### Deployment Workflow
 
-#### Pulumi Security
+1. **Push to Branch**: Automatic deployment trigger
+2. **Build**: Vercel builds application using configured build command
+3. **Test**: Run tests (if configured)
+4. **Deploy**: Deploy to preview (PR) or production (main branch)
+5. **Verify**: Automatic health checks and verification
+6. **Rollback**: Instant rollback if issues detected
 
-- **State Management**: Pulumi Cloud or self-hosted backend
-- **Secrets**: Use Pulumi secrets for sensitive config
-- **Audit Trail**: All infrastructure changes tracked
-- **Rollback**: Ability to revert changes
+### Code Review and Quality
 
-#### Code Review
+#### Required Reviews
 
-- **Required Reviews**: All infrastructure changes require PR review
-- **Automated Checks**: Lint, type check, test
-- **Preview**: Pulumi preview in CI/CD
-- **Documentation**: Update docs with infrastructure changes
+- **PR Reviews**: All changes require PR review before merging
+- **Automated Checks**: Lint, type check, test (via GitHub Actions)
+- **Preview Deployments**: Test changes in production-like environment
+- **Documentation**: Update docs with code changes
+
+#### Security Best Practices
+
+- **Signed Commits**: Use GPG signing for commits (recommended)
+- **Branch Protection**: Protect main branch from direct pushes
+- **Dependency Updates**: Regular dependency updates and security patches
+- **Security Scanning**: Use GitHub Dependabot or similar for vulnerability scanning
 
 ## Compliance and Audit
 
@@ -632,10 +549,10 @@ Each stack can target a different GCP project.
 
 #### Recommended Monitoring
 
-1. **Cloud Monitoring**: GCP Cloud Monitoring
-2. **Security Command Center**: Threat detection
-3. **Audit Logs**: Review access patterns
-4. **Alerting**: Unusual activity alerts
+1. **Vercel Analytics**: Built-in analytics and monitoring
+2. **Error Tracking**: Sentry integration for error tracking
+3. **Deployment Logs**: Review deployment logs for issues
+4. **Alerting**: Set up alerts for failed deployments or errors
 
 #### Key Metrics
 
@@ -723,11 +640,11 @@ If you discover a security vulnerability, please report it responsibly:
 
 ### For Operations
 
-1. **Separate projects**: Dev and prod isolation
-2. **Rotate secrets**: Regular rotation schedule
-3. **Monitor access**: Review audit logs
-4. **Update infrastructure**: Keep Pulumi and GCP updated
-5. **Test backups**: Regular backup verification
+1. **Separate environments**: Dev and prod isolation in Vercel
+2. **Rotate secrets**: Regular rotation schedule for environment variables
+3. **Monitor deployments**: Review deployment logs and analytics
+4. **Update dependencies**: Keep dependencies updated and scan for vulnerabilities
+5. **Test backups**: Regular backup verification (if using external database)
 
 ### For Security
 
@@ -737,13 +654,30 @@ If you discover a security vulnerability, please report it responsibly:
 4. **Incident drills**: Regular incident response practice
 5. **Security training**: Team security awareness
 
+## Alternative Deployment Options
+
+### Google Cloud Platform
+
+For production workloads requiring enhanced security and control, Google Cloud Platform is available as an alternative deployment option. This includes:
+
+- **Enhanced Security**: Private networking, VPC isolation, HSM-backed keys
+- **Fine-Grained Control**: Full control over infrastructure, scaling, and resource allocation
+- **Compliance**: Better support for enterprise security and compliance requirements
+- **Private Networking**: Strict egress control and network-level security policies
+
+**Status**: Documented but not currently implemented. All systems are currently deployed on Vercel.
+
+**Documentation**: See [Google Cloud Security Documentation](../../docs/google-cloud-security.md) for comprehensive Google Cloud security details.
+
+**When to Consider**: Only if production security requirements demand enhanced control beyond Vercel's capabilities. See [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) for detailed comparison.
+
 ## Additional Resources
 
-- [Google Cloud Security Best Practices](https://cloud.google.com/security/best-practices)
+- [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) - Current deployment strategy
+- [Google Cloud Security Documentation](../../docs/google-cloud-security.md) - Alternative deployment security
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 - [Dynamic Labs Security Documentation](https://docs.dynamic.xyz/)
-- [Pulumi Security Best Practices](https://www.pulumi.com/docs/guides/security/)
 
 ## Document Maintenance
 

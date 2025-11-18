@@ -1,3 +1,7 @@
+# DISABLED: Google Cloud deployment workflows are not currently being used.
+# All systems are deployed on Vercel. These workflows are preserved for future reference.
+# To re-enable, rename this file to .yml and uncomment all lines.
+#
 # name: Deploy to Dev
 
 # on:

@@ -534,3 +534,5 @@ const createWallet = useCreateWallet({
 ## Related Packages
 
 - [@vencura/core](../core/README.md) - TypeScript SDK for Vencura API
+- [@vencura/types](../types/README.md) - Shared API contracts and types
+- [apps/api](../../apps/api/README.md) - NestJS backend API

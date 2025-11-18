@@ -53,9 +53,11 @@ This directory contains Pulumi TypeScript infrastructure code for deploying the 
 
 ### 🎯 Overview
 
-**After initial setup, GitHub Actions workflows automatically manage all infrastructure changes** to keep code and infrastructure in sync. You do not need to run Pulumi commands manually for routine deployments.
+**Note**: Google Cloud deployment workflows are currently **disabled**. All systems are deployed on Vercel. The GitHub Actions workflows (`.github/workflows/deploy-*.yml.disabled`) are preserved for future reference but are not active.
 
-### What's Automated by GitHub Workflows
+**If using Google Cloud**: After initial setup, GitHub Actions workflows would automatically manage all infrastructure changes to keep code and infrastructure in sync. You would not need to run Pulumi commands manually for routine deployments.
+
+### What Would Be Automated by GitHub Workflows (Currently Disabled)
 
 ✅ **All infrastructure provisioning and updates**  
 ✅ **Container image builds and pushes**  

@@ -135,7 +135,7 @@ Example:
 </div>
 ```
 
-See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for detailed guidelines.
+See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for detailed guidelines and patterns.
 
 ## Tech Stack
 
