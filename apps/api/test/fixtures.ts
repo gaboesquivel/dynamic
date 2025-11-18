@@ -57,15 +57,56 @@ export const generateTestWalletId = () =>
 /**
  * Test token addresses deployed on Arbitrum Sepolia (Chain ID: 421614).
  *
- * For local testing, deploy these contracts to Anvil and update addresses.
- * When using local blockchain, transactions will go to localhost:8545
- * but the chain ID remains 421614 for Dynamic SDK compatibility.
+ * For local testing, tokens are automatically deployed to Anvil and addresses
+ * are resolved dynamically. When using local blockchain, transactions will go
+ * to localhost:8545 but the chain ID remains 421614 for Dynamic SDK compatibility.
+ *
+ * Token address resolution:
+ * - Local chain: Addresses are obtained from token deployment script
+ * - Testnet: Uses hardcoded addresses on Arbitrum Sepolia
  */
-export const TEST_TOKEN_ADDRESSES = {
+const TESTNET_TOKEN_ADDRESSES = {
   DNMC: '0x4F28D4eD49E20d064C9052E7Ff4Fd12878aBA09F',
   USDC: '0x6a2fE04d877439a44938D38709698d524BCF5c40',
   USDT: '0x5f036f0B6948d4593364f975b81caBB3206aD994',
 } as const
+
+/**
+ * Get test token addresses, resolving local vs testnet automatically.
+ * For local blockchain, uses deployed addresses from setup-tokens.
+ * For testnet, uses hardcoded Arbitrum Sepolia addresses.
+ */
+export function getTestTokenAddresses(): Record<string, `0x${string}`> {
+  // Check if using local blockchain
+  const useLocalBlockchain = process.env.USE_LOCAL_BLOCKCHAIN !== 'false'
+
+  if (useLocalBlockchain) {
+    // Try to get deployed addresses from setup-tokens
+    try {
+      // Dynamic import to avoid circular dependencies
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getDeployedTokenAddresses } = require('./setup-tokens')
+      const deployed = getDeployedTokenAddresses()
+
+      // If we have deployed addresses, use them
+      if (Object.keys(deployed).length > 0) {
+        return deployed as Record<string, `0x${string}`>
+      }
+    } catch {
+      // If setup-tokens hasn't run yet or failed, fall back to testnet addresses
+      // This can happen if tokens haven't been deployed yet
+    }
+  }
+
+  // Default to testnet addresses
+  return TESTNET_TOKEN_ADDRESSES as Record<string, `0x${string}`>
+}
+
+/**
+ * Test token addresses (backward compatibility).
+ * Use getTestTokenAddresses() for dynamic resolution.
+ */
+export const TEST_TOKEN_ADDRESSES = getTestTokenAddresses()
 
 // Token decimals mapping
 export const TEST_TOKEN_DECIMALS = {

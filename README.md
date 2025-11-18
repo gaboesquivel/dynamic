@@ -183,6 +183,17 @@ pnpm run contracts:solana:test    # Test Solana programs
 cd apps/api && pnpm run test:e2e  # E2E tests with automated gas faucet
 ```
 
+### Testing Strategy
+
+The API uses a **blackbox testing strategy** with local chains for automation:
+
+- **Local Chain Automation**: Anvil spins up automatically before tests to save gas costs
+- **Token Mocking**: Test tokens (USDT, USDC, DNMC) are automatically deployed with open mint functionality
+- **Dynamic SDK Integration**: All transaction signing uses the real Dynamic SDK (no mocks)
+- **Blackbox Testing**: All tests hit HTTP endpoints only, ensuring end-to-end validation
+
+See [API Test Documentation](./apps/api/test/README.md) for complete testing strategy details.
+
 ### Environment Setup
 
 This monorepo uses environment-specific configuration files following a unified strategy. See [ADR 014: Environment Strategy](.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](.cursor/rules/base/environment.mdc) for implementation patterns.

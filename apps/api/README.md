@@ -372,16 +372,58 @@ Dynamic user metadata (via frontend `useUserUpdateRequest()` hook) can be used f
 
 ## Testing
 
-The API includes comprehensive blackbox E2E tests that use the real Dynamic SDK. All tests hit real Dynamic SDK endpoints with real API keys - NO MOCKS are used for core functionality.
+The API includes comprehensive **blackbox E2E tests** that use the real Dynamic SDK. All tests hit real Dynamic SDK endpoints with real API keys - NO MOCKS are used for core functionality.
 
-### Testing Philosophy
+### Testing Strategy
 
-**CRITICAL**: Most tests use real APIs with real API keys. NO MOCKS allowed for core functionality.
+Our testing strategy emphasizes **blackbox testing** using local chains for automation. This approach ensures end-to-end validation while maintaining fast, reliable test execution.
 
-- E2E tests hit real Dynamic SDK endpoints for wallet creation, balance, and signing
-- Integration tests use real blockchain RPCs
-- All API calls use actual credentials from environment variables
-- Tests verify end-to-end functionality with real infrastructure
+#### Blackbox Testing Philosophy
+
+**CRITICAL**: All API tests are blackbox - they only interact with HTTP endpoints, no unit tests. This ensures we test the complete flow from HTTP request to blockchain transaction.
+
+- **No Unit Tests**: All tests hit HTTP endpoints only, verifying complete API functionality
+- **Real Dynamic SDK**: All wallet operations and transaction signing use the real Dynamic SDK (no mocks)
+- **Real Blockchain RPCs**: Integration tests use real blockchain RPCs (local Anvil or testnet)
+- **End-to-End Validation**: Tests verify the complete flow from HTTP request to blockchain transaction
+
+#### Local Chain Automation
+
+We spin up a local Anvil blockchain automatically before tests run to save gas costs and eliminate network dependencies:
+
+- **Anvil starts automatically** before tests run (requires Foundry installation)
+- **Wallets are auto-funded** with ETH from Anvil's default account
+- **No manual setup required** - just run `pnpm run test:e2e`
+- **Fast and reliable** - no network latency or rate limits
+- **Point test chains to Anvil** by setting `RPC_URL_<CHAIN_ID>=http://localhost:8545`
+
+#### Token Mocking Strategy
+
+We mock three tokens (USDT, USDC, DNMC) for automated transfer testing:
+
+- **USDT (Mocked)**: Tether USD token mock with 6 decimals
+- **USDC (Mocked)**: USD Coin token mock with 6 decimals
+- **DNMC**: Dynamic Arcade Token (arcade utility token) with 18 decimals
+
+All three tokens are deployed using the `TestToken` contract with **open minting functionality**, allowing any wallet to mint tokens as a faucet. This enables automated transfer testing without requiring special faucet wallets or manual funding.
+
+**Token Deployment**: Test tokens are automatically deployed to local Anvil before tests run. For testnet testing, tokens are deployed on Arbitrum Sepolia (Chain ID: 421614).
+
+#### Testing Flow
+
+1. **Spin up local chain**: Anvil starts automatically before tests run
+2. **Deploy test tokens**: Test tokens (USDT, USDC, DNMC) are automatically deployed to Anvil with open mint functionality
+3. **Use Dynamic SDK**: All wallet operations and transaction signing use the real Dynamic SDK
+4. **Blackbox test endpoints**: Tests hit HTTP endpoints only, verifying complete end-to-end functionality
+
+#### Dynamic SDK Integration
+
+All transaction signing uses the real Dynamic SDK (no mocks):
+
+- **Wallet Creation**: Uses `DynamicEvmWalletClient.createWalletAccount()` for EVM chains
+- **Message Signing**: Uses Dynamic SDK's `signMessage()` method with 2-of-2 threshold signatures
+- **Transaction Signing**: Uses Dynamic SDK's `signTransaction()` method for both EVM and Solana
+- **Real API Keys**: All tests use actual credentials from environment variables
 
 **Automated Gas Faucet**: Transaction tests use an automated gas faucet infrastructure. By default, tests use a local Anvil blockchain where wallets are automatically funded. This eliminates the need for manual wallet funding and makes tests faster and more reliable. For testnet testing, you can set `USE_LOCAL_BLOCKCHAIN=false` and optionally provide `FAUCET_PRIVATE_KEY` for automated funding.
 

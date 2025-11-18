@@ -177,6 +177,53 @@ Anvil is automatically used by the API E2E tests for automated gas faucet functi
 
 See [API Test Documentation](../apps/api/test/README.md) for details on automated gas faucet.
 
+## Testing Strategy
+
+### Blackbox Testing with Local Chains
+
+Our testing strategy emphasizes **blackbox testing** using local chains for automation. This approach ensures end-to-end validation while maintaining fast, reliable test execution.
+
+#### Core Principles
+
+1. **Local Chain Automation**: We spin up a local Anvil blockchain automatically before tests run to save gas costs and eliminate network dependencies
+2. **Test Tokens with Open Mint**: We deploy test tokens (USDT, USDC, DNMC) using the `TestToken` contract with open minting functionality, allowing any wallet to mint tokens as a faucet
+3. **Blackbox Testing**: All API tests are blackbox - they only interact with HTTP endpoints, no unit tests. This ensures we test the complete flow from HTTP request to blockchain transaction
+4. **Dynamic SDK Integration**: All transaction signing uses the real Dynamic SDK (no mocks), ensuring we test against actual wallet infrastructure
+
+#### Token Mocking Strategy
+
+We mock three tokens for automated transfer testing:
+
+- **USDT (Mocked)**: Tether USD token mock with 6 decimals
+- **USDC (Mocked)**: USD Coin token mock with 6 decimals  
+- **DNMC**: Dynamic Arcade Token (arcade utility token) with 18 decimals
+
+All three tokens are deployed using the `TestToken` contract which provides:
+
+- **Open Minting**: Anyone can call `mint()` to create tokens (perfect for faucets)
+- **Open Burning**: Anyone can call `burn()` to destroy tokens (useful for testing)
+- **Standard ERC20 Interface**: Full compatibility with standard token operations
+
+This allows tests to automatically mint tokens via the API transaction endpoint (`mintTestTokenViaFaucet` helper) without requiring special faucet wallets or manual funding.
+
+#### Testing Flow
+
+1. **Spin up local chain**: Anvil starts automatically before tests run
+2. **Deploy test tokens**: Test tokens (USDT, USDC, DNMC) are automatically deployed to Anvil with open mint functionality
+3. **Use Dynamic SDK**: All wallet operations and transaction signing use the real Dynamic SDK
+4. **Blackbox test endpoints**: Tests hit HTTP endpoints only, verifying complete end-to-end functionality
+
+#### Local Chain Deployment
+
+For local testing, tokens are automatically deployed to Anvil before tests run. The deployment process:
+
+- Checks if tokens are already deployed (by verifying contract addresses)
+- Deploys tokens using Foundry scripts if not present
+- Stores deployed addresses for test use
+- Works seamlessly with the automated Anvil startup
+
+See [API Test Documentation](../apps/api/test/README.md) for complete testing strategy details.
+
 ### Environment Setup
 
 Create a `.env` file in the `contracts/evm/` directory (copy from `.env.sample`):
