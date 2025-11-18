@@ -144,7 +144,7 @@ cp .env-example .env
 
 **Note**: If `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is not set, the app will use a placeholder ID and show warnings in development mode. Authentication will not work properly without a valid environment ID.
 
-See [Environment Strategy](../../docs/environment-strategy.md) for detailed configuration instructions.
+See [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
 
 ## Development
 

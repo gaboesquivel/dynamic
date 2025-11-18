@@ -24,7 +24,10 @@ Vencura is a backend API that enables users to create and manage custodial walle
 - **RPC Configuration**: Uses Dynamic's default RPC URLs with optional per-chain overrides
 - **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production)
 - **API Documentation**: Interactive Swagger UI at `/api` (disabled by default, enable with `ENABLE_SWAGGER_UI=true`)
-- **TypeScript SDK**: Auto-generated `@vencura/core` SDK from Swagger/OpenAPI specification (see [@vencura/core README](../../packages/core/README.md))
+- **TypeScript SDK**: Auto-generated `@vencura/core` SDK from Swagger/OpenAPI specification
+  - See [@vencura/core README](../../packages/core/README.md) for SDK usage
+  - See [@vencura/types README](../../packages/types/README.md) for API contracts and types
+  - See [@vencura/react README](../../packages/react/README.md) for React hooks integration
 - **Security**:
   - AES-256-GCM encryption for private key storage
   - Rate limiting on all endpoints (wallet creation: 10/min, transactions: 20/min, signing: 30/min)
@@ -41,15 +44,16 @@ Vencura is a backend API that enables users to create and manage custodial walle
 
 ## Tech Stack
 
-- **Framework**: NestJS
+- **Framework**: NestJS (see [ADR 002](../../.adrs/002-vencura-api-framework.md))
 - **Authentication**: Dynamic Labs SDK Client
-- **Validation**: Zod for environment variables and runtime validation
+- **Validation**: Zod for environment variables and runtime validation (see [@vencura/lib](../../packages/lib/README.md))
 - **Blockchain**:
-  - Viem for EVM chains
+  - Viem for EVM chains (see [ADR 009](../../.adrs/009-viem-vs-ethers.md))
   - @solana/web3.js for Solana
   - Dynamic SDK for wallet operations
-- **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production)
+- **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production) (see [ADR 011](../../.adrs/011-vencura-api-orm.md))
 - **API Documentation**: Swagger/OpenAPI (generates `@vencura/core` TypeScript SDK)
+- **Infrastructure**: Vercel (see [ADR 007](../../.adrs/007-vencura-api-infrastructure.md)) with Google Cloud option (see [ADR 010](../../.adrs/010-vencura-infra-orchestration.md))
 
 ## Getting Started
 
@@ -66,7 +70,7 @@ pnpm install
 
 ### Environment Variables
 
-This API uses environment-specific configuration files. Environment files are loaded in priority order:
+This API uses environment-specific configuration files following [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md). Environment files are loaded in priority order:
 
 1. `.env` (highest priority, sensitive data, never committed, overrides everything)
 2. `.env.development` / `.env.staging` / `.env.production` / `.env.test` (based on NODE_ENV, committed configs)
@@ -74,9 +78,10 @@ This API uses environment-specific configuration files. Environment files are lo
 **File Structure:**
 
 - `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- `.env.development` - Development configuration (committed, non-sensitive)
-- `.env.staging` - Staging configuration (committed, non-sensitive)
-- `.env.production` - Production configuration (committed, non-sensitive)
+- `.env.development` - Development configuration (committed, non-sensitive) - Local Anvil blockchain
+- `.env.staging` - Staging configuration (committed, non-sensitive) - Testnet networks
+- `.env.production` - Production configuration (committed, non-sensitive) - Mainnet networks
+- `.env.test` - Test configuration (committed, non-sensitive) - Local Anvil blockchain (for CI/CD)
 - `.env-example` - Template for `.env` file (shows required sensitive variables)
 
 **Setup for Local Development:**
@@ -113,7 +118,7 @@ cp .env-example .env
 - `SOLANA_RPC_URL`: Custom Solana RPC URL (applies to all Solana networks)
 - `ARBITRUM_SEPOLIA_RPC_URL`: Backward compatibility for Arbitrum Sepolia (maps to `RPC_URL_421614`)
 
-See [Environment Strategy](../../docs/environment-strategy.md) for detailed configuration instructions.
+See [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
 
 **Optional Error Tracking:**
 
@@ -342,7 +347,7 @@ Both EVM and Solana wallet clients authenticate with Dynamic using `DYNAMIC_ENVI
 
 ### Data Storage Strategy
 
-We store all wallet and user data in our own database rather than relying on Dynamic SDK metadata. See [ADR 015](../../.adrs/015-database-vs-dynamic-metadata.md) and [Dynamic Integration Architecture](../../docs/dynamic-integration.md#data-storage-strategy) for details.
+We store all wallet and user data in our own database rather than relying on Dynamic SDK metadata. See [ADR 015: Database Storage vs Dynamic SDK Metadata](../../.adrs/015-database-vs-dynamic-metadata.md) for the complete architecture decision.
 
 **What We Store in Database:**
 
@@ -643,9 +648,24 @@ src/
 └── main.ts           # Application entry point
 ```
 
-## Wallet Security
+## Security
 
 Vencura implements a comprehensive two-layer security model for custodial wallet protection. For detailed security documentation, see [SECURITY.md](./SECURITY.md).
+
+### Security Features
+
+- **Authentication**: Dynamic Labs JWT token verification with RS256 signature validation
+- **Encryption**: AES-256-GCM encryption for private key storage
+- **Rate Limiting**: Endpoint-specific limits (wallet creation: 10/min, transactions: 20/min, signing: 30/min)
+- **Input Validation**: Chain ID validation, address format validation
+- **Security Headers**: HSTS, X-Frame-Options, CSP, and other security headers via Helmet.js
+- **Request Size Limits**: Maximum 10kb payload size to prevent DoS attacks
+- **Request ID Tracing**: All requests include X-Request-ID header for tracing and debugging
+- **Error Sanitization**: Error messages sanitized in production to prevent information leakage
+- **Swagger UI Protection**: Swagger UI disabled by default (enable with `ENABLE_SWAGGER_UI=true`)
+- **CORS Configuration**: Configurable CORS origin (default: `*` for development)
+- **DDoS Protection**: Cloudflare provides DDoS protection in front of the service
+- **User Isolation**: All wallet operations enforce strict user isolation at database level
 
 ### Two-Layer Security Model
 
@@ -746,23 +766,7 @@ const [wallet] = await this.db
 9. Memory cleared (decrypted keys never persisted)
 ```
 
-## Security Considerations
-
-- Private keys are encrypted using AES-256-GCM before storage
-- All API endpoints require Dynamic authentication
-- Users can only access their own wallets
-- Encryption key should be kept secure and never committed to version control
-- **Rate Limiting**: Implemented with endpoint-specific limits (wallet creation: 10/min, transactions: 20/min, signing: 30/min)
-- **Input Validation**: Ethereum addresses and chain IDs are validated for proper format
-- **Security Headers**: HSTS, X-Frame-Options, CSP, and other security headers configured via Helmet.js
-- **Request Size Limits**: Maximum 10kb payload size to prevent DoS attacks
-- **Request ID Tracing**: All requests include X-Request-ID header for tracing and debugging
-- **Error Sanitization**: Error messages sanitized in production to prevent information leakage
-- **Swagger UI Protection**: Swagger UI disabled by default (enable with `ENABLE_SWAGGER_UI=true`)
-- **CORS Configuration**: Configurable CORS origin (default: `*` for development)
-- **DDoS Protection**: Cloudflare provides DDoS protection in front of the service
-- For comprehensive security documentation, see [SECURITY.md](./SECURITY.md)
-- For security review findings and remediation status, see [SECURITY_REVIEW.md](./SECURITY_REVIEW.md)
+For comprehensive security documentation, see [SECURITY.md](./SECURITY.md). For security review findings and remediation status, see [SECURITY_REVIEW.md](./SECURITY_REVIEW.md).
 
 ## Architecture Decisions
 

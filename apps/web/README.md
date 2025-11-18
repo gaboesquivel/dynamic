@@ -58,7 +58,7 @@ This app follows **mobile-first responsive design**:
 - Enhancements added for larger screens using Tailwind breakpoints (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`)
 - All components are designed mobile-first, then enhanced for desktop
 
-See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for detailed guidelines.
+See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for detailed guidelines and patterns.
 
 ## Getting Started
 
@@ -80,7 +80,7 @@ pnpm install
 
 ### Environment Variables
 
-This Next.js app uses environment-specific configuration files. Next.js automatically loads environment files in priority order:
+This Next.js app uses environment-specific configuration files following [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md). Next.js automatically loads environment files in priority order:
 
 1. `.env` (highest priority, sensitive data, never committed, overrides everything)
 2. `.env.development` / `.env.staging` / `.env.production` (based on NODE_ENV, committed configs)
@@ -88,9 +88,9 @@ This Next.js app uses environment-specific configuration files. Next.js automati
 **File Structure:**
 
 - `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- `.env.development` - Development configuration (committed, non-sensitive)
-- `.env.staging` - Staging configuration (committed, non-sensitive)
-- `.env.production` - Production configuration (committed, non-sensitive)
+- `.env.development` - Development configuration (committed, non-sensitive) - Local development with API at `http://localhost:3077`
+- `.env.staging` - Staging configuration (committed, non-sensitive) - Staging environment with testnet API
+- `.env.production` - Production configuration (committed, non-sensitive) - Production environment with mainnet API
 - `.env-example` - Template for `.env` file (shows required sensitive variables)
 
 **Setup for Local Development:**
@@ -115,12 +115,6 @@ cp .env-example .env
 - `NEXT_PUBLIC_SENTRY_DSN`: Sentry DSN URL for error tracking (optional, defaults to disabled)
 - `NEXT_PUBLIC_SENTRY_ENVIRONMENT`: Environment name for Sentry (optional, defaults to `NODE_ENV`)
 
-**Environment-Specific Configuration:**
-
-- **Development** (`.env.development` + `.env`): Local development with API at `http://localhost:3077`
-- **Staging** (`.env.staging` + `.env`): Staging environment with testnet API
-- **Production** (`.env.production` + `.env`): Production environment with mainnet API
-
 **Note**: `.env.development`, `.env.staging`, and `.env.production` are committed files with non-sensitive configuration. Sensitive data (like `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`) should be in `.env` file (never committed).
 
 **Getting Your Dynamic Environment ID:**
@@ -133,7 +127,7 @@ cp .env-example .env
 
 **Note**: If `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is not set, the app will use a placeholder ID and show warnings in development mode. Authentication will not work properly without a valid environment ID.
 
-See [Environment Strategy](../../docs/environment-strategy.md) for detailed configuration instructions.
+See [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
 
 ### Running the Application
 
@@ -202,22 +196,49 @@ vencura-ui/
 
 The frontend communicates with the Vencura API backend. See [Vencura API README](../api/README.md) for backend documentation.
 
-### TypeScript SDK
+### Recommended: React Hooks with @vencura/react
 
-A fully typed TypeScript SDK (`@vencura/core`) is available for interacting with the Vencura API. The SDK is auto-generated from the Swagger/OpenAPI specification. See [@vencura/core README](../../packages/core/README.md) for usage details.
-
-**Note**: This UI currently uses a custom API client, but you can use `@vencura/core` for type-safe API interactions.
-
-### React Hooks
-
-For React applications, **[@vencura/react](../../packages/react/README.md)** provides React hooks built on TanStack Query, offering:
+**[@vencura/react](../../packages/react/README.md)** provides React hooks built on TanStack Query, offering:
 
 - Automatic caching and refetching
 - Optimistic updates
 - Type-safe hooks for all API operations
 - Query key factory for cache management
+- End-to-end type safety from API contracts
 
-This is the recommended approach for new React applications.
+**Example:**
+
+```tsx
+import { useWallets, useCreateWallet } from '@vencura/react'
+
+function WalletsList() {
+  const { data: wallets, isLoading } = useWallets()
+  const createWallet = useCreateWallet()
+
+  return (
+    <div>
+      <button onClick={() => createWallet.mutate({ chainId: 421614 })}>
+        Create Wallet
+      </button>
+      {wallets?.map(wallet => (
+        <div key={wallet.id}>{wallet.address}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+This is the **recommended approach** for React applications. See [@vencura/react README](../../packages/react/README.md) for complete documentation.
+
+### TypeScript SDK
+
+A fully typed TypeScript SDK (`@vencura/core`) is available for programmatic API interactions. The SDK is auto-generated from the Swagger/OpenAPI specification using a contract-first approach with ts-rest. See [@vencura/core README](../../packages/core/README.md) for usage details.
+
+**Related Packages:**
+
+- [@vencura/core](../../packages/core/README.md) - TypeScript SDK for Vencura API
+- [@vencura/types](../../packages/types/README.md) - Shared API contracts and types
+- [@vencura/react](../../packages/react/README.md) - React hooks (recommended for React apps)
 
 ### Development Tools
 
@@ -297,7 +318,7 @@ The UI supports multiple blockchain networks through:
 
 ## Deployment
 
-The Vencura UI is deployed to **Vercel**. See [ADR 008](../../.adrs/008-frontend-infrastructure.md) for deployment details.
+The Vencura UI is deployed to **Vercel**. See [ADR 008: Frontend Infrastructure](../../.adrs/008-frontend-infrastructure.md) for deployment details and architecture decisions.
 
 ## License
 

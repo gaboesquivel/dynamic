@@ -176,6 +176,8 @@ For detailed setup instructions, see [infra/README.md](../infra/README.md).
 
 ## Security Features
 
+For comprehensive Google Cloud security documentation, see [Google Cloud Security Documentation](./google-cloud-security.md).
+
 ### Network Security
 
 - **Private IP Only**: Cloud SQL uses private IP addresses only
@@ -292,6 +294,7 @@ When ready to migrate to Google Cloud:
 
 ## Documentation
 
+- [Google Cloud Security Documentation](./google-cloud-security.md) - Comprehensive Google Cloud security details
 - [Infrastructure README](../infra/README.md) - Detailed setup and usage
 - [ADR 010](../.adrs/010-vencura-infra-orchestration.md) - Infrastructure orchestration decision
 - [ADR 007](../.adrs/007-vencura-api-infrastructure.md) - Infrastructure platform decision

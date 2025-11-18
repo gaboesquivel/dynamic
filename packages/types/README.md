@@ -21,17 +21,17 @@ import { Wallet, CreateWalletInput, WalletBalance } from '@vencura/types'
 
 ### Address Validation
 
-For runtime address validation, use the proper libraries for each chain type:
+This package provides lightweight Zod schemas for address validation. For production validation with proper cryptographic verification, always use chain-specific libraries. See [Multichain Address Validation Rules](../../.cursor/rules/web3/multichain.mdc) for complete guidelines.
+
+**Production Validation (Recommended):**
 
 ```ts
 // EVM addresses - use viem's getAddress
 import { getAddress } from 'viem'
-
 const validatedEvmAddress = getAddress('0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0')
 
 // Solana addresses - use @solana/web3.js PublicKey
 import { PublicKey } from '@solana/web3.js'
-
 const solanaPublicKey = new PublicKey('YourSolanaAddress')
 if (!PublicKey.isOnCurve(solanaPublicKey)) {
   throw new Error('Invalid Solana address')
@@ -39,20 +39,15 @@ if (!PublicKey.isOnCurve(solanaPublicKey)) {
 
 // Cosmos addresses - use @cosmjs/encoding for Bech32 validation
 import { fromBech32 } from '@cosmjs/encoding'
-
 try {
   const { prefix, data } = fromBech32(address)
-  // Validate prefix matches expected chain (e.g., 'cosmos', 'osmo', 'juno')
-  // Validate data length (should be 20 bytes for standard addresses)
-  const isValid = data.length === 20
+  const isValid = data.length === 20 // 20 bytes for standard addresses
 } catch {
   throw new Error('Invalid Cosmos Bech32 address')
 }
 ```
 
-### Using validateAddress from @vencura/types
-
-This package provides a `validateAddress` function for basic format validation:
+**Basic Format Validation (Lightweight):**
 
 ```ts
 import { validateAddress } from '@vencura/types/schemas'
@@ -64,9 +59,7 @@ const address = validateAddress({
 })
 ```
 
-**Note**: The `validateAddress` function performs basic format validation only. For production validation with proper cryptographic verification, always use the chain-specific libraries shown above.
-
-The zod address schemas in this package are lightweight and dependency-free, making them suitable for type inference and basic format validation. For production validation, always use the chain-specific libraries (viem for EVM, @solana/web3.js for Solana, @cosmjs/encoding for Cosmos, etc.).
+**Note**: The `validateAddress` function performs basic format validation only. For production validation with proper cryptographic verification, always use the chain-specific libraries shown above. The zod address schemas in this package are lightweight and dependency-free, making them suitable for type inference and basic format validation.
 
 ### Importing API Contracts
 
@@ -98,6 +91,6 @@ This package uses a contract-first approach where:
 
 ## Related Packages
 
-- `@vencura/core` - TypeScript SDK using these types
-- `apps/api` - NestJS backend implementing these API contracts
-- `@vencura/react` - React hooks using these types
+- [@vencura/core](../core/README.md) - TypeScript SDK using these types
+- [@vencura/react](../react/README.md) - React hooks using these types
+- [apps/api](../../apps/api/README.md) - NestJS backend implementing these API contracts

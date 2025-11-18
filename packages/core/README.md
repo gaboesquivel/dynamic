@@ -79,5 +79,6 @@ This package has no build step - it exports TypeScript source files directly. Th
 
 ## Related Packages
 
-- **[@vencura/types](../types/README.md)** - Shared API contracts and types (API contracts, not blockchain contracts)
-- **[@vencura/react](../react/README.md)** - React hooks for Vencura API using TanStack Query
+- [@vencura/types](../types/README.md) - Shared API contracts and types (API contracts, not blockchain contracts)
+- [@vencura/react](../react/README.md) - React hooks for Vencura API using TanStack Query (recommended for React apps)
+- [apps/api](../../apps/api/README.md) - NestJS backend implementing these API contracts

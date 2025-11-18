@@ -210,6 +210,13 @@ function ModalChat({ open, onOpenChange }) {
 
 The chatbot requires Dynamic Labs authentication. Users must be signed in to use the chatbot. The component automatically handles authentication state and shows a message if the user is not authenticated.
 
+## Related Packages
+
+- [@vencura/core](../core/README.md) - TypeScript SDK for Vencura API
+- [@vencura/react](../react/README.md) - React hooks for Vencura API
+- [@vencura/ui](../ui/README.md) - Shared UI components (used by Chatbot component)
+- [apps/api](../../apps/api/README.md) - NestJS backend API
+
 ## License
 
 PROPRIETARY
