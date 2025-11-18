@@ -91,18 +91,11 @@ export function generateEquationsForTarget(target: number, maxLength = 9): strin
   // Simple brute force for small numbers
   for (let i = 0; i < 20; i++) {
     for (let j = 0; j < 20; j++) {
-      if (i + j === target && `${i}+${j}`.length <= maxLength) {
-        equations.push(`${i}+${j}`)
-      }
-      if (i - j === target && `${i}-${j}`.length <= maxLength) {
-        equations.push(`${i}-${j}`)
-      }
-      if (i * j === target && `${i}*${j}`.length <= maxLength) {
-        equations.push(`${i}*${j}`)
-      }
-      if (j !== 0 && i % j === 0 && i / j === target && `${i}/${j}`.length <= maxLength) {
+      if (i + j === target && `${i}+${j}`.length <= maxLength) equations.push(`${i}+${j}`)
+      if (i - j === target && `${i}-${j}`.length <= maxLength) equations.push(`${i}-${j}`)
+      if (i * j === target && `${i}*${j}`.length <= maxLength) equations.push(`${i}*${j}`)
+      if (j !== 0 && i % j === 0 && i / j === target && `${i}/${j}`.length <= maxLength)
         equations.push(`${i}/${j}`)
-      }
     }
   }
 
@@ -124,9 +117,7 @@ function seededRandom(seed: number | string): number {
       hash = hash | 0 // Convert to 32-bit integer
     }
     numericSeed = hash
-  } else {
-    numericSeed = seed
-  }
+  } else numericSeed = seed
   const x = Math.sin(numericSeed) * 10000
   return x - Math.floor(x)
 }
@@ -267,9 +258,7 @@ export function generateSolutionEquation(target: number, seed?: number): string 
                 // Verify the equation evaluates correctly to avoid filtering later
                 if (expr.length <= MAX) {
                   const result = evaluateExpression(expr)
-                  if (result === target) {
-                    candidates.add(expr)
-                  }
+                  if (result === target) candidates.add(expr)
                 }
               }
             }
@@ -292,9 +281,7 @@ export function generateSolutionEquation(target: number, seed?: number): string 
                   // Verify the equation evaluates correctly to avoid filtering later
                   if (expr.length <= MAX) {
                     const result = evaluateExpression(expr)
-                    if (result === target) {
-                      candidates.add(expr)
-                    }
+                    if (result === target) candidates.add(expr)
                   }
                 }
               }

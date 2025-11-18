@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { validateEnv as validateEnvLib } from '@vencura/lib'
 
 /**
  * Schema for environment variables.
@@ -58,8 +59,9 @@ export type EnvSchema = z.infer<typeof envSchema>
 /**
  * Validates environment variables and returns typed config.
  * Follows RORO pattern (Receive an Object, Return an Object).
+ * Uses @lib's validateEnv with throwOnError for NestJS pattern.
  */
-export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}) {
+export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}): EnvSchema {
   // Prepare env object with defaults (matching Next.js pattern)
   const nodeEnv = env.NODE_ENV || 'development'
   const envData: NodeJS.ProcessEnv = {
@@ -73,15 +75,7 @@ export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } =
       (nodeEnv === 'development' || nodeEnv === 'test' ? 'true' : 'false'),
   }
 
-  // Validate with Zod schema (all validation logic in schema)
-  const result = envSchema.safeParse(envData)
-
-  if (!result.success) {
-    const errors = result.error.errors
-      .map(err => `${err.path.join('.')}: ${err.message}`)
-      .join('\n')
-    throw new Error(`Environment validation failed:\n${errors}`)
-  }
-
-  return result.data
+  // Use @lib's validateEnv with throwOnError for NestJS pattern
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+  return validateEnvLib({ schema: envSchema, env: envData, throwOnError: true }) as EnvSchema
 }

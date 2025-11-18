@@ -16,13 +16,12 @@ export function VoiceControl({ onResult, onCommand, enabled = true }: VoiceContr
     enabled,
   })
 
-  if (!isSupported) {
+  if (!isSupported)
     return (
       <div className="text-sm text-muted-foreground text-center">
         Voice input not supported in this browser
       </div>
     )
-  }
 
   return (
     <div className="flex flex-col items-center gap-2">

@@ -35,8 +35,9 @@ export class WalletContractController {
       create: async ({ body }: { body: CreateWalletInput }) => {
         const user = req.user
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const chainId: number | string = body.chainId
+        const chainId = body.chainId
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const wallet = await this.walletService.createWallet(user.id, chainId)
         return {
           status: 201 as const,
@@ -57,8 +58,9 @@ export class WalletContractController {
         const user = req.user
         const { id } = params
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const message: string = body.message
+        const message = body.message
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = await this.walletService.signMessage(id, user.id, message)
         return {
           status: 200 as const,
@@ -75,12 +77,13 @@ export class WalletContractController {
         const user = req.user
         const { id } = params
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const to: string = body.to
+        const to = body.to
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const amount: number = body.amount
+        const amount = body.amount
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const data: string | undefined = body.data
+        const data = body.data
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = await this.walletService.sendTransaction(id, user.id, to, amount, data)
         return {
           status: 200 as const,

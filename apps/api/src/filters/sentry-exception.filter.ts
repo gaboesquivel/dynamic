@@ -1,7 +1,8 @@
 import { Catch, ExceptionFilter, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common'
 import { Request, Response } from 'express'
 import * as Sentry from '@sentry/node'
-import { sanitizeErrorMessage } from '@vencura/lib'
+import { sanitizeErrorMessage, getErrorMessage } from '@vencura/lib'
+import { isPlainObject } from 'lodash'
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -13,20 +14,28 @@ interface AuthenticatedRequest extends Request {
 /**
  * Normalizes HttpException response to a consistent string format.
  * HttpException.getResponse() can return string | object, so we extract the message field.
+ * Uses @lib's getErrorMessage for non-HttpException cases and lodash for type checking.
  */
 function normalizeExceptionMessage(exception: unknown, isProduction: boolean): string {
-  if (!(exception instanceof HttpException)) return 'Internal server error'
+  if (!(exception instanceof HttpException)) {
+    // Use @lib's getErrorMessage for non-HttpException cases
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+    const message = getErrorMessage(exception) || 'Internal server error'
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+    return sanitizeErrorMessage({ message, isProduction }) as string
+  }
 
   const response = exception.getResponse()
   let message: string
 
   if (typeof response === 'string') {
     message = response
-  } else if (typeof response === 'object' && response !== null) {
-    if ('message' in response && typeof response.message === 'string') {
-      message = response.message
-    } else if ('error' in response && typeof response.error === 'string') {
-      message = response.error
+  } else if (isPlainObject(response) && response !== null) {
+    const obj = response as Record<string, unknown>
+    if ('message' in obj && typeof obj.message === 'string') {
+      message = obj.message
+    } else if ('error' in obj && typeof obj.error === 'string') {
+      message = obj.error
     } else {
       message = JSON.stringify(response)
     }

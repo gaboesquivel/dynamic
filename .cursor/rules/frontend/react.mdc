@@ -6,10 +6,23 @@ alwaysApply: false
 # React Rules
 
 ## Component Structure
+- **React components must be function-based** - Always use function components, never class components
+  - ✅ **Good**: `function Component({ title }: { title: string }) { return <div>{title}</div> }`
+  - ✅ **Good**: `const Component = ({ title }: { title: string }) => <div>{title}</div>`
+  - ❌ **Bad**: `class Component extends React.Component { ... }`
+- **No explicit return types for React components** - Return types are inferred automatically
+  - ✅ **Good**: `function Component({ title }: { title: string }) { return <div>{title}</div> }`
+  - ✅ **Good**: `const Component = ({ title }: { title: string }) => <div>{title}</div>`
+  - ❌ **Bad**: `function Component({ title }: { title: string }): JSX.Element { return <div>{title}</div> }`
+  - ❌ **Bad**: `function Component({ title }: { title: string }): React.ReactElement { return <div>{title}</div> }`
 - Separate UI and business logic into different components
 
 ## Props and State
-- Follow the RORO (Receive an Object, Return an Object) pattern for props
+- **React components always use object destructuring for props** - This is the standard React pattern, regardless of the number of props
+  - ✅ **Good**: `function Component({ title }: { title: string })` (single prop)
+  - ✅ **Good**: `function Component({ title, onClick }: { title: string; onClick: () => void })` (multiple props)
+  - ❌ **Bad**: `function Component(title: string)` (React components don't use direct parameters)
+- **Note**: RORO pattern applies to regular functions only (see [TypeScript Rules](../base/typescript.mdc)), not React components
 - **Use `useSetState` from `react-use` when multiple related state variables are updated together**
 - Group related state into a single state object instead of multiple `useState` calls
 

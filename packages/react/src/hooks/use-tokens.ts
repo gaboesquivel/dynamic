@@ -6,7 +6,7 @@ import {
   type UseQueryOptions,
 } from '@tanstack/react-query'
 import { useVencuraClient } from '../context'
-import type { SendTransactionInput, SendTransactionResult } from '@vencura/core'
+import type { SendTransactionResult } from '@vencura/core'
 import { SendTransactionResult as SendTransactionResultSchema } from '@vencura/types/schemas'
 import { validateResponse } from '../validate'
 import { encodeTokenMint, encodeTokenBurn } from '../utils/token-encoding'
@@ -103,7 +103,7 @@ export function useMintToken(
       const data = encodeTokenMint({ recipient, amount, abi })
 
       // Use generic transaction endpoint
-      const transactionInput: SendTransactionInput = {
+      const transactionInput = {
         to: tokenAddress,
         amount: 0, // No native token transfer, just contract call
         data,
@@ -189,7 +189,7 @@ export function useBurnToken(
       const data = encodeTokenBurn({ account, amount, abi })
 
       // Use generic transaction endpoint
-      const transactionInput: SendTransactionInput = {
+      const transactionInput = {
         to: tokenAddress,
         amount: 0, // No native token transfer, just contract call
         data,

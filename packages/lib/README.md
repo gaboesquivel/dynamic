@@ -113,9 +113,10 @@ const today = getDateKey() // Uses today's date
 
 #### `validateEnv`
 
-Generic environment variable validation helper using zod.
+Generic environment variable validation helper using zod. Supports both Next.js pattern (return result) and NestJS pattern (throw on error).
 
 ```typescript
+// Next.js pattern (return result)
 import { validateEnv } from '@vencura/lib'
 import { z } from 'zod'
 
@@ -130,6 +131,43 @@ if (result.isValid) {
 } else {
   console.error(result.errors) // Validation errors
 }
+```
+
+```typescript
+// NestJS pattern (throw on error)
+import { validateEnv } from '@vencura/lib'
+import { z } from 'zod'
+
+const envSchema = z.object({
+  API_URL: z.string().url(),
+  PORT: z.string().optional(),
+})
+
+const env = validateEnv({ schema: envSchema, throwOnError: true })
+// env is typed as z.infer<typeof envSchema>
+// Throws error if validation fails
+```
+
+#### `getEnvHelper`
+
+Helper for Next.js apps that automatically reconstructs env objects using zod schema inference. Eliminates boilerplate of manually reconstructing env objects.
+
+```typescript
+import { getEnvHelper } from '@vencura/lib'
+import { z } from 'zod'
+
+const envSchema = z.object({
+  NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
+})
+
+export type Env = z.infer<typeof envSchema>
+
+export function getEnv(): Env {
+  return getEnvHelper({ schema: envSchema })
+}
+// Returns validated env vars, throws in production if validation fails
+// Uses zod schema inference - no manual object reconstruction needed
 ```
 
 ### Zod Utilities
@@ -155,13 +193,42 @@ This package is part of the monorepo and is automatically available to all apps.
 Import utilities as needed:
 
 ```typescript
-import { delay, getErrorMessage, getDateKey } from '@vencura/lib'
+import { delay, getErrorMessage, getDateKey, getEnvHelper, validateEnv } from '@vencura/lib'
 ```
+
+## Best Practices
+
+### Environment Validation
+
+**Next.js Apps:**
+
+- Use `getEnvHelper` to eliminate boilerplate of manually reconstructing env objects
+- Define zod schema and use `z.infer<typeof schema>` for type inference
+- Let zod handle object reconstruction automatically
+
+**NestJS Apps:**
+
+- Use `validateEnv` with `throwOnError: true` for NestJS pattern
+- Define zod schema and use `z.infer<typeof schema>` for type inference
+- Use `formatZodErrors` from @lib for consistent error formatting
+
+### Error Handling
+
+- Use `getErrorMessage` from @lib for consistent error message extraction
+- Use lodash utilities (`isPlainObject`, `isEmpty`) for type checking instead of manual checks
+- Use `formatZodError` for user-facing messages, `formatZodErrors` for arrays
+
+### Fetch Calls
+
+- Always use `fetchWithTimeout` for external API calls (addresses security concern LOW-003)
+- Use appropriate timeout values based on expected response time
+- Default timeout is 5000ms, adjust as needed
 
 ## When to Use @vencura/lib vs Other Libraries
 
 - **@vencura/lib**: Use for shared utilities (error handling, delays, date formatting, env validation)
-- **lodash**: Use for complex array/object manipulations, functional utilities (debounce, throttle)
+- **lodash**: Use for complex array/object manipulations, functional utilities (debounce, throttle), and type checking (`isPlainObject`, `isEmpty`, `isString`)
+- **zod**: Use for schema validation and type inference (always prefer zod for validation)
 - **nanoid**: Use directly for unique ID generation (not wrapped in @vencura/lib)
 - **Native JavaScript**: Use for simple operations (array.map, Object.keys, etc.)
 

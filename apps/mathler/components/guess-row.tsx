@@ -33,13 +33,9 @@ export function GuessRow({
 
         let bgColor = 'bg-muted border-2 border-border'
         if (hasFeedback && feedbackType) {
-          if (feedbackType === 'correct') {
-            bgColor = 'bg-green-500 border-2 border-green-600'
-          } else if (feedbackType === 'present') {
-            bgColor = 'bg-yellow-400 border-2 border-yellow-500'
-          } else if (feedbackType === 'absent') {
-            bgColor = 'bg-gray-500 border-2 border-gray-600'
-          }
+          if (feedbackType === 'correct') bgColor = 'bg-green-500 border-2 border-green-600'
+          else if (feedbackType === 'present') bgColor = 'bg-yellow-400 border-2 border-yellow-500'
+          else if (feedbackType === 'absent') bgColor = 'bg-gray-500 border-2 border-gray-600'
         }
 
         return (

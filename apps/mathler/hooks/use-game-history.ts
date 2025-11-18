@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import { useAsyncFn } from 'react-use'
 import { groupBy, sumBy } from 'lodash'
 import {
@@ -37,17 +36,11 @@ export function useGameHistory() {
   const { updateUser } = useUserUpdateRequest()
   const refreshUser = useRefreshUser()
 
-  const history = useMemo(() => {
-    if (!user?.metadata) return []
-    const metadata = user.metadata as UserMetadata
-    return metadata.mathlerHistory ?? []
-  }, [user?.metadata])
+  const history = !user?.metadata ? [] : ((user.metadata as UserMetadata).mathlerHistory ?? [])
 
   const [saveGameState, saveGame] = useAsyncFn(
-    async (gameData: Omit<GameHistoryEntry, 'completedAt'>) => {
-      if (!user) {
-        throw new Error('Cannot save game: user not authenticated')
-      }
+    async (gameData: Omit<GameHistoryEntry, 'completedAt'>): Promise<boolean> => {
+      if (!user) throw new Error('Cannot save game: user not authenticated')
 
       const metadata = (user.metadata as UserMetadata) || {}
       const existingHistory = metadata.mathlerHistory ?? []
@@ -74,9 +67,7 @@ export function useGameHistory() {
       })
 
       // Check for updateUser errors or unsuccessful responses
-      if (!result) {
-        throw new Error('Failed to save game history: updateUser returned no result')
-      }
+      if (!result) throw new Error('Failed to save game history: updateUser returned no result')
 
       // Type-safe error checking
       const hasError =
@@ -102,9 +93,7 @@ export function useGameHistory() {
       // (no verification required)
       const requiresVerification =
         result.isEmailVerificationRequired || result.isSmsVerificationRequired
-      if (!requiresVerification) {
-        await refreshUser()
-      }
+      if (!requiresVerification) await refreshUser()
 
       return !requiresVerification
     },

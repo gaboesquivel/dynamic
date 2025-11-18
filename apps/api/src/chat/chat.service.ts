@@ -25,7 +25,11 @@ export class ChatService {
     private readonly walletService: WalletService,
   ) {}
 
-  streamChat(messages: ChatMessage[], userId: string, options: Omit<ChatRequest, 'messages'> = {}) {
+  streamChat(
+    messages: ChatMessage[],
+    userId: string,
+    options: Omit<ChatRequest, 'messages'> = {},
+  ): ReturnType<typeof streamText> {
     const openAiKey = this.configService.get<string>('ai.openAiKey')
 
     if (!openAiKey) {
@@ -52,7 +56,36 @@ export class ChatService {
     return streamText(streamTextOptions)
   }
 
-  getTools() {
+  getTools(): {
+    getWallets: { name: string; description: string; parameters: Record<string, never> }
+    createWallet: {
+      name: string
+      description: string
+      parameters: { chainId: { type: string; description: string } }
+    }
+    getBalance: {
+      name: string
+      description: string
+      parameters: { walletId: { type: string; description: string } }
+    }
+    sendTransaction: {
+      name: string
+      description: string
+      parameters: {
+        walletId: { type: string; description: string }
+        to: { type: string; description: string }
+        amount: { type: string; description: string }
+      }
+    }
+    signMessage: {
+      name: string
+      description: string
+      parameters: {
+        walletId: { type: string; description: string }
+        message: { type: string; description: string }
+      }
+    }
+  } {
     // Return tool schemas for client reference
     return {
       getWallets: {

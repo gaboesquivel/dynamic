@@ -1,6 +1,7 @@
 import { isEmpty } from 'lodash'
 import { z } from 'zod'
 import type { ChainType } from '@vencura/types'
+import { createAddressSchema } from '@vencura/types/schemas'
 
 /**
  * Schema for sign message input.
@@ -28,7 +29,7 @@ export type SendTransactionFormData = z.infer<typeof sendTransactionSchema>
 
 /**
  * Validates an address based on chain type.
- * Uses basic format validation - server-side validation is the source of truth.
+ * Uses zod schemas from @vencura/types for validation - server-side validation is the source of truth.
  *
  * @param params - Validation parameters
  * @param params.address - Address to validate
@@ -47,19 +48,17 @@ export function validateAddressInput({
     return { valid: false, error: 'Address is required' }
   }
 
-  // Basic format validation based on chain type
-  if (chainType === 'solana') {
-    // Solana addresses are base58, typically 32-44 characters
-    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmed))
-      return { valid: false, error: 'Invalid Solana address format' }
-  } else if (chainType === 'evm' || !chainType) {
-    // EVM addresses are 0x-prefixed hex, 42 characters
-    if (!/^0x[a-fA-F0-9]{40}$/.test(trimmed))
-      return {
-        valid: false,
-        error: 'Invalid EVM address format (must be 0x followed by 40 hex characters)',
-      }
-  }
+  // Use EVM as default if chainType is not provided
+  const validationChainType = chainType || 'evm'
 
-  return { valid: true }
+  try {
+    const schema = createAddressSchema({ chainType: validationChainType })
+    schema.parse(trimmed)
+    return { valid: true }
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { valid: false, error: error.errors[0]?.message || 'Invalid address format' }
+    }
+    return { valid: false, error: 'Invalid address format' }
+  }
 }

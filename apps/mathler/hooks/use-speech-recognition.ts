@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect } from 'react'
 import { useSetState } from 'react-use'
 
 interface UseSpeechRecognitionOptions {
@@ -60,13 +60,9 @@ export function useSpeechRecognition({
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       setState({ listening: false })
-      if (event.error === 'no-speech') {
-        onError('No speech detected')
-      } else if (event.error === 'not-allowed') {
-        onError('Microphone permission denied')
-      } else {
-        onError(`Speech recognition error: ${event.error}`)
-      }
+      if (event.error === 'no-speech') onError('No speech detected')
+      else if (event.error === 'not-allowed') onError('Microphone permission denied')
+      else onError(`Speech recognition error: ${event.error}`)
     }
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
@@ -83,13 +79,11 @@ export function useSpeechRecognition({
     ref.current = recognition
 
     return () => {
-      if (ref.current) {
-        ref.current.stop()
-      }
+      if (ref.current) ref.current.stop()
     }
   }, [lang, onResult, onError, setState])
 
-  const start = useCallback(() => {
+  const start = () => {
     if (ref.current && !state.listening) {
       try {
         ref.current.start()
@@ -97,13 +91,11 @@ export function useSpeechRecognition({
         onError('Failed to start speech recognition')
       }
     }
-  }, [state.listening, onError])
+  }
 
-  const stop = useCallback(() => {
-    if (ref.current && state.listening) {
-      ref.current.stop()
-    }
-  }, [state.listening])
+  const stop = () => {
+    if (ref.current && state.listening) ref.current.stop()
+  }
 
   return {
     supported: state.supported,

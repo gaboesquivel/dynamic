@@ -52,9 +52,7 @@ export function parseVoiceInput(text: string): {
 
   // Check for commands first
   for (const word of words) {
-    if (COMMAND_MAP[word]) {
-      return { result: '', command: COMMAND_MAP[word] }
-    }
+    if (COMMAND_MAP[word]) return { result: '', command: COMMAND_MAP[word] }
   }
 
   // Parse numbers and operators

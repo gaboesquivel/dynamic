@@ -9,7 +9,7 @@ import { SentryExceptionFilter } from './filters/sentry-exception.filter'
 import { RequestIdMiddleware } from './common/request-id.middleware'
 import { validateEnv } from './config/env.schema'
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   // Initialize Sentry before creating NestJS app
   initSentry()
 

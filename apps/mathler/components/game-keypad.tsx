@@ -21,11 +21,8 @@ export function GameKeypad({
   const operators = ['+', '-', '×', '÷']
 
   const handleClick = (char: string) => {
-    if (onInputAtPosition) {
-      onInputAtPosition(char)
-    } else {
-      onInput(currentInput + char)
-    }
+    if (onInputAtPosition) onInputAtPosition(char)
+    else onInput(currentInput + char)
   }
 
   return (

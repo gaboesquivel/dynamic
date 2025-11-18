@@ -27,13 +27,31 @@ alwaysApply: false
 
 ## Type Inference Enforcement
 
-**Critical Rule**: Always enforce type inference - define return types in functions, never in consumers.
+**Critical Rule**: Always enforce type inference - define return types in functions when needed, never in consumers.
 
 ### Function Definitions
-- **Functions MUST define explicit return types**: Always specify return types in function signatures
-  - ✅ **Good**: `function getUser(id: string): User { ... }`
-  - ✅ **Good**: `const getUser = (id: string): User => { ... }`
-  - ❌ **Bad**: `function getUser(id: string) { ... }` (missing return type)
+
+**Return Type Rules:**
+
+- **Simple functions** (single-expression returns, one-liners, pure functions): Can rely on type inference
+  - ✅ **Good**: `const double = (x: number) => x * 2` (inferred)
+  - ✅ **Good**: `const getValue = () => someValue` (inferred)
+  - ✅ **Good**: `const format = (str: string) => str.trim().toLowerCase()` (inferred)
+
+- **Complex functions** (multiple return paths, async operations, complex logic): MUST have explicit return types
+  - ✅ **Good**: `async function fetchData(): Promise<Data> { ... }`
+  - ✅ **Good**: `function process(input: string): Result | null { ... }`
+  - ✅ **Good**: `function validate(data: unknown): ValidationResult { if (...) return ...; return ... }`
+
+- **Exported/public functions**: Prefer explicit return types for API clarity and documentation
+  - ✅ **Good**: `export function getUser(id: string): User { ... }`
+  - ✅ **Good**: `export const createClient = (config: Config): Client => { ... }`
+
+- **React components**: NEVER have explicit return types - always rely on inference
+  - ✅ **Good**: `export function Component() { return <div>...</div> }` (inferred JSX.Element)
+  - ❌ **Bad**: `export function Component(): JSX.Element { ... }` (redundant)
+  - ❌ **Bad**: `export const Component: React.FC<Props> = () => { ... }` (avoid React.FC)
+
 - **Use `ReturnType<typeof function>` only in function definitions**, not in consumers
   - ✅ **Good**: `type Handler = ReturnType<typeof createHandler>` (in type definition)
   - ❌ **Bad**: `const handler: ReturnType<typeof createHandler> = createHandler()` (in consumer)
@@ -47,6 +65,12 @@ alwaysApply: false
 - **Never add explicit type imports just to help inference**: If TypeScript isn't resolving function types correctly, fix the function definition instead
   - ❌ **Bad**: Adding `import type { User } from './types'` just to type a consumer variable
   - ✅ **Good**: Ensure the function has an explicit return type, then let consumers infer
+- **Never cast types on the consumer side**: Types should be inferred from function return values, primarily from `@vencura/types`, `@vencura/core`, and `@vencura/react`
+  - ✅ **Good**: `const { data: wallets } = useWallets()` (inferred Wallet[] from @vencura/react)
+  - ✅ **Good**: `const wallet = await client.wallet.create({ body })` (inferred Wallet from @vencura/core)
+  - ❌ **Bad**: `const { data: wallets }: { data: Wallet[] } = useWallets()` (redundant type annotation)
+  - ❌ **Bad**: `const wallet: Wallet = await client.wallet.create({ body })` (should infer)
+  - ❌ **Bad**: `const transactionInput: SendTransactionInput = { ... }` (should infer from function/object literal)
 
 ### Examples
 

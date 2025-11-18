@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { z } from 'zod'
 import { EncryptionService } from '../common/encryption.service'
 import {
   getChainMetadata,
@@ -19,6 +20,23 @@ import type {
 import * as schema from '../database/schema'
 import { eq, and } from 'drizzle-orm'
 
+// Zod schema for key shares array (used for JSON.parse validation)
+const keySharesSchema = z.array(z.string())
+
+// Chain type schema from Wallet for validation
+const chainTypeSchema = z.enum([
+  'evm',
+  'solana',
+  'cosmos',
+  'bitcoin',
+  'flow',
+  'starknet',
+  'algorand',
+  'sui',
+  'spark',
+  'tron',
+])
+
 @Injectable()
 export class WalletService {
   constructor(
@@ -28,6 +46,25 @@ export class WalletService {
     private readonly configService: ConfigService,
     private readonly walletClientFactory: WalletClientFactory,
   ) {}
+
+  /**
+   * Helper method to get wallet by ID and userId with existence check.
+   * Reduces boilerplate across multiple service methods.
+   */
+  private async getWalletByIdAndUserId(
+    walletId: string,
+    userId: string,
+  ): Promise<typeof schema.wallets.$inferSelect> {
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(and(eq(schema.wallets.id, walletId), eq(schema.wallets.userId, userId)))
+      .limit(1)
+
+    if (!wallet) throw new NotFoundException('Wallet not found')
+
+    return wallet
+  }
 
   async createWallet(
     userId: string,
@@ -106,32 +143,15 @@ export class WalletService {
       .from(schema.wallets)
       .where(eq(schema.wallets.userId, userId))
 
-    // Type assertion to ensure chainType matches schema union type
-    // Database returns string, but schema expects union of specific chain types
+    // Validate chainType using zod schema instead of type assertion
     return wallets.map(wallet => ({
       ...wallet,
-      chainType: wallet.chainType as
-        | 'evm'
-        | 'solana'
-        | 'cosmos'
-        | 'bitcoin'
-        | 'flow'
-        | 'starknet'
-        | 'algorand'
-        | 'sui'
-        | 'spark'
-        | 'tron',
+      chainType: chainTypeSchema.parse(wallet.chainType),
     }))
   }
 
   async getBalance(walletId: string, userId: string): Promise<BalanceResult> {
-    const [wallet] = await this.db
-      .select()
-      .from(schema.wallets)
-      .where(and(eq(schema.wallets.id, walletId), eq(schema.wallets.userId, userId)))
-      .limit(1)
-
-    if (!wallet) throw new NotFoundException('Wallet not found')
+    const wallet = await this.getWalletByIdAndUserId(walletId, userId)
 
     // Get appropriate wallet client based on stored network/chain type
     const walletClient = this.walletClientFactory.createWalletClient(wallet.network)
@@ -143,16 +163,11 @@ export class WalletService {
   }
 
   async signMessage(walletId: string, userId: string, message: string): Promise<SignMessageResult> {
-    const [wallet] = await this.db
-      .select()
-      .from(schema.wallets)
-      .where(and(eq(schema.wallets.id, walletId), eq(schema.wallets.userId, userId)))
-      .limit(1)
-
-    if (!wallet) throw new NotFoundException('Wallet not found')
+    const wallet = await this.getWalletByIdAndUserId(walletId, userId)
 
     const keySharesEncrypted = await this.encryptionService.decrypt(wallet.privateKeyEncrypted)
-    const externalServerKeyShares = JSON.parse(keySharesEncrypted) as string[]
+    // Validate JSON.parse result with zod schema for type safety
+    const externalServerKeyShares = keySharesSchema.parse(JSON.parse(keySharesEncrypted))
 
     // Get appropriate wallet client based on stored network/chain type
     const walletClient = this.walletClientFactory.createWalletClient(wallet.network)
@@ -170,50 +185,24 @@ export class WalletService {
     amount: number,
     data?: string,
   ): Promise<SendTransactionResult> {
-    const [wallet] = await this.db
-      .select()
-      .from(schema.wallets)
-      .where(and(eq(schema.wallets.id, walletId), eq(schema.wallets.userId, userId)))
-      .limit(1)
-
-    if (!wallet) throw new NotFoundException('Wallet not found')
+    const wallet = await this.getWalletByIdAndUserId(walletId, userId)
 
     // Destructure wallet properties
     const { network, address, privateKeyEncrypted, chainType: chainTypeRaw } = wallet
 
-    // Validate chainType is a valid ChainType
-    const validChainTypes: readonly ChainType[] = [
-      'evm',
-      'solana',
-      'cosmos',
-      'bitcoin',
-      'flow',
-      'starknet',
-      'algorand',
-      'sui',
-      'spark',
-      'tron',
-    ] as const
-
-    // Type guard to narrow chainTypeRaw to ChainType
-    if (!validChainTypes.includes(chainTypeRaw as ChainType)) {
-      throw new BadRequestException(`Invalid chain type: ${chainTypeRaw}`)
-    }
-
-    // Type is now validated, safe to use
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const chainType = chainTypeRaw as ChainType
+    // Validate chainType using zod schema instead of hardcoded array
+    const chainType = chainTypeSchema.parse(chainTypeRaw)
 
     // Validate recipient address based on wallet's chain type
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    if (!validateAddress({ address: to, chainType: chainType })) {
+    if (!validateAddress({ address: to, chainType })) {
       throw new BadRequestException(
         `Invalid address format for chain type ${chainType}. Please provide a valid ${chainType} address.`,
       )
     }
 
+    // Validate JSON.parse result with zod schema for type safety
     const keySharesEncrypted = await this.encryptionService.decrypt(privateKeyEncrypted)
-    const externalServerKeyShares = JSON.parse(keySharesEncrypted) as string[]
+    const externalServerKeyShares = keySharesSchema.parse(JSON.parse(keySharesEncrypted))
 
     // Get appropriate wallet client based on stored network/chain type
     const walletClient = this.walletClientFactory.createWalletClient(network)

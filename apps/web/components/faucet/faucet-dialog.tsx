@@ -2,8 +2,9 @@
 
 import { useMintToken, useBurnToken, useWallets, useCreateWallet } from '@vencura/react'
 import { FAUCET_TOKENS } from '@/lib/tokens'
-import { parseUnits, getAddress, type Address } from 'viem'
+import { parseUnits, getAddress } from 'viem'
 import { useQueryStates } from 'nuqs'
+import { z } from 'zod'
 import {
   Dialog,
   DialogContent,
@@ -18,25 +19,46 @@ import { testnetTokenAbi } from '@vencura/evm/abis'
 import { arbitrumSepolia } from 'viem/chains'
 import * as React from 'react'
 
+// Zod schemas for URL query parameter parsing
+const actionSchema = z.enum(['mint', 'burn']).optional()
+const quantitySchema = z.string()
+const tokenSchema = z.string().transform(val => getAddress(val))
+const refetchSchema = z.string().transform(val => val === 'true')
+
 function useFaucetStates() {
   return useQueryStates({
     action: {
       defaultValue: undefined,
-      parse: (value: string) => value as 'mint' | 'burn' | undefined,
+      parse: (value: string) => {
+        const result = actionSchema.safeParse(value)
+        return result.success ? result.data : undefined
+      },
     },
     quantity: {
       defaultValue: '42000',
       clearOnDefault: false,
-      parse: (value: string) => value as string,
+      parse: (value: string) => {
+        const result = quantitySchema.safeParse(value)
+        return result.success ? result.data : '42000'
+      },
     },
     token: {
       clearOnDefault: false,
       defaultValue: undefined,
-      parse: (value: string) => getAddress(value),
+      parse: (value: string) => {
+        try {
+          return tokenSchema.parse(value)
+        } catch {
+          return undefined
+        }
+      },
     },
     refetch_data: {
       defaultValue: false,
-      parse: (value: string) => value === 'true',
+      parse: (value: string) => {
+        const result = refetchSchema.safeParse(value)
+        return result.success ? result.data : false
+      },
     },
   })
 }
@@ -62,7 +84,9 @@ export function FaucetDialog() {
   const tokenAddress = tokenConfig?.address
 
   // Use the custodial wallet address as recipient (mint/burn to self)
-  const connectedAddress = arbitrumSepoliaWallet?.address as Address | undefined
+  const connectedAddress = arbitrumSepoliaWallet?.address
+    ? getAddress(arbitrumSepoliaWallet.address)
+    : undefined
 
   const minter = useMintToken({
     onSuccess: () => {

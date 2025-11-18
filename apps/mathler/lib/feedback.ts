@@ -6,9 +6,7 @@ export function calculateFeedback(
 
   // First pass: mark correct positions
   for (let i = 0; i < guess.length; i++) {
-    if (guess[i] === solution[i]) {
-      feedback[i] = 'correct'
-    }
+    if (guess[i] === solution[i]) feedback[i] = 'correct'
   }
 
   // Second pass: mark present but wrong position

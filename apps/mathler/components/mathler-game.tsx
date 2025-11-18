@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useSetState } from 'react-use'
 import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@/lib/math'
 import { getDateKey } from '@vencura/lib'
@@ -33,68 +33,65 @@ export function MathlerGame() {
   })
   const { saveGame } = useGameHistory()
 
-  const handleSubmit = useCallback(
-    (value: string) => {
-      if (!value || gameState.gameStatus !== 'playing') return
+  const handleSubmit = (value: string) => {
+    if (!value || gameState.gameStatus !== 'playing') return
 
-      try {
-        const result = evaluateExpression(value)
+    try {
+      const result = evaluateExpression(value)
 
-        if (result === null) {
-          alert('Invalid expression')
-          return
-        }
-
-        const newGuesses = [...gameState.guesses, value]
-
-        // Normalize guess for feedback comparison (× -> *, ÷ -> /)
-        const normalizedGuess = value.replace(/×/g, '*').replace(/÷/g, '/')
-
-        // Calculate feedback comparing guess to solution equation
-        const feedbackRow = calculateFeedback(normalizedGuess, gameState.solution)
-
-        // Check win condition (result equals target AND guess matches solution exactly)
-        const isWin = result === gameState.target && normalizedGuess === gameState.solution
-        const isGameOver = isWin || newGuesses.length >= 6
-
-        if (isWin) {
-          setGameState({
-            guesses: newGuesses,
-            feedback: [...gameState.feedback, feedbackRow],
-            gameStatus: 'won',
-            showSuccessModal: true,
-          })
-        } else if (newGuesses.length >= 6) {
-          setGameState({
-            guesses: newGuesses,
-            feedback: [...gameState.feedback, feedbackRow],
-            gameStatus: 'lost',
-          })
-        } else {
-          setGameState({
-            guesses: newGuesses,
-            feedback: [...gameState.feedback, feedbackRow],
-          })
-        }
-
-        // Save game history when game ends
-        if (isGameOver) {
-          const finalStatus: 'won' | 'lost' = isWin ? 'won' : 'lost'
-          saveGame({
-            date: getDateKey(),
-            target: gameState.target,
-            solution: gameState.solution,
-            guesses: newGuesses,
-            status: finalStatus,
-            guessCount: newGuesses.length,
-          })
-        }
-      } catch {
+      if (result === null) {
         alert('Invalid expression')
+        return
       }
-    },
-    [gameState, saveGame, setGameState],
-  )
+
+      const newGuesses = [...gameState.guesses, value]
+
+      // Normalize guess for feedback comparison (× -> *, ÷ -> /)
+      const normalizedGuess = value.replace(/×/g, '*').replace(/÷/g, '/')
+
+      // Calculate feedback comparing guess to solution equation
+      const feedbackRow = calculateFeedback(normalizedGuess, gameState.solution)
+
+      // Check win condition (result equals target AND guess matches solution exactly)
+      const isWin = result === gameState.target && normalizedGuess === gameState.solution
+      const isGameOver = isWin || newGuesses.length >= 6
+
+      if (isWin) {
+        setGameState({
+          guesses: newGuesses,
+          feedback: [...gameState.feedback, feedbackRow],
+          gameStatus: 'won',
+          showSuccessModal: true,
+        })
+      } else if (newGuesses.length >= 6) {
+        setGameState({
+          guesses: newGuesses,
+          feedback: [...gameState.feedback, feedbackRow],
+          gameStatus: 'lost',
+        })
+      } else {
+        setGameState({
+          guesses: newGuesses,
+          feedback: [...gameState.feedback, feedbackRow],
+        })
+      }
+
+      // Save game history when game ends
+      if (isGameOver) {
+        const finalStatus: 'won' | 'lost' = isWin ? 'won' : 'lost'
+        saveGame({
+          date: getDateKey(),
+          target: gameState.target,
+          solution: gameState.solution,
+          guesses: newGuesses,
+          status: finalStatus,
+          guessCount: newGuesses.length,
+        })
+      }
+    } catch {
+      alert('Invalid expression')
+    }
+  }
 
   const {
     input: currentInput,
@@ -110,7 +107,7 @@ export function MathlerGame() {
     onSubmit: handleSubmit,
   })
 
-  const resetGame = useCallback(() => {
+  const resetGame = () => {
     const newTarget = getRandomTarget()
     const newSolution = generateSolutionEquation(newTarget)
     setGameState({
@@ -122,50 +119,37 @@ export function MathlerGame() {
       showSuccessModal: false,
     })
     resetInput()
-  }, [resetInput, setGameState])
+  }
 
   useEffect(() => {
     resetGame()
-  }, [resetGame])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const handleInputChange = useCallback(
-    (value: string) => {
-      if (gameState.gameStatus !== 'playing') return
-      // Replace entire input
-      resetInput()
-      for (const char of value) {
-        handleInputAtPosition(char)
-      }
-    },
-    [gameState.gameStatus, resetInput, handleInputAtPosition],
-  )
+  const handleInputChange = (value: string) => {
+    if (gameState.gameStatus !== 'playing') return
+    // Replace entire input
+    resetInput()
+    for (const char of value) {
+      handleInputAtPosition(char)
+    }
+  }
 
-  const handleVoiceResult = useCallback(
-    (text: string) => {
-      if (gameState.gameStatus !== 'playing') return
-      // Insert voice input at cursor position
-      for (const char of text) {
-        handleInputAtPosition(char)
-      }
-    },
-    [gameState.gameStatus, handleInputAtPosition],
-  )
+  const handleVoiceResult = (text: string) => {
+    if (gameState.gameStatus !== 'playing') return
+    // Insert voice input at cursor position
+    for (const char of text) {
+      handleInputAtPosition(char)
+    }
+  }
 
-  const handleVoiceCommand = useCallback(
-    (command: 'backspace' | 'delete' | 'enter' | 'submit' | 'clear') => {
-      if (gameState.gameStatus !== 'playing') return
-      if (command === 'backspace' || command === 'delete') {
-        handleBackspace()
-      } else if (command === 'enter' || command === 'submit') {
-        if (currentInput) {
-          handleSubmit(currentInput)
-        }
-      } else if (command === 'clear') {
-        handleClear()
-      }
-    },
-    [gameState.gameStatus, handleBackspace, handleSubmit, handleClear, currentInput],
-  )
+  const handleVoiceCommand = (command: 'backspace' | 'delete' | 'enter' | 'submit' | 'clear') => {
+    if (gameState.gameStatus !== 'playing') return
+    if (command === 'backspace' || command === 'delete') handleBackspace()
+    else if (command === 'enter' || command === 'submit') {
+      if (currentInput) handleSubmit(currentInput)
+    } else if (command === 'clear') handleClear()
+  }
 
   return (
     <div className="w-full max-w-sm space-y-6">

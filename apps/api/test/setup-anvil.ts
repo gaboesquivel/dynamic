@@ -1,6 +1,7 @@
 // Anvil setup for local blockchain testing
 import { spawn } from 'child_process'
 import { accessSync, constants } from 'fs'
+import { fetchWithTimeout } from '@vencura/lib'
 
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -15,14 +16,18 @@ let anvilProcess: ReturnType<typeof spawn> | null = null
  */
 async function isAnvilRunning(): Promise<boolean> {
   try {
-    const response = await fetch(ANVIL_RPC_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'eth_blockNumber',
-        id: 1,
-      }),
+    const response = await fetchWithTimeout({
+      url: ANVIL_RPC_URL,
+      options: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_blockNumber',
+          id: 1,
+        }),
+      },
+      timeoutMs: 2000, // Short timeout for localhost check
     })
     return response.ok
   } catch {

@@ -6,28 +6,50 @@ import { Button } from '@workspace/ui/components/button'
 import { FaucetDialog } from './faucet-dialog'
 import { useQueryStates } from 'nuqs'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { z } from 'zod'
 
 const DEFAULT_BALANCE = '0.00'
+
+// Zod schemas for URL query parameter parsing
+const actionSchema = z.enum(['mint', 'burn']).optional()
+const quantitySchema = z.string()
+const tokenSchema = z.string().transform(val => getAddress(val))
+const refetchSchema = z.string().transform(val => val === 'true')
 
 function useFaucetStates() {
   return useQueryStates({
     action: {
       defaultValue: undefined,
-      parse: (value: string) => value as 'mint' | 'burn' | undefined,
+      parse: (value: string) => {
+        const result = actionSchema.safeParse(value)
+        return result.success ? result.data : undefined
+      },
     },
     quantity: {
       defaultValue: '42000',
       clearOnDefault: false,
-      parse: (value: string) => value as string,
+      parse: (value: string) => {
+        const result = quantitySchema.safeParse(value)
+        return result.success ? result.data : '42000'
+      },
     },
     token: {
       clearOnDefault: false,
       defaultValue: undefined,
-      parse: (value: string) => getAddress(value),
+      parse: (value: string) => {
+        try {
+          return tokenSchema.parse(value)
+        } catch {
+          return undefined
+        }
+      },
     },
     refetch_data: {
       defaultValue: false,
-      parse: (value: string) => value === 'true',
+      parse: (value: string) => {
+        const result = refetchSchema.safeParse(value)
+        return result.success ? result.data : false
+      },
     },
   })
 }

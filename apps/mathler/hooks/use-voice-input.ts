@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { parseVoiceInput } from '@/lib/voice-input-parser'
 import { useSpeechRecognition } from './use-speech-recognition'
 
@@ -29,11 +29,8 @@ export function useVoiceInput({
   const { supported, listening, start, stop } = useSpeechRecognition({
     onResult: (text: string) => {
       const parsed = parseVoiceInput(text)
-      if (parsed.command) {
-        onCommand?.(parsed.command)
-      } else if (parsed.result) {
-        onResult?.(parsed.result)
-      }
+      if (parsed.command) onCommand?.(parsed.command)
+      else if (parsed.result) onResult?.(parsed.result)
     },
     onError: (err: string) => {
       setError(err)
@@ -41,25 +38,18 @@ export function useVoiceInput({
     lang: 'en-US',
   })
 
-  const startListening = useCallback(() => {
-    if (enabled) {
-      start()
-    }
-  }, [enabled, start])
+  const startListening = () => {
+    if (enabled) start()
+  }
 
-  const stopListening = useCallback(() => {
-    if (listening) {
-      stop()
-    }
-  }, [listening, stop])
+  const stopListening = () => {
+    if (listening) stop()
+  }
 
-  const toggleListening = useCallback(() => {
-    if (listening) {
-      stopListening()
-    } else {
-      startListening()
-    }
-  }, [listening, startListening, stopListening])
+  const toggleListening = () => {
+    if (listening) stopListening()
+    else startListening()
+  }
 
   return {
     isListening: listening,
