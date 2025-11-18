@@ -41,14 +41,15 @@ export function getEnvHelper<T extends z.ZodTypeAny>({
       throw new Error(`Environment validation failed:\n${errorMessage}`)
     }
     console.warn(`Environment validation warnings:\n${errorMessage}`)
-    // In development, return parsed data even if validation had warnings
+    // In development, try to return parsed data even if validation had warnings
     // Zod will apply defaults and return partial data for optional fields
     const parsed = schema.safeParse(env)
     if (parsed.success) {
       return parsed.data
     }
-    // Fallback: return empty object (zod will apply defaults if schema has them)
-    return schema.parse({}) as z.infer<T>
+    // If parsing still fails, throw error instead of unsafe fallback
+    // This prevents returning invalid data when required fields are missing
+    throw new Error(`Environment validation failed in development:\n${errorMessage}`)
   }
 
   return result.data as z.infer<T>

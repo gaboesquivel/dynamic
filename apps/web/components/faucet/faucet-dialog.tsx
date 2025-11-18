@@ -4,7 +4,6 @@ import { useMintToken, useBurnToken, useWallets, useCreateWallet } from '@vencur
 import { FAUCET_TOKENS } from '@/lib/tokens'
 import { parseUnits, getAddress } from 'viem'
 import { useQueryStates } from 'nuqs'
-import { z } from 'zod'
 import {
   Dialog,
   DialogContent,
@@ -18,29 +17,24 @@ import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { testnetTokenAbi } from '@vencura/evm/abis'
 import { arbitrumSepolia } from 'viem/chains'
 import * as React from 'react'
-
-// Zod schemas for URL query parameter parsing
-const actionSchema = z.enum(['mint', 'burn']).optional()
-const quantitySchema = z.string()
-const tokenSchema = z.string().transform(val => getAddress(val))
-const refetchSchema = z.string().transform(val => val === 'true')
+import {
+  actionSchema,
+  quantitySchema,
+  tokenSchema,
+  refetchSchema,
+  parseOrDefault,
+} from '@/lib/faucet-query'
 
 function useFaucetStates() {
   return useQueryStates({
     action: {
       defaultValue: undefined,
-      parse: (value: string) => {
-        const result = actionSchema.safeParse(value)
-        return result.success ? result.data : undefined
-      },
+      parse: parseOrDefault(actionSchema, undefined),
     },
     quantity: {
       defaultValue: '42000',
       clearOnDefault: false,
-      parse: (value: string) => {
-        const result = quantitySchema.safeParse(value)
-        return result.success ? result.data : '42000'
-      },
+      parse: parseOrDefault(quantitySchema, '42000'),
     },
     token: {
       clearOnDefault: false,
@@ -55,10 +49,7 @@ function useFaucetStates() {
     },
     refetch_data: {
       defaultValue: false,
-      parse: (value: string) => {
-        const result = refetchSchema.safeParse(value)
-        return result.success ? result.data : false
-      },
+      parse: parseOrDefault(refetchSchema, false),
     },
   })
 }

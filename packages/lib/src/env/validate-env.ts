@@ -2,18 +2,33 @@ import { z } from 'zod'
 import { formatZodErrors } from '../zod/format-errors'
 
 /**
- * Generic environment variable validation helper using zod.
- * Supports both Next.js pattern (return result) and NestJS pattern (throw on error).
+ * Core validation logic that always returns a result.
+ * Internal helper used by both public functions.
+ */
+function _validateEnv<T extends z.ZodTypeAny>(
+  schema: T,
+  env: NodeJS.ProcessEnv = process.env,
+): { isValid: false; errors: string[] } | { isValid: true; data: z.infer<T> } {
+  const result = schema.safeParse(env)
+
+  if (!result.success) {
+    return { isValid: false, errors: formatZodErrors(result.error) }
+  }
+
+  return { isValid: true, data: result.data }
+}
+
+/**
+ * Validates environment variables and returns a result object.
+ * Use this for Next.js apps where you want to handle errors gracefully.
  *
  * @param params - Validation parameters
  * @param params.schema - Zod schema for environment variables
  * @param params.env - Environment variables object (defaults to process.env)
- * @param params.throwOnError - If true, throws error instead of returning result (NestJS pattern)
- * @returns Validation result with isValid flag, data, and errors (or throws if throwOnError is true)
+ * @returns Validation result with isValid flag, data, and errors
  *
  * @example
  * ```ts
- * // Next.js pattern (return result)
  * const envSchema = z.object({
  *   API_URL: z.string().url(),
  *   PORT: z.string().optional()
@@ -26,48 +41,49 @@ import { formatZodErrors } from '../zod/format-errors'
  *   console.error(result.errors) // Validation errors
  * }
  * ```
+ */
+export function validateEnv<T extends z.ZodTypeAny>({
+  schema,
+  env = process.env,
+}: {
+  schema: T
+  env?: NodeJS.ProcessEnv
+}): { isValid: false; errors: string[] } | { isValid: true; data: z.infer<T> } {
+  return _validateEnv(schema, env)
+}
+
+/**
+ * Validates environment variables and throws on error.
+ * Use this for NestJS apps where validation failures should crash the app.
+ *
+ * @param params - Validation parameters
+ * @param params.schema - Zod schema for environment variables
+ * @param params.env - Environment variables object (defaults to process.env)
+ * @returns Validated environment variables (typed from zod schema)
+ * @throws Error if validation fails
  *
  * @example
  * ```ts
- * // NestJS pattern (throw on error)
  * const envSchema = z.object({
  *   API_URL: z.string().url(),
  *   PORT: z.string().optional()
  * })
  *
- * const env = validateEnv({ schema: envSchema, throwOnError: true })
+ * const env = validateEnvOrThrow({ schema: envSchema })
  * // env is typed as z.infer<typeof envSchema>
  * ```
  */
-export function validateEnv<T extends z.ZodTypeAny>({
+export function validateEnvOrThrow<T extends z.ZodTypeAny>({
   schema,
   env = process.env,
-  throwOnError = false,
 }: {
   schema: T
   env?: NodeJS.ProcessEnv
-  throwOnError?: boolean
-}):
-  | {
-      isValid: boolean
-      data?: z.infer<T>
-      errors?: string[]
-    }
-  | z.infer<T> {
-  const result = schema.safeParse(env)
-
-  if (!result.success) {
-    const errors = formatZodErrors(result.error)
-    if (throwOnError) {
-      const errorMessage = errors.join('\n')
-      throw new Error(`Environment validation failed:\n${errorMessage}`)
-    }
-    return { isValid: false, errors }
+}): z.infer<T> {
+  const result = _validateEnv(schema, env)
+  if (!result.isValid) {
+    const errorMessage = result.errors.join('\n')
+    throw new Error(`Environment validation failed:\n${errorMessage}`)
   }
-
-  if (throwOnError) {
-    return result.data
-  }
-
-  return { isValid: true, data: result.data }
+  return result.data
 }

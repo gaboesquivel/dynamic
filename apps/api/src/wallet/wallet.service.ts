@@ -19,13 +19,7 @@ import type {
 } from './clients/base-wallet-client'
 import * as schema from '../database/schema'
 import { eq, and } from 'drizzle-orm'
-import { Wallet } from '@vencura/types/schemas'
-
-// Zod schema for key shares array (used for JSON.parse validation)
-const keySharesSchema = z.array(z.string())
-
-// Chain type schema extracted from Wallet schema for validation
-const chainTypeSchema = Wallet.shape.chainType
+import { keySharesSchema, chainTypeSchema, parseJsonWithSchema } from '@vencura/lib'
 
 @Injectable()
 export class WalletService {
@@ -157,7 +151,10 @@ export class WalletService {
 
     const keySharesEncrypted = await this.encryptionService.decrypt(wallet.privateKeyEncrypted)
     // Validate JSON.parse result with zod schema for type safety
-    const externalServerKeyShares = keySharesSchema.parse(JSON.parse(keySharesEncrypted))
+    const externalServerKeyShares = parseJsonWithSchema({
+      jsonString: keySharesEncrypted,
+      schema: keySharesSchema,
+    })
 
     // Get appropriate wallet client based on stored network/chain type
     const walletClient = this.walletClientFactory.createWalletClient(wallet.network)
@@ -192,7 +189,10 @@ export class WalletService {
 
     // Validate JSON.parse result with zod schema for type safety
     const keySharesEncrypted = await this.encryptionService.decrypt(privateKeyEncrypted)
-    const externalServerKeyShares = keySharesSchema.parse(JSON.parse(keySharesEncrypted))
+    const externalServerKeyShares = parseJsonWithSchema({
+      jsonString: keySharesEncrypted,
+      schema: keySharesSchema,
+    })
 
     // Get appropriate wallet client based on stored network/chain type
     const walletClient = this.walletClientFactory.createWalletClient(network)

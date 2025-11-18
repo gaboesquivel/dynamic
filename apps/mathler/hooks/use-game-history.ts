@@ -36,7 +36,7 @@ export function useGameHistory() {
   const { updateUser } = useUserUpdateRequest()
   const refreshUser = useRefreshUser()
 
-  const history = !user?.metadata ? [] : ((user.metadata as UserMetadata).mathlerHistory ?? [])
+  const history = user?.metadata ? (user.metadata as UserMetadata).mathlerHistory ?? [] : []
 
   const [saveGameState, saveGame] = useAsyncFn(
     async (gameData: Omit<GameHistoryEntry, 'completedAt'>): Promise<boolean> => {

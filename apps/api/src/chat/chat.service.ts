@@ -18,6 +18,38 @@ export interface ChatRequest {
   maxTokens?: number
 }
 
+/**
+ * Reusable tool schema interface for OpenAI tool definitions.
+ */
+interface ToolSchema<P = Record<string, any>> {
+  name: string
+  description: string
+  parameters: P
+}
+
+/**
+ * Tool schemas for wallet operations.
+ * Used by getTools() to return tool definitions for client reference.
+ */
+type Tools = {
+  getWallets: ToolSchema<Record<string, never>>
+  createWallet: ToolSchema<{
+    chainId: { type: string; description: string }
+  }>
+  getBalance: ToolSchema<{
+    walletId: { type: string; description: string }
+  }>
+  sendTransaction: ToolSchema<{
+    walletId: { type: string; description: string }
+    to: { type: string; description: string }
+    amount: { type: string; description: string }
+  }>
+  signMessage: ToolSchema<{
+    walletId: { type: string; description: string }
+    message: { type: string; description: string }
+  }>
+}
+
 @Injectable()
 export class ChatService {
   constructor(
@@ -56,36 +88,7 @@ export class ChatService {
     return streamText(streamTextOptions)
   }
 
-  getTools(): {
-    getWallets: { name: string; description: string; parameters: Record<string, never> }
-    createWallet: {
-      name: string
-      description: string
-      parameters: { chainId: { type: string; description: string } }
-    }
-    getBalance: {
-      name: string
-      description: string
-      parameters: { walletId: { type: string; description: string } }
-    }
-    sendTransaction: {
-      name: string
-      description: string
-      parameters: {
-        walletId: { type: string; description: string }
-        to: { type: string; description: string }
-        amount: { type: string; description: string }
-      }
-    }
-    signMessage: {
-      name: string
-      description: string
-      parameters: {
-        walletId: { type: string; description: string }
-        message: { type: string; description: string }
-      }
-    }
-  } {
+  getTools(): Tools {
     // Return tool schemas for client reference
     return {
       getWallets: {

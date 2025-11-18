@@ -34,8 +34,7 @@ export class WalletContractController {
       },
       create: async ({ body }: { body: CreateWalletInput }) => {
         const user = req.user
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const chainId = body.chainId
+        const { chainId } = body
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const wallet = await this.walletService.createWallet(user.id, chainId)
@@ -57,8 +56,7 @@ export class WalletContractController {
       signMessage: async ({ params, body }: { params: { id: string }; body: SignMessageInput }) => {
         const user = req.user
         const { id } = params
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const message = body.message
+        const { message } = body
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = await this.walletService.signMessage(id, user.id, message)
@@ -76,12 +74,7 @@ export class WalletContractController {
       }) => {
         const user = req.user
         const { id } = params
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const to = body.to
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const amount = body.amount
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-        const data = body.data
+        const { to, amount, data } = body
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const result = await this.walletService.sendTransaction(id, user.id, to, amount, data)

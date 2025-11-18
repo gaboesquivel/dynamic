@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { validateEnv as validateEnvLib } from '@vencura/lib'
+import { validateEnvOrThrow } from '@vencura/lib'
 
 /**
  * Schema for environment variables.
@@ -59,7 +59,7 @@ export type EnvSchema = z.infer<typeof envSchema>
 /**
  * Validates environment variables and returns typed config.
  * Follows RORO pattern (Receive an Object, Return an Object).
- * Uses @lib's validateEnv with throwOnError for NestJS pattern.
+ * Uses @lib's validateEnvOrThrow for NestJS pattern.
  */
 export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}): EnvSchema {
   // Prepare env object with defaults (matching Next.js pattern)
@@ -75,7 +75,6 @@ export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } =
       (nodeEnv === 'development' || nodeEnv === 'test' ? 'true' : 'false'),
   }
 
-  // Use @lib's validateEnv with throwOnError for NestJS pattern
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  return validateEnvLib({ schema: envSchema, env: envData, throwOnError: true }) as EnvSchema
+  // Use @lib's validateEnvOrThrow for NestJS pattern
+  return validateEnvOrThrow({ schema: envSchema, env: envData })
 }

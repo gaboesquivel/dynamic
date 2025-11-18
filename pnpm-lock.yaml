@@ -671,6 +671,9 @@ importers:
       '@types/lodash':
         specifier: ^4.17.20
         version: 4.17.20
+      '@vencura/types':
+        specifier: workspace:*
+        version: link:../types
       lodash:
         specifier: ^4.17.21
         version: 4.17.21

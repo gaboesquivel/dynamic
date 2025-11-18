@@ -2,6 +2,7 @@ import { isEmpty } from 'lodash'
 import { z } from 'zod'
 import type { ChainType } from '@vencura/core'
 import { createAddressSchema } from '@vencura/types/schemas'
+import { isZodError } from '@vencura/lib'
 
 /**
  * Schema for sign message input.
@@ -56,9 +57,12 @@ export function validateAddressInput({
     schema.parse(trimmed)
     return { valid: true }
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (isZodError(error)) {
       return { valid: false, error: error.errors[0]?.message || 'Invalid address format' }
     }
-    return { valid: false, error: 'Invalid address format' }
+    // Log unexpected errors to help debug potential bugs
+    console.error('Unexpected error during address validation:', error)
+    // Rethrow non-Zod errors to avoid hiding potential bugs
+    throw error
   }
 }

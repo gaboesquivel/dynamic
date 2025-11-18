@@ -108,8 +108,7 @@ export function useMathlerInput({ maxLength, gameStatus, onSubmit }: UseMathlerI
 
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameStatus, state.input, state.cursor, maxLength, onSubmit])
+  }, [gameStatus, state.input, state.cursor, maxLength, onSubmit, moveCursor, clear, insertAt, backspace])
 
   const reset = () => {
     setState({ input: '', cursor: 0 })
