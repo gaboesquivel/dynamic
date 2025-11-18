@@ -379,6 +379,105 @@ const [saveState, saveData] = useAsyncFn(async (data) => {
 // Access loading/error automatically: saveState.loading, saveState.error
 ```
 
+## Memoization Hooks (`useMemo` and `useCallback`)
+
+### Default: Don't Use Them
+
+In modern React (18+), `useMemo` and `useCallback` are **mostly obsolete** and should be avoided by default. React's optimizations (Concurrent Mode, automatic batching, React Compiler) handle most performance concerns automatically.
+
+### Why They're Usually Unnecessary
+
+1. **Modern React Optimizations**: React 18's rendering optimizations and the React Compiler automatically handle most memoization needs
+2. **Memory Overhead**: Overusing these hooks can actually harm performance by holding references longer than necessary
+3. **Inline Functions Are Cheap**: Modern JavaScript engines (V8) efficiently handle inline function creation and garbage collection
+4. **React.memo Is Better**: For component memoization, `React.memo` is usually more effective than `useCallback`
+
+### Best Practice: Start Without Them
+
+**Default approach:**
+- Write code without `useMemo` or `useCallback`
+- Profile your application when you notice performance issues
+- Only add memoization hooks when profiling reveals a real bottleneck
+
+### When to Still Use Them
+
+Only use `useMemo` or `useCallback` in these specific cases:
+
+1. **Computationally Expensive Operations**
+   ```tsx
+   // Only when the computation is truly expensive
+   const result = useMemo(() => computeExpensiveValue(data), [data])
+   ```
+
+2. **Memoizing Dependencies in Custom Hooks**
+   ```tsx
+   // When function identity matters for hook dependencies
+   const fetchData = useCallback(() => fetch(apiUrl), [apiUrl])
+   useEffect(() => { fetchData() }, [fetchData])
+   ```
+
+3. **Stable Object References in Dependency Arrays**
+   ```tsx
+   // When passing objects as dependencies
+   const memoizedOptions = useMemo(() => ({ limit: 10 }), [])
+   useEffect(() => { doSomething() }, [memoizedOptions])
+   ```
+
+4. **Context Provider Functions**
+   ```tsx
+   // When passing functions through Context to prevent consumer re-renders
+   const value = useMemo(() => ({ fetchData }), [fetchData])
+   ```
+
+### Prefer `React.memo` Over `useCallback`
+
+Instead of memoizing functions with `useCallback`, wrap components with `React.memo`:
+
+```tsx
+// Good: Use React.memo for component memoization
+const ExpensiveComponent = React.memo(({ value }) => {
+  return <div>{value}</div>
+})
+
+// Avoid: Don't use useCallback unless profiling shows it's needed
+const handleClick = useCallback(() => { /* ... */ }, [])
+```
+
+### Anti-Patterns to Avoid
+
+❌ **Don't**: Preemptively use `useMemo`/`useCallback` everywhere
+```tsx
+// Bad: Unnecessary memoization
+const handleClick = useCallback(() => {
+  console.log('clicked')
+}, [])
+
+const count = useMemo(() => items.length, [items])
+```
+
+✅ **Do**: Write simple code, optimize only when needed
+```tsx
+// Good: Simple and clear
+const handleClick = () => {
+  console.log('clicked')
+}
+
+const count = items.length
+```
+
+❌ **Don't**: Use `useCallback` to prevent re-renders without `React.memo`
+```tsx
+// Bad: useCallback alone doesn't prevent re-renders
+const handleClick = useCallback(() => {}, [])
+<Child onClick={handleClick} />
+```
+
+✅ **Do**: Use `React.memo` on the child component
+```tsx
+// Good: React.memo prevents unnecessary re-renders
+const Child = React.memo(({ onClick }) => <button onClick={onClick}>Click</button>)
+```
+
 ## Custom Hooks Best Practices
 - Combine multiple queries into single, cohesive hooks
 - Avoid over-fetching data; optimize query dependencies
