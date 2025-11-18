@@ -1,5 +1,5 @@
 // Re-export all Radix UI primitives for centralized access
-// This allows apps to import Radix primitives from @workspace/ui/radix
+// This allows apps to import Radix primitives from @vencura/ui/radix
 // instead of installing them individually
 
 export * from '@radix-ui/react-accordion'

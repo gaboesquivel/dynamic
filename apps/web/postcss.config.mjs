@@ -1,3 +1,3 @@
-import postcssConfig from '@workspace/ui/postcss.config'
+import postcssConfig from '@vencura/ui/postcss.config'
 
 export default postcssConfig

@@ -2,7 +2,7 @@
 
 import { FAUCET_TOKENS } from '@/lib/tokens'
 import { formatUnits, getAddress } from 'viem'
-import { Button } from '@workspace/ui/components/button'
+import { Button } from '@vencura/ui/components/button'
 import { FaucetDialog } from './faucet-dialog'
 import { useQueryStates } from 'nuqs'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'

@@ -176,7 +176,7 @@ This package is designed for maximum portability:
 
 ```tsx
 import { Chatbot } from '@vencura/ai'
-import { Sheet, SheetContent, SheetTrigger } from '@workspace/ui/components/sheet'
+import { Sheet, SheetContent, SheetTrigger } from '@vencura/ui/components/sheet'
 
 function SidebarChat() {
   return (
@@ -193,7 +193,7 @@ function SidebarChat() {
 
 ```tsx
 import { Chatbot } from '@vencura/ai'
-import { Dialog, DialogContent } from '@workspace/ui/components/dialog'
+import { Dialog, DialogContent } from '@vencura/ui/components/dialog'
 
 function ModalChat({ open, onOpenChange }) {
   return (

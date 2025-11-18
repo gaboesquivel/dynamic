@@ -5,4 +5,3 @@ import { Wallet } from '@vencura/types/schemas'
  * Extracted from Wallet schema for reuse across services.
  */
 export const chainTypeSchema = Wallet.shape.chainType
-

@@ -1,6 +1,6 @@
 import { Geist, Geist_Mono } from 'next/font/google'
 
-import '@workspace/ui/styles/globals.css'
+import '@vencura/ui/styles/globals.css'
 import { Providers } from '@/components/providers'
 import { ErrorBoundary } from '@/components/error-boundary'
 

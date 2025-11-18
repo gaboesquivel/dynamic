@@ -5,4 +5,3 @@ import { z } from 'zod'
  * Used for JSON.parse validation of encrypted key shares.
  */
 export const keySharesSchema = z.array(z.string())
-

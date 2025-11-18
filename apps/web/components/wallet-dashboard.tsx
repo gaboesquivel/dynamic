@@ -2,7 +2,7 @@
 
 import { isEmpty } from 'lodash'
 import { useQueryState, parseAsInteger } from 'nuqs'
-import { Button } from '@workspace/ui/components/button'
+import { Button } from '@vencura/ui/components/button'
 import { useWallets, useCreateWallet } from '@vencura/react'
 import { WalletCard } from './wallet-card'
 import { SUPPORTED_CHAINS } from '@/lib/chains'

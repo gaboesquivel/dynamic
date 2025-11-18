@@ -2,8 +2,8 @@
 
 import { Mic, MicOff } from 'lucide-react'
 import { useVoiceInput } from '../hooks/useVoiceInput'
-import { Button } from '@workspace/ui/components/button'
-import { cn } from '@workspace/ui/lib/utils'
+import { Button } from '@vencura/ui/components/button'
+import { cn } from '@vencura/ui/lib/utils'
 
 export interface VoiceInputProps {
   onTranscript?: (text: string) => void

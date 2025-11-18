@@ -1,7 +1,7 @@
 'use client'
 
 import { useSetState } from 'react-use'
-import { Button } from '@workspace/ui/components/button'
+import { Button } from '@vencura/ui/components/button'
 import { useWalletBalance, useSignMessage, useSendTransaction, type Wallet } from '@vencura/react'
 import { getChainByNetworkId } from '@/lib/chains'
 import { getErrorMessage } from '@/lib/error'

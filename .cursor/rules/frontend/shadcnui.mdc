@@ -6,25 +6,25 @@ alwaysApply: false
 # ShadcnUI Rules
 
 ## Core Principles
-- Install ShadcnUI components in `@workspace/ui` (packages/ui)
-- Always import components from `@workspace/ui/components/*`, never directly from packages/ui
+- Install ShadcnUI components in `@vencura/ui` (packages/ui)
+- Always import components from `@vencura/ui/components/*`, never directly from packages/ui
 - Update the Tailwind preset or tokens in packages/ui (not per app)
 - Application-specific components go in the Next.js app's `components` folder
 - Hooks and utils must be collocated in the same directory as the component that uses them
 
 ## Installation Pattern
-When generating UI code, always install ShadcnUI components in `@workspace/ui`:
+When generating UI code, always install ShadcnUI components in `@vencura/ui`:
 - Components are installed in `packages/ui/src/components/`
 - Each app has a `components.json` that points to:
-  - `"utils": "@workspace/ui/lib/utils"`
-  - `"ui": "@workspace/ui/components"`
+  - `"utils": "@vencura/ui/lib/utils"`
+  - `"ui": "@vencura/ui/components"`
 
 ## Import Patterns
 Always import ShadcnUI components using the workspace alias:
 
 ```tsx
-import { Button } from "@workspace/ui/components/button";
-import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@vencura/ui/components/button";
+import { cn } from "@vencura/ui/lib/utils";
 ```
 
 ## Component Patterns
@@ -32,7 +32,7 @@ import { cn } from "@workspace/ui/lib/utils";
 - Use the cn utility for merging class names
 
 ```tsx
-import { cn } from "@workspace/ui/lib/utils";
+import { cn } from "@vencura/ui/lib/utils";
 import { cva } from "class-variance-authority";
 
 const buttonVariants = cva(
@@ -52,7 +52,7 @@ const buttonVariants = cva(
 ```
 
 ## Design System Organization
-- Keep all core UI components in `@workspace/ui`
+- Keep all core UI components in `@vencura/ui`
 - Application-specific components go in the app's `components` folder
 - Hooks and utils should be collocated with the components that use them (same directory)
 

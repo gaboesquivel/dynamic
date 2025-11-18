@@ -1,4 +1,4 @@
-# `@workspace/ui`
+# `@vencura/ui`
 
 Shared UI component library built with Shadcn/ui and Tailwind CSS for use across all frontend applications in the monorepo.
 
@@ -19,27 +19,27 @@ This package is part of the monorepo and is automatically available to all apps.
 ### Importing Components
 
 ```tsx
-import { Button } from '@workspace/ui/components/button'
+import { Button } from '@vencura/ui/components/button'
 ```
 
 ### Importing Utilities
 
 ```tsx
-import { cn } from '@workspace/ui/lib/utils'
+import { cn } from '@vencura/ui/lib/utils'
 ```
 
 ### Importing Styles
 
 ```tsx
 // In your app's layout or global CSS
-import '@workspace/ui/globals.css'
+import '@vencura/ui/globals.css'
 ```
 
 ### Importing PostCSS Config
 
 ```tsx
 // For Next.js apps that need to extend PostCSS config
-import postcssConfig from '@workspace/ui/postcss.config'
+import postcssConfig from '@vencura/ui/postcss.config'
 export default postcssConfig
 ```
 
@@ -47,38 +47,38 @@ export default postcssConfig
 
 ```tsx
 // Import Radix UI primitives directly from the design system
-import * as AccordionPrimitive from '@workspace/ui/radix'
+import * as AccordionPrimitive from '@vencura/ui/radix'
 // or import specific primitives
-import { AccordionRoot, AccordionItem } from '@workspace/ui/radix'
+import { AccordionRoot, AccordionItem } from '@vencura/ui/radix'
 ```
 
 ## Available Exports
 
 ### Components
 
-- `@workspace/ui/components/*` - All Shadcn/ui components (e.g., `button`, `card`, `input`, etc.)
+- `@vencura/ui/components/*` - All Shadcn/ui components (e.g., `button`, `card`, `input`, etc.)
 
 ### Radix UI Primitives
 
-- `@workspace/ui/radix` - All Radix UI primitives re-exported for centralized access
+- `@vencura/ui/radix` - All Radix UI primitives re-exported for centralized access
   - Includes: accordion, alert-dialog, avatar, checkbox, dialog, dropdown-menu, popover, select, tabs, tooltip, and more
   - **Why centralized?** Ensures all apps use the same Radix UI versions, reduces bundle size, and simplifies maintenance
 
 ### Utilities
 
-- `@workspace/ui/lib/utils` - Utility functions including `cn()` for className merging
+- `@vencura/ui/lib/utils` - Utility functions including `cn()` for className merging
 
 ### Styles
 
-- `@workspace/ui/globals.css` - Global Tailwind CSS styles and theme variables
+- `@vencura/ui/globals.css` - Global Tailwind CSS styles and theme variables
 
 ### Hooks
 
-- `@workspace/ui/hooks/*` - Shared React hooks
+- `@vencura/ui/hooks/*` - Shared React hooks
 
 ### PostCSS Config
 
-- `@workspace/ui/postcss.config` - PostCSS configuration for Tailwind CSS
+- `@vencura/ui/postcss.config` - PostCSS configuration for Tailwind CSS
 
 ## Dependency Strategy
 
@@ -100,7 +100,7 @@ This package serves as the **single source of truth** for all design system depe
 
 ### Apps Should NOT Install
 
-❌ **Don't install these in apps** - Import from `@workspace/ui` instead:
+❌ **Don't install these in apps** - Import from `@vencura/ui` instead:
 
 - Any `@radix-ui/react-*` packages
 - `class-variance-authority`
@@ -115,7 +115,7 @@ This package serves as the **single source of truth** for all design system depe
 - App-specific libraries (data fetching, forms, etc.)
 - Third-party integrations
 
-**Note**: `next-themes` stays in apps because it's a provider that wraps your app and may have app-specific configuration. The theme CSS variables are centralized in `@workspace/ui/globals.css`.
+**Note**: `next-themes` stays in apps because it's a provider that wraps your app and may have app-specific configuration. The theme CSS variables are centralized in `@vencura/ui/globals.css`.
 
 ## Mobile-First Design
 

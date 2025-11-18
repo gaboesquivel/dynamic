@@ -1,4 +1,4 @@
-import { z, ZodType } from 'zod'
+import { z } from 'zod'
 import { getAddress } from 'viem'
 
 /**
@@ -14,7 +14,7 @@ export const refetchSchema = z.string().transform(val => val === 'true')
  * Helper function to parse a value with a Zod schema and return a fallback if parsing fails.
  * Reduces repetitive safeParse boilerplate in query parameter parsing.
  *
- * @param schema - Zod schema to parse against
+ * @param schema - Zod schema to parse against (supports transformed schemas)
  * @param fallback - Fallback value if parsing fails
  * @returns Parser function that can be used with nuqs useQueryStates
  *
@@ -23,10 +23,12 @@ export const refetchSchema = z.string().transform(val => val === 'true')
  * parse: parseOrDefault(actionSchema, undefined)
  * ```
  */
-export function parseOrDefault<T>(schema: ZodType<T>, fallback: T) {
-  return (value: string): T => {
+export function parseOrDefault<T extends z.ZodTypeAny>(
+  schema: T,
+  fallback: z.infer<T>,
+): (value: string) => z.infer<T> {
+  return (value: string): z.infer<T> => {
     const result = schema.safeParse(value)
     return result.success ? result.data : fallback
   }
 }
-

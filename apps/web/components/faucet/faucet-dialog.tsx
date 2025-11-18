@@ -11,8 +11,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@workspace/ui/components/dialog'
-import { Button } from '@workspace/ui/components/button'
+} from '@vencura/ui/components/dialog'
+import { Button } from '@vencura/ui/components/button'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { testnetTokenAbi } from '@vencura/evm/abis'
 import { arbitrumSepolia } from 'viem/chains'

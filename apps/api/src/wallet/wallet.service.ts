@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { z } from 'zod'
 import { EncryptionService } from '../common/encryption.service'
 import {
   getChainMetadata,

@@ -2,7 +2,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@workspace/ui"],
+  transpilePackages: ["@vencura/ui"],
   webpack: (config) => {
     // Ignore optional dependencies that aren't needed for web builds
     config.resolve.fallback = {

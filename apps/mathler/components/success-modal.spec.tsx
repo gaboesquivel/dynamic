@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { SuccessModal } from './success-modal'
 
 // Mock the dialog component since it might have complex dependencies
-jest.mock('@workspace/ui/components/dialog', () => ({
+jest.mock('@vencura/ui/components/dialog', () => ({
   Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
     open ? <div data-testid="dialog">{children}</div> : null,
   DialogContent: ({ children }: { children: React.ReactNode }) => (
@@ -23,7 +23,7 @@ jest.mock('@workspace/ui/components/dialog', () => ({
   ),
 }))
 
-jest.mock('@workspace/ui/components/button', () => ({
+jest.mock('@vencura/ui/components/button', () => ({
   Button: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
     <button onClick={onClick}>{children}</button>
   ),

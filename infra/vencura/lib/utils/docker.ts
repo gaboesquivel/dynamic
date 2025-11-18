@@ -45,14 +45,14 @@ export function getGcpAccessToken(): pulumi.Output<string> {
           if (isString(token)) {
             return token;
           }
-          if (token === null) {
+          if (token === null || token === undefined) {
             throw new Error(
               'Failed to get GCP access token: received null token from Application Default Credentials.',
             );
           }
           // Handle AccessTokenResponse type (has .token property)
           if (isPlainObject(token) && 'token' in token) {
-            const tokenValue = (token as { token: string }).token;
+            const tokenValue = (token as { token: unknown }).token;
             if (isString(tokenValue)) {
               return tokenValue;
             }

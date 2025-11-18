@@ -1,4 +1,4 @@
-import { z, ZodError } from 'zod'
+import { z } from 'zod'
 import { isZodError } from '../error/is-zod-error'
 
 /**
@@ -35,7 +35,8 @@ export function parseJsonWithSchema<T extends z.ZodTypeAny>({
       throw error
     }
     // Re-throw JSON.parse errors with context
-    throw new Error(`Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(
+      `Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`,
+    )
   }
 }
-

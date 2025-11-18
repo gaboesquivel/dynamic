@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Chatbot } from '@vencura/ai'
-import { Button } from '@workspace/ui/components/button'
+import { Button } from '@vencura/ui/components/button'
 import { getEnv } from '@/lib/env'
-import { cn } from '@workspace/ui/lib/utils'
+import { cn } from '@vencura/ui/lib/utils'
 
 export function ChatSidebar() {
   const [isOpen, setIsOpen] = useState(true)

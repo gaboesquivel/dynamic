@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@workspace/ui/*": ["./src/*"]
+      "@vencura/ui/*": ["./src/*"]
     }
   },
   "include": [".", "../../typescript-config/reset.d.ts"],

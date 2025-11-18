@@ -4,7 +4,7 @@ import { useChatbot } from '../hooks/useChatbot'
 import { VoiceInput } from './VoiceInput'
 // Note: ai-elements components will be imported when package is available
 // For now, using basic div structure
-import { cn } from '@workspace/ui/lib/utils'
+import { cn } from '@vencura/ui/lib/utils'
 
 export interface ChatbotProps {
   className?: string

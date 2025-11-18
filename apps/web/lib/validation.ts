@@ -1,6 +1,6 @@
 import { isEmpty } from 'lodash'
 import { z } from 'zod'
-import type { ChainType } from '@vencura/core'
+import type { ChainType } from '@vencura/types'
 import { createAddressSchema } from '@vencura/types/schemas'
 import { isZodError } from '@vencura/lib'
 
@@ -62,7 +62,11 @@ export function validateAddressInput({
     }
     // Log unexpected errors to help debug potential bugs
     console.error('Unexpected error during address validation:', error)
-    // Rethrow non-Zod errors to avoid hiding potential bugs
-    throw error
+    // Return consistent error object instead of throwing
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    return {
+      valid: false,
+      error: `Unexpected validation error${errorMessage ? `: ${errorMessage}` : ''}`,
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { DynamicWidget } from '@/lib/dynamic'
-import { Button } from '@workspace/ui/components/button'
+import { Button } from '@vencura/ui/components/button'
 import { WalletDashboard } from '@/components/wallet-dashboard'
 import { ChatSidebar } from '@/components/chat-sidebar'
 import { useSetState } from 'react-use'

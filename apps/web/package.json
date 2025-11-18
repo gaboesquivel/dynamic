@@ -27,7 +27,7 @@
     "@vencura/types": "workspace:*",
     "@vencura/ai": "workspace:*",
     "@vencura/lib": "workspace:*",
-    "@workspace/ui": "workspace:*",
+    "@vencura/ui": "workspace:*",
     "lodash": "^4.17.21",
     "lucide-react": "^0.475.0",
     "next": "^16.0.0",

@@ -2,7 +2,7 @@ import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@workspace/ui"],
+  transpilePackages: ["@vencura/ui"],
   // Suppress OpenTelemetry/Sentry warnings about external packages
   serverExternalPackages: [
     'import-in-the-middle',

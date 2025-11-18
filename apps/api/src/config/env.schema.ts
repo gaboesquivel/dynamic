@@ -76,5 +76,5 @@ export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } =
   }
 
   // Use @lib's validateEnvOrThrow for NestJS pattern
-  return validateEnvOrThrow({ schema: envSchema, env: envData })
+  return validateEnvOrThrow({ schema: envSchema, env: envData }) as EnvSchema
 }

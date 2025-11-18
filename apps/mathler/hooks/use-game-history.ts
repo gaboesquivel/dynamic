@@ -1,12 +1,13 @@
 'use client'
 
 import { useAsyncFn } from 'react-use'
-import { groupBy, sumBy, isPlainObject, isString } from 'lodash'
+import { groupBy, sumBy, isPlainObject } from 'lodash'
 import {
   useDynamicContext,
   useUserUpdateRequest,
   useRefreshUser,
 } from '@dynamic-labs/sdk-react-core'
+import { getErrorMessage } from '@vencura/lib'
 
 export interface GameHistoryEntry {
   date: string // ISO date string (YYYY-MM-DD)
@@ -36,7 +37,7 @@ export function useGameHistory() {
   const { updateUser } = useUserUpdateRequest()
   const refreshUser = useRefreshUser()
 
-  const history = user?.metadata ? (user.metadata as UserMetadata).mathlerHistory ?? [] : []
+  const history = user?.metadata ? ((user.metadata as UserMetadata).mathlerHistory ?? []) : []
 
   const [saveGameState, saveGame] = useAsyncFn(
     async (gameData: Omit<GameHistoryEntry, 'completedAt'>): Promise<boolean> => {
@@ -76,12 +77,7 @@ export function useGameHistory() {
 
       if (hasError) {
         const errorMessage =
-          (isPlainObject(result) &&
-            'error' in result &&
-            isPlainObject(result.error) &&
-            'message' in result.error &&
-            isString(result.error.message) &&
-            result.error.message) ||
+          (isPlainObject(result) && 'error' in result && getErrorMessage(result.error)) ||
           'Failed to update user metadata. Please try again.'
         throw new Error(errorMessage)
       }

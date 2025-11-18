@@ -46,6 +46,11 @@ alwaysApply: false
 - **Exported/public functions**: Prefer explicit return types for API clarity and documentation
   - ✅ **Good**: `export function getUser(id: string): User { ... }`
   - ✅ **Good**: `export const createClient = (config: Config): Client => { ... }`
+- **@vencura/lib functions**: MUST always have explicit return types - no exceptions
+  - ✅ **Good**: `export function delay(ms: number): Promise<void> { ... }`
+  - ✅ **Good**: `export function getErrorMessage(error: unknown): string | null { ... }`
+  - ❌ **Bad**: `export const delay = (ms: number) => new Promise(...)` (missing return type)
+  - **Rationale**: Consumers should never need to cast types when using @vencura/lib functions
 
 - **React components**: NEVER have explicit return types - always rely on inference
   - ✅ **Good**: `export function Component() { return <div>...</div> }` (inferred JSX.Element)
@@ -65,11 +70,14 @@ alwaysApply: false
 - **Never add explicit type imports just to help inference**: If TypeScript isn't resolving function types correctly, fix the function definition instead
   - ❌ **Bad**: Adding `import type { User } from './types'` just to type a consumer variable
   - ✅ **Good**: Ensure the function has an explicit return type, then let consumers infer
-- **Never cast types on the consumer side**: Types should be inferred from function return values, primarily from `@vencura/types`, `@vencura/core`, and `@vencura/react`
+- **Never cast types on the consumer side**: Types should be inferred from function return values, primarily from `@vencura/types`, `@vencura/core`, `@vencura/react`, and `@vencura/lib`
   - ✅ **Good**: `const { data: wallets } = useWallets()` (inferred Wallet[] from @vencura/react)
   - ✅ **Good**: `const wallet = await client.wallet.create({ body })` (inferred Wallet from @vencura/core)
+  - ✅ **Good**: `const message = getErrorMessage(error)` (inferred string | null from @vencura/lib)
+  - ✅ **Good**: `const env = validateEnv({ schema })` (inferred result type from @vencura/lib)
   - ❌ **Bad**: `const { data: wallets }: { data: Wallet[] } = useWallets()` (redundant type annotation)
   - ❌ **Bad**: `const wallet: Wallet = await client.wallet.create({ body })` (should infer)
+  - ❌ **Bad**: `const message = getErrorMessage(error) as string` (should never need casting with @vencura/lib)
   - ❌ **Bad**: `const transactionInput: SendTransactionInput = { ... }` (should infer from function/object literal)
 
 ### Examples
@@ -142,10 +150,14 @@ The following ESLint rules enforce these codestyle guidelines:
   - **Async utilities**: `delay`, `fetchWithTimeout`
   - **Error utilities**: `getErrorMessage`, `formatZodError`, `sanitizeErrorMessage`, `isZodError`
   - **Date utilities**: `getDateKey`
-  - **Environment utilities**: `validateEnv`
-  - **Zod utilities**: `formatZodErrors`
+  - **Environment utilities**: `validateEnv`, `validateEnvOrThrow`, `getEnvHelper`
+  - **Zod utilities**: `formatZodErrors`, `parseJsonWithSchema`
   - Import from `@vencura/lib`: `import { delay, getErrorMessage } from '@vencura/lib'`
   - **Prefer @vencura/lib over custom implementations** for these utilities
+  - **Critical**: All @vencura/lib functions MUST return explicit types - consumers should never need type casting
+    - ✅ **Good**: `const message = getErrorMessage(error)` (type inferred as `string | null`)
+    - ❌ **Bad**: `const message: string | null = getErrorMessage(error)` (redundant - should infer)
+    - ❌ **Bad**: `const message = getErrorMessage(error) as string` (should never need casting)
 - **Prefer lodash over custom implementations** for common operations
   - Use lodash for array manipulation (`isEmpty`, `uniq`, `groupBy`, `chunk`)
   - Use lodash for object operations (`merge`, `pick`, `omit`, `isEmpty`)
@@ -162,6 +174,12 @@ The following ESLint rules enforce these codestyle guidelines:
     - Use `validateEnv({ schema: envSchema })` for validation
     - Infer types: `type Env = z.infer<typeof envSchema>`
     - All apps (Next.js, NestJS) should follow the same pattern
+  - **Validation Functions**: Zod-based validation functions that return result objects must handle all errors gracefully
+    - ✅ **Good**: Return `{ valid: boolean; error?: string }` for all error cases (Zod errors and unexpected errors)
+    - ✅ **Good**: Use `isZodError` from `@vencura/lib` to check error types, then return consistent error objects
+    - ❌ **Bad**: Rethrowing non-Zod errors breaks callers that expect result objects
+    - **Example**: `validateAddressInput` returns `{ valid: false, error: '...' }` for all errors, never throws
+    - **Exception**: Library functions designed to throw (e.g., `parseJsonWithSchema`) are fine - they're documented to throw
 
 ## ts-reset Type Safety
 
@@ -189,6 +207,10 @@ This monorepo uses `@total-typescript/ts-reset` to enhance TypeScript's built-in
 - Place the happy path last for improved readability
 - Avoid unnecessary else statements; prefer `if-return` pattern
 - Throw errors from `@repo/errors` for consistency
+- **Zod-based validation functions**: Functions that return result objects (e.g., `{ valid: boolean; error?: string }`) must catch all errors and return consistent error objects instead of throwing
+  - ✅ **Good**: `catch (error) { if (isZodError(error)) return { valid: false, error: ... }; return { valid: false, error: 'Unexpected validation error' } }`
+  - ❌ **Bad**: `catch (error) { if (isZodError(error)) return { valid: false, error: ... }; throw error }` (breaks callers expecting result objects)
+  - This ensures callers can safely check `.valid` without try/catch blocks
 
 ## File Structure & Organization
 Maintain a structured and logical order when organizing files:

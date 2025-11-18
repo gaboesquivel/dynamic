@@ -27,20 +27,20 @@ Frontend application for interacting with the Vencura API - a multichain custodi
 - TanStack Query (with devtools in development mode)
 - Dynamic SDK
 - Tailwind CSS
-- Shadcn/ui components (via `@workspace/ui`)
+- Shadcn/ui components (via `@vencura/ui`)
 - react-error-boundary for error handling
 - zod-validation-error for better validation error messages
 
 ## Design System & Dependencies
 
-This app uses `@workspace/ui` as the centralized design system:
+This app uses `@vencura/ui` as the centralized design system:
 
-- **UI Components**: Import from `@workspace/ui/components/*`
-- **Radix Primitives**: Import from `@workspace/ui/radix`
-- **Utilities**: Import from `@workspace/ui/lib/utils`
-- **Icons**: Import from `lucide-react` via `@workspace/ui`
+- **UI Components**: Import from `@vencura/ui/components/*`
+- **Radix Primitives**: Import from `@vencura/ui/radix`
+- **Utilities**: Import from `@vencura/ui/lib/utils`
+- **Icons**: Import from `lucide-react` via `@vencura/ui`
 
-**Do NOT install** these design system dependencies directly in this app - they are managed centrally in `@workspace/ui`:
+**Do NOT install** these design system dependencies directly in this app - they are managed centrally in `@vencura/ui`:
 
 - Any `@radix-ui/react-*` packages
 - `class-variance-authority`, `clsx`, `tailwind-merge`
