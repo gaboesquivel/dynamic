@@ -1,12 +1,12 @@
-import * as gcp from '@pulumi/gcp';
-import * as pulumi from '@pulumi/pulumi';
-import type { Config } from './config';
-import { resourceName } from './config';
-import type { SecretResources } from './secrets';
+import * as gcp from '@pulumi/gcp'
+import * as pulumi from '@pulumi/pulumi'
+import type { Config } from './config'
+import { resourceName } from './config'
+import type { SecretResources } from './secrets'
 
 export interface ServiceAccountResources {
-  cloudRunServiceAccount: gcp.serviceaccount.Account;
-  cicdServiceAccount: gcp.serviceaccount.Account;
+  cloudRunServiceAccount: gcp.serviceaccount.Account
+  cicdServiceAccount: gcp.serviceaccount.Account
 }
 
 export function createServiceAccounts(
@@ -14,8 +14,8 @@ export function createServiceAccounts(
   secrets: SecretResources,
   provider: gcp.Provider,
 ): ServiceAccountResources {
-  const cloudRunSaName = resourceName(config, 'cloud-run-sa');
-  const cicdSaName = resourceName(config, 'cicd-sa');
+  const cloudRunSaName = resourceName(config, 'cloud-run-sa')
+  const cicdSaName = resourceName(config, 'cicd-sa')
 
   // Cloud Run service account
   const cloudRunServiceAccount = new gcp.serviceaccount.Account(
@@ -26,7 +26,7 @@ export function createServiceAccounts(
       description: `Service account for Vencura Cloud Run service in ${config.environment}`,
     },
     { provider },
-  );
+  )
 
   // IAM binding: Secret Manager accessor (with IAM conditions to limit to specific secrets)
   // Note: dbConnectionStringSecret is added in database module, so we'll add it separately
@@ -38,7 +38,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cloudRunServiceAccount.email}`,
     },
     { provider, dependsOn: [cloudRunServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cloudRunSaName}-secret-dynamic-api-token`,
@@ -48,7 +48,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cloudRunServiceAccount.email}`,
     },
     { provider, dependsOn: [cloudRunServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cloudRunSaName}-secret-arbitrum-sepolia-rpc-url`,
@@ -58,7 +58,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cloudRunServiceAccount.email}`,
     },
     { provider, dependsOn: [cloudRunServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cloudRunSaName}-secret-encryption-key`,
@@ -68,7 +68,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cloudRunServiceAccount.email}`,
     },
     { provider, dependsOn: [cloudRunServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cloudRunSaName}-secret-db-password`,
@@ -78,7 +78,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cloudRunServiceAccount.email}`,
     },
     { provider, dependsOn: [cloudRunServiceAccount] },
-  );
+  )
 
   // IAM binding: Cloud SQL client
   new gcp.projects.IAMMember(
@@ -89,7 +89,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cloudRunServiceAccount.email}`,
     },
     { provider, dependsOn: [cloudRunServiceAccount] },
-  );
+  )
 
   // CI/CD service account (for GitHub Actions)
   const cicdServiceAccount = new gcp.serviceaccount.Account(
@@ -100,7 +100,7 @@ export function createServiceAccounts(
       description: `Service account for GitHub Actions CI/CD in ${config.environment}`,
     },
     { provider },
-  );
+  )
 
   // IAM binding: Artifact Registry writer
   new gcp.projects.IAMMember(
@@ -111,7 +111,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   // IAM binding: Cloud Run admin
   new gcp.projects.IAMMember(
@@ -122,7 +122,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   // IAM binding: Secret Manager accessor (for reading secrets during deployment)
   new gcp.secretmanager.SecretIamMember(
@@ -133,7 +133,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cicdSaName}-secret-dynamic-api-token`,
@@ -143,7 +143,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cicdSaName}-secret-arbitrum-sepolia-rpc-url`,
@@ -153,7 +153,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cicdSaName}-secret-encryption-key`,
@@ -163,7 +163,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   new gcp.secretmanager.SecretIamMember(
     `${cicdSaName}-secret-db-password`,
@@ -173,7 +173,7 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   // IAM binding: Secret Manager admin (for creating/deleting temporary secrets in PR deployments)
   // This allows CI/CD to create ephemeral secrets for PR preview deployments
@@ -185,10 +185,10 @@ export function createServiceAccounts(
       member: pulumi.interpolate`serviceAccount:${cicdServiceAccount.email}`,
     },
     { provider, dependsOn: [cicdServiceAccount] },
-  );
+  )
 
   return {
     cloudRunServiceAccount,
     cicdServiceAccount,
-  };
+  }
 }

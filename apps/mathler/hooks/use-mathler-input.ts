@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useSetState } from 'react-use'
 
 interface UseMathlerInputProps {
@@ -17,32 +17,38 @@ interface InputState {
 export function useMathlerInput({ maxLength, gameStatus, onSubmit }: UseMathlerInputProps) {
   const [state, setState] = useSetState<InputState>({ input: '', cursor: 0 })
 
-  const insertAt = (char: string, position = state.cursor) => {
-    if (gameStatus !== 'playing') return
-    const next = state.input.slice(0, position) + char + state.input.slice(position)
-    if (next.length <= maxLength) setState({ input: next, cursor: position + 1 })
-  }
+  const insertAt = useCallback(
+    (char: string, position = state.cursor) => {
+      if (gameStatus !== 'playing') return
+      const next = state.input.slice(0, position) + char + state.input.slice(position)
+      if (next.length <= maxLength) setState({ input: next, cursor: position + 1 })
+    },
+    [gameStatus, state.cursor, state.input, maxLength, setState],
+  )
 
-  const backspace = () => {
+  const backspace = useCallback(() => {
     if (gameStatus !== 'playing' || state.cursor === 0) return
     const next = state.input.slice(0, state.cursor - 1) + state.input.slice(state.cursor)
     setState({ input: next, cursor: state.cursor - 1 })
-  }
+  }, [gameStatus, state.cursor, state.input, setState])
 
-  const moveCursor = (dir: 'left' | 'right') => {
-    if (gameStatus !== 'playing') return
-    setState({
-      cursor:
-        dir === 'left'
-          ? Math.max(0, state.cursor - 1)
-          : Math.min(state.input.length, state.cursor + 1),
-    })
-  }
+  const moveCursor = useCallback(
+    (dir: 'left' | 'right') => {
+      if (gameStatus !== 'playing') return
+      setState({
+        cursor:
+          dir === 'left'
+            ? Math.max(0, state.cursor - 1)
+            : Math.min(state.input.length, state.cursor + 1),
+      })
+    },
+    [gameStatus, state.cursor, state.input.length, setState],
+  )
 
-  const clear = () => {
+  const clear = useCallback(() => {
     if (gameStatus !== 'playing') return
     setState({ input: '', cursor: 0 })
-  }
+  }, [gameStatus, setState])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

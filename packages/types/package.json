@@ -1,16 +1,31 @@
 {
   "name": "@vencura/types",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
   "description": "Shared API contracts and types for Vencura",
   "license": "PROPRIETARY",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./schemas": "./src/schemas/index.ts",
-    "./api-contracts": "./src/api-contracts/index.ts"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "require": "./dist/cjs/index.cjs",
+      "import": "./dist/esm/index.mjs"
+    },
+    "./schemas": {
+      "types": "./dist/types/schemas/index.d.ts",
+      "require": "./dist/cjs/schemas/index.cjs",
+      "import": "./dist/esm/schemas/index.mjs"
+    },
+    "./api-contracts": {
+      "types": "./dist/types/api-contracts/index.d.ts",
+      "require": "./dist/cjs/api-contracts/index.cjs",
+      "import": "./dist/esm/api-contracts/index.mjs"
+    }
   },
   "scripts": {
+    "build": "tsup",
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
@@ -21,6 +36,7 @@
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.32.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.9.2"
   }
 }

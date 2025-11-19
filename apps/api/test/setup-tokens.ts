@@ -92,7 +92,7 @@ function deployToken(
       try {
         const json = JSON.parse(line)
         if (json.deployedAddresses && Object.keys(json.deployedAddresses).length > 0) {
-          const addresses = Object.values(json.deployedAddresses) as string[]
+          const addresses = Object.values(json.deployedAddresses)
           if (addresses.length > 0) {
             const address = addresses[addresses.length - 1] as Address
             console.log(`✓ ${tokenKey} deployed at: ${address}`)
@@ -202,4 +202,3 @@ export async function deployTestTokens(): Promise<Record<string, Address>> {
 export function getDeployedTokenAddresses(): Record<string, Address> {
   return { ...deployedAddresses }
 }
-

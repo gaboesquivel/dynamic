@@ -29,7 +29,7 @@
  */
 
 export { VencuraProvider, type VencuraProviderProps } from './provider'
-export * from './hooks'
+export * from './hooks/index'
 export * from './context'
 export * from './utils/token-encoding'
 

@@ -36,17 +36,20 @@ All three tokens are deployed using the `TestToken` contract which provides:
 - **Standard ERC20 Interface**: Full compatibility with standard token operations
 
 **Token Minting Flow**: Tests automatically mint tokens via the API transaction endpoint using the `mintTestTokenViaFaucet()` helper. The helper:
+
 - Creates or reuses a test wallet via Dynamic SDK
 - Encodes the `mint()` function call
 - Sends the transaction via the API `/wallets/:id/send` endpoint
 - Returns the transaction hash for verification
 
 **Token Transfer Testing**: Tests verify token transfers by:
+
 - Minting tokens to a test wallet
 - Transferring tokens to another address via the API transaction endpoint
 - Verifying transaction success and hash format
 
 **Token Addresses**: Token addresses are automatically detected based on environment:
+
 - **Local Chain**: Tokens are deployed to Anvil and addresses are stored after deployment
 - **Testnet**: Tokens use hardcoded addresses on Arbitrum Sepolia (Chain ID: 421614)
 

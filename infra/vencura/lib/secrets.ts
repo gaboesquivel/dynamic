@@ -1,33 +1,27 @@
-import * as gcp from '@pulumi/gcp';
-import * as random from '@pulumi/random';
-import * as pulumi from '@pulumi/pulumi';
-import type { Config } from './config';
-import { secretName } from './config';
+import * as gcp from '@pulumi/gcp'
+import * as random from '@pulumi/random'
+import * as pulumi from '@pulumi/pulumi'
+import type { Config } from './config'
+import { secretName } from './config'
 
 export interface SecretResources {
-  dbPassword: pulumi.Output<string>;
+  dbPassword: pulumi.Output<string>
   secrets: {
-    dynamicEnvironmentId: gcp.secretmanager.Secret;
-    dynamicApiToken: gcp.secretmanager.Secret;
-    arbitrumSepoliaRpcUrl: gcp.secretmanager.Secret;
-    encryptionKey: gcp.secretmanager.Secret;
-    dbPassword: gcp.secretmanager.Secret;
-  };
+    dynamicEnvironmentId: gcp.secretmanager.Secret
+    dynamicApiToken: gcp.secretmanager.Secret
+    arbitrumSepoliaRpcUrl: gcp.secretmanager.Secret
+    encryptionKey: gcp.secretmanager.Secret
+    dbPassword: gcp.secretmanager.Secret
+  }
 }
 
-export function createSecrets(
-  config: Config,
-  provider: gcp.Provider,
-): SecretResources {
+export function createSecrets(config: Config, provider: gcp.Provider): SecretResources {
   // Auto-generate database password
-  const dbPassword = new random.RandomPassword(
-    secretName(config, 'db-password-random'),
-    {
-      length: 32,
-      special: true,
-      overrideSpecial: '!#$%&*()-_=+[]{}<>:?',
-    },
-  );
+  const dbPassword = new random.RandomPassword(secretName(config, 'db-password-random'), {
+    length: 32,
+    special: true,
+    overrideSpecial: '!#$%&*()-_=+[]{}<>:?',
+  })
 
   // Secret Manager secrets with environment-prefixed names
   const dynamicEnvironmentId = new gcp.secretmanager.Secret(
@@ -41,14 +35,14 @@ export function createSecrets(
       },
     },
     { provider },
-  );
+  )
 
   // Read secret value from environment variable (required)
-  const dynamicEnvironmentIdValue = process.env.DYNAMIC_ENVIRONMENT_ID;
+  const dynamicEnvironmentIdValue = process.env.DYNAMIC_ENVIRONMENT_ID
   if (!dynamicEnvironmentIdValue) {
     throw new Error(
       'DYNAMIC_ENVIRONMENT_ID environment variable is required. Set it in GitHub Secrets or .env file.',
-    );
+    )
   }
 
   // Create secret version with actual value
@@ -59,7 +53,7 @@ export function createSecrets(
       secretData: dynamicEnvironmentIdValue,
     },
     { provider },
-  );
+  )
 
   const dynamicApiToken = new gcp.secretmanager.Secret(
     secretName(config, 'dynamic-api-token'),
@@ -72,13 +66,13 @@ export function createSecrets(
       },
     },
     { provider },
-  );
+  )
 
-  const dynamicApiTokenValue = process.env.DYNAMIC_API_TOKEN;
+  const dynamicApiTokenValue = process.env.DYNAMIC_API_TOKEN
   if (!dynamicApiTokenValue) {
     throw new Error(
       'DYNAMIC_API_TOKEN environment variable is required. Set it in GitHub Secrets or .env file.',
-    );
+    )
   }
 
   new gcp.secretmanager.SecretVersion(
@@ -88,7 +82,7 @@ export function createSecrets(
       secretData: dynamicApiTokenValue,
     },
     { provider },
-  );
+  )
 
   const arbitrumSepoliaRpcUrl = new gcp.secretmanager.Secret(
     secretName(config, 'arbitrum-sepolia-rpc-url'),
@@ -101,13 +95,13 @@ export function createSecrets(
       },
     },
     { provider },
-  );
+  )
 
-  const arbitrumSepoliaRpcUrlValue = process.env.ARBITRUM_SEPOLIA_RPC_URL;
+  const arbitrumSepoliaRpcUrlValue = process.env.ARBITRUM_SEPOLIA_RPC_URL
   if (!arbitrumSepoliaRpcUrlValue) {
     throw new Error(
       'ARBITRUM_SEPOLIA_RPC_URL environment variable is required. Set it in GitHub Secrets or .env file.',
-    );
+    )
   }
 
   new gcp.secretmanager.SecretVersion(
@@ -117,7 +111,7 @@ export function createSecrets(
       secretData: arbitrumSepoliaRpcUrlValue,
     },
     { provider },
-  );
+  )
 
   const encryptionKey = new gcp.secretmanager.Secret(
     secretName(config, 'encryption-key'),
@@ -130,13 +124,13 @@ export function createSecrets(
       },
     },
     { provider },
-  );
+  )
 
-  const encryptionKeyValue = process.env.ENCRYPTION_KEY;
+  const encryptionKeyValue = process.env.ENCRYPTION_KEY
   if (!encryptionKeyValue) {
     throw new Error(
       'ENCRYPTION_KEY environment variable is required. Set it in GitHub Secrets or .env file.',
-    );
+    )
   }
 
   new gcp.secretmanager.SecretVersion(
@@ -146,7 +140,7 @@ export function createSecrets(
       secretData: encryptionKeyValue,
     },
     { provider },
-  );
+  )
 
   // Database password secret (auto-generated, no env var needed)
   const dbPasswordSecret = new gcp.secretmanager.Secret(
@@ -160,7 +154,7 @@ export function createSecrets(
       },
     },
     { provider },
-  );
+  )
 
   new gcp.secretmanager.SecretVersion(
     secretName(config, 'db-password-version'),
@@ -169,7 +163,7 @@ export function createSecrets(
       secretData: dbPassword.result,
     },
     { provider },
-  );
+  )
 
   return {
     dbPassword: dbPassword.result,
@@ -180,5 +174,5 @@ export function createSecrets(
       encryptionKey,
       dbPassword: dbPasswordSecret,
     },
-  };
+  }
 }

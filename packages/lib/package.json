@@ -1,19 +1,29 @@
 {
   "name": "@vencura/lib",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
   "description": "Shared utility functions and helpers for Vencura",
   "license": "PROPRIETARY",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "require": "./dist/cjs/index.cjs",
+      "import": "./dist/esm/index.mjs"
+    }
+  },
   "scripts": {
+    "build": "tsup",
     "lint": "eslint . --max-warnings 0"
   },
   "devDependencies": {
+    "@types/node": "^20.19.9",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.32.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
