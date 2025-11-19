@@ -97,9 +97,8 @@ describe('Security Features (e2e)', () => {
       const response = await request(TEST_SERVER_URL).get('/api')
 
       // Swagger should be disabled by default
-      if (response.status === 404) {
-        expect(response.body.statusCode).toBe(404)
-      }
+      expect(response.status).toBe(404)
+      expect(response.body.statusCode).toBe(404)
     })
   })
 
