@@ -20,19 +20,60 @@
         "SENTRY_DSN",
         "SENTRY_ENVIRONMENT",
         "ENABLE_SWAGGER_UI",
-        "FAUCET_PRIVATE_KEY"
+        "FAUCET_PRIVATE_KEY",
+        "CORS_ORIGIN",
+        "GCP_PROJECT_ID",
+        "GOOGLE_PROJECT",
+        "GCLOUD_PROJECT",
+        "GOOGLE_CLOUD_PROJECT",
+        "GCP_REGION",
+        "GOOGLE_REGION",
+        "CLOUDFLARE_BASE_DOMAIN",
+        "GCP_IMAGE_TAG",
+        "GITHUB_SHA",
+        "GITHUB_ACTIONS",
+        "GITHUB_EVENT_WORKFLOW_RUN_HEAD_SHA"
       ]
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "env": ["NODE_ENV", "CI", "NEXT_RUNTIME", "NEXT_PUBLIC_SENTRY_DSN", "SENTRY_ORG", "SENTRY_PROJECT"]
+      "env": [
+        "NODE_ENV",
+        "CI",
+        "NEXT_RUNTIME",
+        "NEXT_PUBLIC_SENTRY_DSN",
+        "SENTRY_ORG",
+        "SENTRY_PROJECT",
+        "GCP_PROJECT_ID",
+        "GOOGLE_PROJECT",
+        "GCLOUD_PROJECT",
+        "GOOGLE_CLOUD_PROJECT",
+        "GCP_REGION",
+        "GOOGLE_REGION",
+        "CLOUDFLARE_BASE_DOMAIN",
+        "GCP_IMAGE_TAG",
+        "GITHUB_SHA",
+        "GITHUB_ACTIONS",
+        "GITHUB_EVENT_WORKFLOW_RUN_HEAD_SHA",
+        "CORS_ORIGIN",
+        "TEST_SERVER_URL",
+        "TEST_SERVER_PORT",
+        "TEST_SERVER_PID",
+        "ARB_TESTNET_GAS_FAUCET_KEY"
+      ]
     },
     "check-types": {
       "dependsOn": ["^check-types"]
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "TEST_SERVER_URL",
+        "TEST_SERVER_PORT",
+        "TEST_SERVER_PID",
+        "ARB_TESTNET_GAS_FAUCET_KEY"
+      ]
     },
     "test:coverage": {
       "dependsOn": ["^build"],

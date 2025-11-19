@@ -1,11 +1,11 @@
-import * as pulumi from '@pulumi/pulumi';
-import type { CloudRunResources } from './cloud-run';
-import type { DatabaseResources } from './database';
-import type { ServiceAccountResources } from './service-accounts';
-import type { SecretResources } from './secrets';
-import type { NetworkResources } from './network';
-import type { ArtifactRegistryResources } from './artifact-registry';
-import type { Config } from './config';
+import * as pulumi from '@pulumi/pulumi'
+import type { CloudRunResources } from './cloud-run'
+import type { DatabaseResources } from './database'
+import type { ServiceAccountResources } from './service-accounts'
+import type { SecretResources } from './secrets'
+import type { NetworkResources } from './network'
+import type { ArtifactRegistryResources } from './artifact-registry'
+import type { Config } from './config'
 
 export function createOutputs(
   config: Config,
@@ -18,7 +18,7 @@ export function createOutputs(
 ): Record<string, pulumi.Output<any>> {
   return {
     // Cloud Run service URL (safe array access)
-    cloudRunUrl: cloudRun.service.statuses.apply((statuses) =>
+    cloudRunUrl: cloudRun.service.statuses.apply(statuses =>
       statuses && statuses.length > 0 ? (statuses[0]?.url ?? '') : '',
     ),
 
@@ -53,5 +53,5 @@ export function createOutputs(
 
     // Region
     region: pulumi.output(config.region),
-  };
+  }
 }

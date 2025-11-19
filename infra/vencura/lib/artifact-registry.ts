@@ -1,10 +1,10 @@
-import * as gcp from '@pulumi/gcp';
-import type { Config } from './config';
-import { resourceName } from './config';
-import type { ServiceAccountResources } from './service-accounts';
+import * as gcp from '@pulumi/gcp'
+import type { Config } from './config'
+import { resourceName } from './config'
+import type { ServiceAccountResources } from './service-accounts'
 
 export interface ArtifactRegistryResources {
-  repository: gcp.artifactregistry.Repository;
+  repository: gcp.artifactregistry.Repository
 }
 
 export function createArtifactRegistry(
@@ -12,7 +12,7 @@ export function createArtifactRegistry(
   serviceAccounts: ServiceAccountResources,
   provider: gcp.Provider,
 ): ArtifactRegistryResources {
-  const repoName = resourceName(config, 'artifact-registry');
+  const repoName = resourceName(config, 'artifact-registry')
 
   // Docker repository for container images
   const repository = new gcp.artifactregistry.Repository(
@@ -28,7 +28,7 @@ export function createArtifactRegistry(
       },
     },
     { provider },
-  );
+  )
 
   // IAM binding: CI/CD service account can write
   new gcp.artifactregistry.RepositoryIamMember(
@@ -37,14 +37,12 @@ export function createArtifactRegistry(
       repository: repository.name,
       location: repository.location,
       role: 'roles/artifactregistry.writer',
-      member: serviceAccounts.cicdServiceAccount.email.apply(
-        (email) => `serviceAccount:${email}`,
-      ),
+      member: serviceAccounts.cicdServiceAccount.email.apply(email => `serviceAccount:${email}`),
     },
     { provider, dependsOn: [repository, serviceAccounts.cicdServiceAccount] },
-  );
+  )
 
   return {
     repository,
-  };
+  }
 }

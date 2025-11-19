@@ -1,16 +1,22 @@
 {
   "name": "@vencura/core",
   "version": "0.0.1",
-  "type": "module",
   "private": true,
   "description": "TypeScript SDK for Vencura API",
   "license": "PROPRIETARY",
-  "scripts": {
-    "lint": "eslint . --max-warnings 0"
-  },
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.mjs",
+  "types": "./dist/types/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*"
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "require": "./dist/cjs/index.cjs",
+      "import": "./dist/esm/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "@ts-rest/core": "^3.40.0",
@@ -20,6 +26,7 @@
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.32.0",
+    "tsup": "^8.3.5",
     "typescript": "^5.9.2"
   }
 }

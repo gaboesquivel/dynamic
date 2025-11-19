@@ -196,7 +196,7 @@ Our testing strategy emphasizes **blackbox testing** using testnet networks for 
 We mock three tokens for automated transfer testing:
 
 - **USDT (Mocked)**: Tether USD token mock with 6 decimals
-- **USDC (Mocked)**: USD Coin token mock with 6 decimals  
+- **USDC (Mocked)**: USD Coin token mock with 6 decimals
 - **DNMC**: Dynamic Arcade Token (arcade utility token) with 18 decimals
 
 All three tokens are deployed on Arbitrum Sepolia using the `TestToken` contract which provides:

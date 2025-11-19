@@ -106,7 +106,7 @@ export const TronAddressSchema = z
  * Address schema that validates based on chain type.
  * Follows RORO pattern (Receive an Object, Return an Object).
  */
-export function createAddressSchema({ chainType }: { chainType: ChainType }): z.ZodString {
+export function createAddressSchema({ chainType }: { chainType: ChainType }): z.ZodType<string> {
   switch (chainType) {
     case 'evm':
     case 'spark':

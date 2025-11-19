@@ -14,10 +14,6 @@ export interface VencuraClientConfig {
   headers?: Record<string, string>
 }
 
-interface VencuraClientInstance {
-  wallet: ReturnType<typeof initClient<typeof walletAPIContract>>
-}
-
 /**
  * Creates a Vencura API client using ts-rest contracts.
  * Provides type-safe methods for interacting with the Vencura API.
@@ -34,7 +30,7 @@ interface VencuraClientInstance {
  * const wallets = await client.wallet.list()
  * ```
  */
-export function createVencuraClient(config: VencuraClientConfig = {}): VencuraClientInstance {
+export function createVencuraClient(config: VencuraClientConfig = {}) {
   const { baseUrl = '', headers = {} } = config
 
   const client = initClient(walletAPIContract, {

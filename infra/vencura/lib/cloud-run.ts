@@ -1,15 +1,15 @@
-import * as gcp from '@pulumi/gcp';
-import type { Config } from './config';
-import { resourceName } from './config';
-import type { NetworkResources } from './network';
-import type { DatabaseResources } from './database';
-import type { SecretResources } from './secrets';
-import type { ServiceAccountResources } from './service-accounts';
-import type { ArtifactRegistryResources } from './artifact-registry';
-import type { DockerBuildResources } from './docker-build';
+import * as gcp from '@pulumi/gcp'
+import type { Config } from './config'
+import { resourceName } from './config'
+import type { NetworkResources } from './network'
+import type { DatabaseResources } from './database'
+import type { SecretResources } from './secrets'
+import type { ServiceAccountResources } from './service-accounts'
+import type { ArtifactRegistryResources } from './artifact-registry'
+import type { DockerBuildResources } from './docker-build'
 
 export interface CloudRunResources {
-  service: gcp.cloudrun.Service;
+  service: gcp.cloudrun.Service
 }
 
 export function createCloudRun(
@@ -22,7 +22,7 @@ export function createCloudRun(
   dockerBuild: DockerBuildResources,
   provider: gcp.Provider,
 ): CloudRunResources {
-  const serviceName = resourceName(config, 'api');
+  const serviceName = resourceName(config, 'api')
 
   // Cloud Run service
   const service = new gcp.cloudrun.Service(
@@ -33,13 +33,10 @@ export function createCloudRun(
       template: {
         metadata: {
           annotations: {
-            'autoscaling.knative.dev/minScale':
-              config.cloudRunMinInstances.toString(),
-            'autoscaling.knative.dev/maxScale':
-              config.cloudRunMaxInstances.toString(),
+            'autoscaling.knative.dev/minScale': config.cloudRunMinInstances.toString(),
+            'autoscaling.knative.dev/maxScale': config.cloudRunMaxInstances.toString(),
             'run.googleapis.com/cloudsql-instances': database.connectionName,
-            'run.googleapis.com/vpc-access-connector':
-              network.vpcConnector.name,
+            'run.googleapis.com/vpc-access-connector': network.vpcConnector.name,
             'run.googleapis.com/vpc-access-egress': 'private-ranges-only',
           },
           labels: {
@@ -65,10 +62,7 @@ export function createCloudRun(
                 },
                 {
                   name: 'NODE_ENV',
-                  value:
-                    config.environment === 'prod'
-                      ? 'production'
-                      : 'development',
+                  value: config.environment === 'prod' ? 'production' : 'development',
                 },
                 {
                   name: 'DYNAMIC_ENVIRONMENT_ID',
@@ -165,7 +159,7 @@ export function createCloudRun(
         ...(dockerBuild.image ? [dockerBuild.image] : []),
       ],
     },
-  );
+  )
 
   // Allow unauthenticated access (can be restricted later with IAM)
   new gcp.cloudrun.IamMember(
@@ -177,9 +171,9 @@ export function createCloudRun(
       member: 'allUsers',
     },
     { provider, dependsOn: [service] },
-  );
+  )
 
   return {
     service,
-  };
+  }
 }
