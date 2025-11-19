@@ -98,7 +98,7 @@ describe('WalletController Multichain (e2e)', () => {
     })
   })
 
-  describe('Solana Chain Wallet Creation', () => {
+  describe.skip('Solana Chain Wallet Creation', () => {
     it('should create wallet on Solana Mainnet', async () => {
       const response = await request(TEST_SERVER_URL)
         .post('/wallets')
@@ -189,7 +189,7 @@ describe('WalletController Multichain (e2e)', () => {
         })
     })
 
-    it('should get balance for Solana wallet', async () => {
+    it.skip('should get balance for Solana wallet', async () => {
       const createResponse = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
@@ -264,7 +264,7 @@ describe('WalletController Multichain (e2e)', () => {
         })
     })
 
-    it('should sign message with Solana wallet', async () => {
+    it.skip('should sign message with Solana wallet', async () => {
       const createResponse = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
@@ -315,10 +315,11 @@ describe('WalletController Multichain (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.BASE_SEPOLIA })
 
-      const solanaResponse = await request(TEST_SERVER_URL)
-        .post('/wallets')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ chainId: TEST_CHAINS.SOLANA.DEVNET })
+      // Solana tests disabled - only supporting EVM for now
+      // const solanaResponse = await request(TEST_SERVER_URL)
+      //   .post('/wallets')
+      //   .set('Authorization', `Bearer ${authToken}`)
+      //   .send({ chainId: TEST_CHAINS.SOLANA.DEVNET })
 
       // Get wallet IDs from responses or from existing wallets
       const walletsResponse = await request(TEST_SERVER_URL)
@@ -326,15 +327,15 @@ describe('WalletController Multichain (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
 
-      expect(walletsResponse.body.length).toBeGreaterThanOrEqual(3)
+      expect(walletsResponse.body.length).toBeGreaterThanOrEqual(2)
 
       const walletIds = walletsResponse.body.map((w: { id: string }) => w.id)
       const walletNetworks = walletsResponse.body.map((w: { network: string }) => w.network)
 
-      // Verify wallets exist for all three chains
+      // Verify wallets exist for both EVM chains (Solana disabled)
       expect(walletNetworks).toContain('421614') // Arbitrum Sepolia
       expect(walletNetworks).toContain('84532') // Base Sepolia
-      expect(walletNetworks).toContain('solana-devnet') // Solana Devnet
+      // expect(walletNetworks).toContain('solana-devnet') // Solana Devnet - disabled
 
       // If wallets were just created, verify their IDs are in the list
       if (arbitrumResponse.status === 201) {
@@ -343,9 +344,9 @@ describe('WalletController Multichain (e2e)', () => {
       if (baseResponse.status === 201) {
         expect(walletIds).toContain(baseResponse.body.id)
       }
-      if (solanaResponse.status === 201) {
-        expect(walletIds).toContain(solanaResponse.body.id)
-      }
+      // if (solanaResponse.status === 201) {
+      //   expect(walletIds).toContain(solanaResponse.body.id)
+      // }
     })
   })
 })

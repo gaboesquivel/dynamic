@@ -6,6 +6,7 @@ import type { Address } from 'viem'
 import { createWalletClient, createPublicClient, http } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { arbitrumSepolia } from 'viem/chains'
+import { ErrorResponseSchema } from '@vencura/types/api-contracts'
 
 const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
@@ -40,19 +41,40 @@ export async function createTestWallet({
     .set('Authorization', `Bearer ${authToken}`)
     .send({ chainId })
 
-  // Handle "wallet already exists" error gracefully (400 or 500 as fallback)
-  if (response.status === 400 || response.status === 500) {
-    const errorMessage =
-      typeof response.body === 'object' && response.body?.message
-        ? String(response.body.message).toLowerCase()
-        : ''
-    if (
-      errorMessage.includes('wallet already exists') ||
-      errorMessage.includes('multiple wallets per chain') ||
-      errorMessage.includes('failed to create wallet')
-    ) {
-      // Return existing wallet instead of failing
-      return getOrCreateTestWallet({ baseUrl, authToken, chainId })
+  // Handle "multiple wallets per chain" error as SUCCESS (expected behavior)
+  // CRITICAL: This is expected behavior, not a failure - we cannot create multiple wallets with same API key
+  if (response.status === 400) {
+    // Validate error response structure using zod schema
+    const errorResponse = ErrorResponseSchema.safeParse(response.body)
+    if (errorResponse.success) {
+      const errorMessage = errorResponse.data.message.toLowerCase()
+      if (
+        errorMessage.includes('multiple wallets per chain') ||
+        errorMessage.includes('wallet already exists') ||
+        errorMessage.includes('you cannot create multiple wallets')
+      ) {
+        // Extract existing wallet address from error details
+        const existingWalletAddress = errorResponse.data.details?.existingWalletAddress
+
+        if (existingWalletAddress) {
+          // Query wallet by address using GET /wallets endpoint
+          const walletsResponse = await request(baseUrl)
+            .get('/wallets')
+            .set('Authorization', `Bearer ${authToken}`)
+            .expect(200)
+
+          const wallets = walletsResponse.body as TestWallet[]
+          const existingWallet = wallets.find(w => w.address === existingWalletAddress)
+
+          if (existingWallet) {
+            // Return existing wallet - this is SUCCESS (wallet exists, which is what we want)
+            return existingWallet
+          }
+        }
+
+        // Fallback: use getOrCreateTestWallet if we can't find wallet by address
+        return getOrCreateTestWallet({ baseUrl, authToken, chainId })
+      }
     }
   }
 

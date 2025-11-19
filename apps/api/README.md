@@ -217,6 +217,23 @@ Content-Type: application/json
 }
 ```
 
+**Error Response (Multiple Wallets):**
+
+If a wallet already exists for the chain, the API returns a 400 error with details:
+
+```json
+{
+  "message": "Multiple wallets per chain not allowed",
+  "details": {
+    "existingWalletAddress": "0x...",
+    "chainId": 421614,
+    "dynamicNetworkId": "421614"
+  }
+}
+```
+
+**Note**: The `createTestWallet()` helper in tests treats this error as SUCCESS (expected behavior) and returns the existing wallet. This is because Dynamic SDK does not allow creating multiple wallets per chain with the same API key.
+
 ### Get Balance
 
 ```http
@@ -335,6 +352,56 @@ await fetch('/wallets/:id/send', {
 - **Portable**: No vendor lock-in, works with any backend
 
 **Note**: Token balance and supply reads currently require a generic read endpoint (not yet implemented). For now, use client-side RPC calls or implement a read endpoint if needed.
+
+## Error Handling
+
+The API returns enhanced error responses with detailed information for debugging and user guidance. All error responses preserve the exact error messages from Dynamic SDK.
+
+### Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "message": "Exact error message from Dynamic SDK",
+  "details": {
+    "existingWalletAddress": "0x...",
+    "chainId": 421614,
+    "dynamicNetworkId": "421614",
+    "transactionHash": "0x..."
+  }
+}
+```
+
+The `details` object is optional and only included when relevant context is available.
+
+### Error Details Fields
+
+- `existingWalletAddress`: Wallet address that already exists (for multiple wallets errors)
+- `chainId`: Chain ID or Dynamic network ID where the error occurred
+- `dynamicNetworkId`: Dynamic network ID string
+- `transactionHash`: Transaction hash (for transaction-related errors)
+
+### Multiple Wallets Per Chain
+
+**CRITICAL**: Dynamic SDK does not allow creating multiple wallets per chain with the same API key. When attempting to create a duplicate wallet, the API returns a 400 error with the existing wallet address in the `details` object:
+
+```json
+{
+  "message": "Multiple wallets per chain not allowed",
+  "details": {
+    "existingWalletAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+    "chainId": 421614,
+    "dynamicNetworkId": "421614"
+  }
+}
+```
+
+**Test Behavior**: In tests, the `createTestWallet()` helper treats this error as SUCCESS (expected behavior) and returns the existing wallet. This is because wallet existence is the desired outcome, not an error condition.
+
+### Error Message Preservation
+
+All error responses preserve the exact error messages from Dynamic SDK, ensuring transparency and easier debugging. Error classification (authentication, rate limit, network, etc.) is handled automatically, but the original Dynamic SDK message is always returned.
 
 ## Dynamic SDK Integration
 
@@ -512,6 +579,18 @@ E2E tests automatically initialize the database schema and use test environment 
 - **Real Dynamic SDK**: All tests use real Dynamic SDK endpoints (no mocks)
 - **Automated**: Tests run without manual intervention
 - **Comprehensive Coverage**: Tests cover all wallet endpoints, error cases, and multichain scenarios
+- **Error Handling**: Tests handle "multiple wallets per chain" errors as SUCCESS (expected behavior)
+
+### Test Error Handling
+
+**CRITICAL**: Tests treat "multiple wallets per chain" errors as SUCCESS, not failure. This is expected behavior when a wallet already exists for the same API key/chain combination.
+
+- ✅ **SUCCESS**: Wallet creation returns 201 → Test passes
+- ✅ **SUCCESS**: Wallet creation returns 400 with "multiple wallets" → Extract existing wallet, test passes
+- ❌ **FAILURE**: Wallet creation returns 400 with other error → Test fails
+- ❌ **FAILURE**: Wallet creation returns 500 → Test fails
+
+The `createTestWallet()` helper automatically extracts the existing wallet address from error details and returns the existing wallet, ensuring tests pass when wallets already exist.
 
 ### Test Files
 

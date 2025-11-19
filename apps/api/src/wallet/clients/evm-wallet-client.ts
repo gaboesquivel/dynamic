@@ -28,10 +28,13 @@ import {
   BaseWalletClient,
   isHttpException,
   type CreateWalletResult,
+  type CreateWalletParams,
   type BalanceResult,
   type SignMessageResult,
   type SendTransactionResult,
   type SendTransactionParams,
+  handleDynamicSDKError,
+  extractDynamicSDKErrorMessage,
 } from './base-wallet-client'
 import { LoggerService } from '../../common/logger/logger.service'
 
@@ -170,7 +173,7 @@ export class EvmWalletClient extends BaseWalletClient {
     }
   }
 
-  async createWallet(): Promise<CreateWalletResult> {
+  async createWallet(params: CreateWalletParams): Promise<CreateWalletResult> {
     try {
       this.logger.info('Creating EVM wallet', {
         chainId: this.chainMetadata.chainId,
@@ -206,123 +209,44 @@ export class EvmWalletClient extends BaseWalletClient {
       // Return Dynamic SDK result directly (matches CreateWalletResult interface)
       return wallet
     } catch (error) {
-      // Re-throw HTTP exceptions as-is (using safe HttpException check)
-      if (isHttpException(error)) {
-        throw error
-      }
+      // Extract error message for logging
+      const errorMessage = extractDynamicSDKErrorMessage(error) || 'Unknown error'
 
-      // Convert Dynamic SDK errors to appropriate HTTP exceptions
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      const lowerMessage = errorMessage.toLowerCase()
-
-      // Multiple wallets per chain not allowed (400) - Check FIRST before other error types
-      // Check error status code if available (Dynamic SDK errors have status property)
-      const errorStatus = (error as any)?.status || (error as any)?.error?.status
-      // Check nested error message (Dynamic SDK wraps errors)
-      const nestedError = (error as any)?.error
-      const nestedErrorMessage = nestedError ? String(nestedError).toLowerCase() : ''
-      // Check error.cause for Node.js error chaining
-      const causeMessage = (error as any)?.cause?.message
-        ? String((error as any).cause.message).toLowerCase()
-        : ''
-      // Check if nested error is an object with message property
-      const nestedErrorObjMessage =
-        nestedError && typeof nestedError === 'object' && nestedError.message
-          ? String(nestedError.message).toLowerCase()
-          : ''
-      // Check entire error object string representation (catches all properties)
-      let errorString = ''
-      try {
-        errorString = JSON.stringify(error).toLowerCase()
-      } catch {
-        // Ignore circular reference errors
-        errorString = ''
-      }
-
-      if (
-        errorStatus === 400 ||
-        lowerMessage.includes('multiple wallets per chain') ||
-        lowerMessage.includes('wallet already exists') ||
-        nestedErrorMessage.includes('multiple wallets per chain') ||
-        nestedErrorMessage.includes('wallet already exists') ||
-        causeMessage.includes('multiple wallets per chain') ||
-        causeMessage.includes('wallet already exists') ||
-        nestedErrorObjMessage.includes('multiple wallets per chain') ||
-        nestedErrorObjMessage.includes('wallet already exists') ||
-        errorString.includes('multiple wallets per chain') ||
-        errorString.includes('wallet already exists')
-      ) {
-        this.logger.warn('Wallet already exists for chain', {
+      // Log full error structure for debugging (only in test/dev mode)
+      if (process.env.NODE_ENV !== 'production') {
+        const errorStack = error instanceof Error ? error.stack : ''
+        const errorDetails: Record<string, unknown> = {
+          errorType: error?.constructor?.name,
+          hasMessage: !!(error as any)?.message,
+          message: (error as any)?.message,
+          hasStatus: !!(error as any)?.status,
+          status: (error as any)?.status,
+          hasError: !!(error as any)?.error,
+          errorProperty: (error as any)?.error,
+          hasCause: !!(error as any)?.cause,
+          cause: (error as any)?.cause,
+          errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+          stack: errorStack,
+        }
+        try {
+          errorDetails.errorStringified = JSON.stringify(error, null, 2)
+        } catch {
+          errorDetails.errorStringified = '[Circular or non-serializable]'
+        }
+        this.logger.error('Full error structure from Dynamic SDK', {
+          ...errorDetails,
           chainId: this.chainMetadata.chainId,
           dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
         })
-        throw new BadRequestException('Wallet already exists for this chain')
       }
 
-      // Authentication errors (401)
-      if (
-        lowerMessage.includes('authentication') ||
-        lowerMessage.includes('token') ||
-        lowerMessage.includes('unauthorized') ||
-        lowerMessage.includes('auth') ||
-        lowerMessage.includes('credential') ||
-        lowerMessage.includes('permission denied')
-      ) {
-        throw new UnauthorizedException(`Failed to create wallet: ${errorMessage}`)
-      }
-      // Rate limit errors (429)
-      if (
-        lowerMessage.includes('rate limit') ||
-        lowerMessage.includes('throttle') ||
-        lowerMessage.includes('too many') ||
-        lowerMessage.includes('quota') ||
-        lowerMessage.includes('limit exceeded')
-      ) {
-        throw new HttpException(
-          `Failed to create wallet: ${errorMessage}`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        )
-      }
-      // Network errors (502)
-      if (
-        lowerMessage.includes('network') ||
-        lowerMessage.includes('timeout') ||
-        lowerMessage.includes('connection') ||
-        lowerMessage.includes('econnrefused') ||
-        lowerMessage.includes('enotfound') ||
-        lowerMessage.includes('econnreset') ||
-        lowerMessage.includes('socket') ||
-        lowerMessage.includes('dns')
-      ) {
-        throw new BadGatewayException(`Failed to create wallet: ${errorMessage}`)
-      }
-      // Not found errors (404)
-      if (
-        lowerMessage.includes('not found') ||
-        lowerMessage.includes('does not exist') ||
-        lowerMessage.includes('missing') ||
-        lowerMessage.includes('not available')
-      ) {
-        throw new BadRequestException(`Failed to create wallet: ${errorMessage}`)
-      }
-      // Forbidden errors (403)
-      if (
-        lowerMessage.includes('forbidden') ||
-        lowerMessage.includes('access denied') ||
-        lowerMessage.includes('not allowed')
-      ) {
-        throw new UnauthorizedException(`Failed to create wallet: ${errorMessage}`)
-      }
-
-      // Log the error for debugging
-      const errorStack = error instanceof Error ? error.stack : undefined
-      this.logger.error('Dynamic SDK wallet creation error', {
-        message: errorMessage,
-        stack: errorStack,
-        chainId: this.chainMetadata.chainId,
+      // Use shared error handling utility
+      // Include error details for multiple wallets error
+      handleDynamicSDKError(error, 'create wallet', {
+        existingWalletAddress: params.existingWalletAddress || undefined,
+        chainId: params.chainId,
         dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
       })
-      throw new InternalServerErrorException(`Failed to create wallet: ${errorMessage}`)
     }
   }
 
@@ -380,80 +304,11 @@ export class EvmWalletClient extends BaseWalletClient {
         signedMessage: signature,
       }
     } catch (error) {
-      // Re-throw HTTP exceptions as-is (using safe HttpException check)
-      if (isHttpException(error)) {
-        throw error
-      }
-
-      // Convert Dynamic SDK errors to appropriate HTTP exceptions
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      const lowerMessage = errorMessage.toLowerCase()
-
-      // Authentication errors (401)
-      if (
-        lowerMessage.includes('authentication') ||
-        lowerMessage.includes('token') ||
-        lowerMessage.includes('unauthorized') ||
-        lowerMessage.includes('auth') ||
-        lowerMessage.includes('credential') ||
-        lowerMessage.includes('permission denied')
-      ) {
-        throw new UnauthorizedException(`Failed to sign message: ${errorMessage}`)
-      }
-      // Rate limit errors (429)
-      if (
-        lowerMessage.includes('rate limit') ||
-        lowerMessage.includes('throttle') ||
-        lowerMessage.includes('too many') ||
-        lowerMessage.includes('quota') ||
-        lowerMessage.includes('limit exceeded')
-      ) {
-        throw new HttpException(
-          `Failed to sign message: ${errorMessage}`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        )
-      }
-      // Network errors (502)
-      if (
-        lowerMessage.includes('network') ||
-        lowerMessage.includes('timeout') ||
-        lowerMessage.includes('connection') ||
-        lowerMessage.includes('econnrefused') ||
-        lowerMessage.includes('enotfound') ||
-        lowerMessage.includes('econnreset') ||
-        lowerMessage.includes('socket') ||
-        lowerMessage.includes('dns')
-      ) {
-        throw new BadGatewayException(`Failed to sign message: ${errorMessage}`)
-      }
-      // Not found errors (404)
-      if (
-        lowerMessage.includes('not found') ||
-        lowerMessage.includes('does not exist') ||
-        lowerMessage.includes('missing') ||
-        lowerMessage.includes('not available')
-      ) {
-        throw new BadRequestException(`Failed to sign message: ${errorMessage}`)
-      }
-      // Forbidden errors (403)
-      if (
-        lowerMessage.includes('forbidden') ||
-        lowerMessage.includes('access denied') ||
-        lowerMessage.includes('not allowed')
-      ) {
-        throw new UnauthorizedException(`Failed to sign message: ${errorMessage}`)
-      }
-
-      // Log the error for debugging
-      const errorStack = error instanceof Error ? error.stack : undefined
-      this.logger.error('Dynamic SDK sign message error', {
-        message: errorMessage,
-        stack: errorStack,
-        address,
+      // Use shared error handling utility
+      handleDynamicSDKError(error, 'sign message', {
         chainId: this.chainMetadata.chainId,
         dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
       })
-      throw new InternalServerErrorException(`Failed to sign message: ${errorMessage}`)
     }
   }
 
@@ -554,81 +409,12 @@ export class EvmWalletClient extends BaseWalletClient {
         transactionHash: hash,
       }
     } catch (error) {
-      // Re-throw HTTP exceptions as-is (using safe HttpException check)
-      if (isHttpException(error)) {
-        throw error
-      }
-
-      // Convert Dynamic SDK errors to appropriate HTTP exceptions
-      const errorMessage = error instanceof Error ? error.message : String(error)
-      const lowerMessage = errorMessage.toLowerCase()
-
-      // Authentication errors (401)
-      if (
-        lowerMessage.includes('authentication') ||
-        lowerMessage.includes('token') ||
-        lowerMessage.includes('unauthorized') ||
-        lowerMessage.includes('auth') ||
-        lowerMessage.includes('credential') ||
-        lowerMessage.includes('permission denied')
-      ) {
-        throw new UnauthorizedException(`Failed to send transaction: ${errorMessage}`)
-      }
-      // Rate limit errors (429)
-      if (
-        lowerMessage.includes('rate limit') ||
-        lowerMessage.includes('throttle') ||
-        lowerMessage.includes('too many') ||
-        lowerMessage.includes('quota') ||
-        lowerMessage.includes('limit exceeded')
-      ) {
-        throw new HttpException(
-          `Failed to send transaction: ${errorMessage}`,
-          HttpStatus.TOO_MANY_REQUESTS,
-        )
-      }
-      // Network errors (502)
-      if (
-        lowerMessage.includes('network') ||
-        lowerMessage.includes('timeout') ||
-        lowerMessage.includes('connection') ||
-        lowerMessage.includes('econnrefused') ||
-        lowerMessage.includes('enotfound') ||
-        lowerMessage.includes('econnreset') ||
-        lowerMessage.includes('socket') ||
-        lowerMessage.includes('dns')
-      ) {
-        throw new BadGatewayException(`Failed to send transaction: ${errorMessage}`)
-      }
-      // Not found errors (404)
-      if (
-        lowerMessage.includes('not found') ||
-        lowerMessage.includes('does not exist') ||
-        lowerMessage.includes('missing') ||
-        lowerMessage.includes('not available')
-      ) {
-        throw new BadRequestException(`Failed to send transaction: ${errorMessage}`)
-      }
-      // Forbidden errors (403)
-      if (
-        lowerMessage.includes('forbidden') ||
-        lowerMessage.includes('access denied') ||
-        lowerMessage.includes('not allowed')
-      ) {
-        throw new UnauthorizedException(`Failed to send transaction: ${errorMessage}`)
-      }
-
-      // Log the error for debugging
-      const errorStack = error instanceof Error ? error.stack : undefined
-      this.logger.error('Dynamic SDK send transaction error', {
-        message: errorMessage,
-        stack: errorStack,
-        address,
-        to: params.to,
+      // Use shared error handling utility
+      // Extract transaction hash if available (from successful send before error)
+      handleDynamicSDKError(error, 'send transaction', {
         chainId: this.chainMetadata.chainId,
         dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
       })
-      throw new InternalServerErrorException(`Failed to send transaction: ${errorMessage}`)
     }
   }
 }

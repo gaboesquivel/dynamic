@@ -22,6 +22,7 @@ import type {
   SignMessageResult,
   SendTransactionResult,
 } from './clients/base-wallet-client'
+import { isHttpException } from './clients/base-wallet-client'
 import * as schema from '../database/schema/index'
 import { eq, and } from 'drizzle-orm'
 import { keySharesSchema, chainTypeSchema, parseJsonWithSchema } from '@vencura/lib'
@@ -56,6 +57,31 @@ export class WalletService {
     return wallet
   }
 
+  /**
+   * Helper method to get existing wallet by userId and network (Dynamic network ID).
+   * Returns wallet address if found, null otherwise.
+   * Used to provide existing wallet address in error details when multiple wallets error occurs.
+   *
+   * @param userId - User ID
+   * @param network - Dynamic network ID (string)
+   * @returns Wallet address if found, null otherwise
+   */
+  async getExistingWalletByChain({
+    userId,
+    network,
+  }: {
+    userId: string
+    network: string
+  }): Promise<string | null> {
+    const [wallet] = await this.db
+      .select({ address: schema.wallets.address })
+      .from(schema.wallets)
+      .where(and(eq(schema.wallets.userId, userId), eq(schema.wallets.network, network)))
+      .limit(1)
+
+    return wallet?.address || null
+  }
+
   async createWallet(
     userId: string,
     chainId: number | string,
@@ -87,8 +113,19 @@ export class WalletService {
       if (!walletClient)
         throw new BadRequestException(`Wallet client not available for chain: ${chainId}`)
 
-      // Create wallet using chain-specific client
-      const wallet = await walletClient.createWallet()
+      // Check for existing wallet before attempting creation
+      // This allows us to provide existing wallet address in error details if creation fails
+      const existingWalletAddress = await this.getExistingWalletByChain({
+        userId,
+        network: dynamicNetworkId,
+      })
+
+      // Create wallet using chain-specific client (pass userId and chainId via RORO pattern)
+      const wallet = await walletClient.createWallet({
+        userId,
+        chainId,
+        existingWalletAddress,
+      })
 
       // Encrypt and store the key shares
       const keySharesEncrypted = await this.encryptionService.encrypt(
@@ -113,12 +150,41 @@ export class WalletService {
         chainType,
       }
     } catch (error) {
-      // Re-throw HTTP exceptions as-is (BadRequestException, etc.)
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException ||
-        error instanceof InternalServerErrorException
-      ) {
+      // Re-throw HTTP exceptions, but enrich with existing wallet address if multiple wallets error
+      if (isHttpException(error)) {
+        // If it's a BadRequestException with multiple wallets error, enrich with existing wallet address
+        const errorResponse = error.getResponse()
+        if (
+          error.getStatus() === 400 &&
+          errorResponse &&
+          typeof errorResponse === 'object' &&
+          'message' in errorResponse
+        ) {
+          const message = String(errorResponse.message).toLowerCase()
+          if (
+            message.includes('multiple wallets') ||
+            message.includes('wallet already exists') ||
+            message.includes('you cannot create multiple wallets')
+          ) {
+            // Query for existing wallet address if not already provided
+            const existingWalletAddress =
+              (errorResponse as any).details?.existingWalletAddress ||
+              (await this.getExistingWalletByChain({
+                userId,
+                network: dynamicNetworkId,
+              }))
+
+            // Re-throw with enriched error details
+            throw new BadRequestException({
+              message: errorResponse.message,
+              details: {
+                existingWalletAddress: existingWalletAddress || undefined,
+                chainId,
+                dynamicNetworkId,
+              },
+            })
+          }
+        }
         throw error
       }
 

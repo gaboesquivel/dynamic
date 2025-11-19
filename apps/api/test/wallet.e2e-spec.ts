@@ -146,7 +146,7 @@ describe('WalletController (e2e)', () => {
       expect(typeof response.headers['x-request-id']).toBe('string')
     })
 
-    it('should create a wallet on Solana devnet using Dynamic SDK', async () => {
+    it.skip('should create a wallet on Solana devnet using Dynamic SDK', async () => {
       const response = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)

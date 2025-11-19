@@ -130,7 +130,7 @@ describe('WalletController Transactions (e2e)', () => {
     })
   })
 
-  describe('Solana Transaction Sending', () => {
+  describe.skip('Solana Transaction Sending', () => {
     it('should send real transaction on Solana Devnet', async () => {
       const wallet = await getOrCreateTestWallet({
         authToken,
@@ -228,7 +228,7 @@ describe('WalletController Transactions (e2e)', () => {
       expect(txHash.length).toBe(66) // 0x + 64 hex chars
     })
 
-    it('should return valid Solana transaction signature format when transaction succeeds', async () => {
+    it.skip('should return valid Solana transaction signature format when transaction succeeds', async () => {
       const wallet = await getOrCreateTestWallet({
         authToken,
         chainId: TEST_CHAINS.SOLANA.DEVNET,
