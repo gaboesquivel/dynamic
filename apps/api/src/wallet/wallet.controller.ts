@@ -1,4 +1,15 @@
-import { Controller, Post, Get, Body, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common'
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Res,
+} from '@nestjs/common'
+import type { Response } from 'express'
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 import { WalletService } from './wallet.service'
@@ -43,16 +54,36 @@ export class WalletController {
   }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 wallet creations per minute
   @ApiOperation({
     summary: 'Create a new custodial wallet',
     description:
-      'Create a wallet on any supported chain. Provide chainId as a number (e.g., 421614 for Arbitrum Sepolia) or Dynamic network ID string (e.g., "solana-mainnet" for Solana).',
+      'Create a wallet on any supported chain. Provide chainId as a number (e.g., 421614 for Arbitrum Sepolia) or Dynamic network ID string (e.g., "solana-mainnet" for Solana). Returns 201 for new wallets, 200 for existing wallets (idempotent).',
   })
   @ApiResponse({
     status: 201,
     description: 'Wallet created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string' },
+        address: { type: 'string' },
+        network: {
+          type: 'string',
+          description: 'Dynamic network ID',
+          example: '421614',
+        },
+        chainType: {
+          type: 'string',
+          description: 'Chain type',
+          example: 'evm',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Wallet already exists (idempotent)',
     schema: {
       type: 'object',
       properties: {
@@ -76,8 +107,19 @@ export class WalletController {
   async createWallet(
     @CurrentUser() user: { id: string; email: string },
     @Body() createWalletDto: CreateWalletDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.walletService.createWallet(user.id, createWalletDto.chainId)
+    const walletResult = await this.walletService.createWallet(user.id, createWalletDto.chainId)
+
+    // Return 200 if wallet already existed, 201 if newly created (idempotent creation)
+    res.status(walletResult.isNew ? HttpStatus.CREATED : HttpStatus.OK)
+
+    return {
+      id: walletResult.id,
+      address: walletResult.address,
+      network: walletResult.network,
+      chainType: walletResult.chainType,
+    }
   }
 
   @Get(':id/balance')

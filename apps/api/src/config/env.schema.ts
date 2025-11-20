@@ -56,7 +56,6 @@ export type EnvSchema = z.infer<typeof envSchema>
  */
 export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}): EnvSchema {
   // Prepare env object with defaults (matching Next.js pattern)
-  const nodeEnv = env.NODE_ENV || 'development'
   const envData: NodeJS.ProcessEnv = {
     ...env,
     // Set defaults for optional fields (matching Next.js behavior)
@@ -65,5 +64,5 @@ export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } =
   }
 
   // Use @lib's validateEnvOrThrow for NestJS pattern
-  return validateEnvOrThrow({ schema: envSchema, env: envData }) as EnvSchema
+  return validateEnvOrThrow({ schema: envSchema, env: envData })
 }

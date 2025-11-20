@@ -1,4 +1,4 @@
-import { isPlainObject } from 'lodash'
+import isPlainObject from 'lodash/isPlainObject'
 
 /**
  * Extracts error message from various error types.

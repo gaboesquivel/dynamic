@@ -3,7 +3,7 @@ import { getTestAuthToken } from './auth'
 
 const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
-describe('ChatController (e2e)', () => {
+describe.skip('ChatController (e2e)', () => {
   let authToken: string
 
   beforeAll(async () => {

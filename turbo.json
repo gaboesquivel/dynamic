@@ -59,7 +59,8 @@
         "TEST_SERVER_URL",
         "TEST_SERVER_PORT",
         "TEST_SERVER_PID",
-        "ARB_TESTNET_GAS_FAUCET_KEY"
+        "ARB_TESTNET_GAS_FAUCET_KEY",
+        "PLAYWRIGHT_TEST_BASE_URL"
       ]
     },
     "check-types": {
@@ -67,39 +68,18 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "env": [
-        "TEST_SERVER_URL",
-        "TEST_SERVER_PORT",
-        "TEST_SERVER_PID",
-        "ARB_TESTNET_GAS_FAUCET_KEY"
-      ]
+      "cache": false,
+      "outputs": []
     },
     "test:coverage": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": ["coverage/**"]
+      "cache": false,
+      "outputs": []
     },
     "test:e2e": {
       "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*", "e2e/**", "playwright.config.ts"],
-      "outputs": ["playwright-report/**", "test-results/**"],
-      "env": [
-        "DYNAMIC_ENVIRONMENT_ID",
-        "DYNAMIC_API_TOKEN",
-        "ENCRYPTION_KEY",
-        "USE_LOCAL_BLOCKCHAIN",
-        "RPC_URL_*",
-        "TEST_AUTH_TOKEN",
-        "NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID",
-        "NEXT_PUBLIC_API_URL",
-        "NEXT_PUBLIC_SENTRY_DSN",
-        "NEXT_PUBLIC_SENTRY_ENVIRONMENT",
-        "PORT",
-        "PLAYWRIGHT_TEST_BASE_URL",
-        "CI",
-        "NODE_ENV"
-      ]
+      "cache": false,
+      "outputs": []
     },
     "dev": {
       "cache": false,

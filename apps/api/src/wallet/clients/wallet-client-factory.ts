@@ -1,13 +1,19 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Inject } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { getChainMetadata, getChainType } from '../../common/chains'
+import { LoggerService } from '../../common/logger/logger.service'
+import { RateLimitService } from '../../common/rate-limit.service'
 import { BaseWalletClient } from './base-wallet-client'
 import { EvmWalletClient } from './evm-wallet-client'
 import { SolanaWalletClient } from './solana-wallet-client'
 
 @Injectable()
 export class WalletClientFactory {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly rateLimitService: RateLimitService,
+    @Inject(LoggerService) private readonly logger: LoggerService,
+  ) {}
 
   /**
    * Create appropriate wallet client based on chain type
@@ -21,9 +27,19 @@ export class WalletClientFactory {
 
     switch (chainType) {
       case 'evm':
-        return new EvmWalletClient(this.configService, chainMetadata)
+        return new EvmWalletClient(
+          this.configService,
+          chainMetadata,
+          this.rateLimitService,
+          this.logger,
+        )
       case 'solana':
-        return new SolanaWalletClient(this.configService, chainMetadata)
+        return new SolanaWalletClient(
+          this.configService,
+          chainMetadata,
+          this.rateLimitService,
+          this.logger,
+        )
       // Add other chain types as they become supported
       case 'cosmos':
       case 'bitcoin':

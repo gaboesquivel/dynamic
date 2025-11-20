@@ -1,3 +1,2 @@
-export * from './users'
-export * from './wallets'
+export * from './key-shares'
 export * from './token-metadata'

@@ -1,26 +1,26 @@
 {
+  "preset": "ts-jest/presets/default",
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": "\\.e2e-spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": ["ts-jest", {
-      "useESM": false,
+    "^.+\\.ts$": ["ts-jest", {
       "tsconfig": {
-        "esModuleInterop": true,
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "resolvePackageJsonExports": false
+        "module": "CommonJS",
+        "moduleResolution": "node"
       }
     }]
   },
+  "transformIgnorePatterns": [],
   "globalSetup": "<rootDir>/setup-server.ts",
   "globalTeardown": "<rootDir>/teardown-server.ts",
   "setupFilesAfterEnv": ["<rootDir>/setup.ts"],
   "testTimeout": 120000,
   "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/../src/$1",
-    "^@cosmjs/encoding$": "<rootDir>/__mocks__/@cosmjs-encoding.ts"
+    "^@cosmjs/encoding$": "<rootDir>/__mocks__/@cosmjs-encoding.ts",
+    "^@vencura/lib$": "<rootDir>/../../../packages/lib/dist/cjs/index.cjs"
   },
   "collectCoverageFrom": [
     "src/**/*.(t|j)s",

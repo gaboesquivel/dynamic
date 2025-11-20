@@ -242,6 +242,37 @@ await updateUser({
 - Dynamic SDK's node wallet clients **do not support** custom wallet metadata
 - All backend operations require our database for wallet lookups and key retrieval
 
+## Rate Limit Handling
+
+The API automatically handles Dynamic SDK rate limits with centralized retry logic:
+
+### Dynamic SDK Rate Limits
+
+- **SDK endpoints** (`/sdk`): 100 requests per minute per IP, 10,000 requests per minute per project environment
+- **Developer endpoints**: 1,500 requests per minute per IP, 3,000 requests per minute per project environment
+
+We use SDK endpoints, so the API implements safeguards for **100 req/min per IP** and **10,000 req/min per project environment**.
+
+### Retry Strategy
+
+All Dynamic SDK calls are wrapped with `RateLimitService.retryWithBackoff()` which:
+
+- Detects 429 errors via status code or error message
+- Retries with exponential backoff and jitter
+- Respects `Retry-After` header if present
+- Logs retry attempts for monitoring
+- Throws error after max retries exhausted
+
+### Configuration
+
+Rate limit behavior is configurable via environment variables:
+
+- `DYNAMIC_RATE_LIMIT_MAX_RETRIES` (default: 5)
+- `DYNAMIC_RATE_LIMIT_BASE_DELAY_MS` (default: 1000)
+- `DYNAMIC_RATE_LIMIT_MAX_DELAY_MS` (default: 30000)
+
+See [ADR 016](../apps/api/.adrs/016-dynamic-sdk-rate-limits.md) for detailed implementation information.
+
 ## Future Enhancements
 
 - **Generic read endpoint**: For token balance and supply reads

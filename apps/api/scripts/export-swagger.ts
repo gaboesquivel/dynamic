@@ -19,12 +19,10 @@ import { NestFactory } from '@nestjs/core'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { writeFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const require = createRequire(import.meta.url)
 
 const exportSwagger = async () => {
   try {
@@ -37,15 +35,15 @@ const exportSwagger = async () => {
       process.exit(0)
     }
 
-    // Use require for CommonJS compatibility with compiled NestJS modules
+    // Use dynamic import for ESM compatibility with compiled NestJS modules
     // Wrap in try-catch to handle module loading errors gracefully
     let AppModule
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      AppModule = require('../dist/app.module.js').AppModule
-    } catch (requireError) {
-      const errorMessage =
-        requireError instanceof Error ? requireError.message : String(requireError)
+      const moduleUrl = pathToFileURL(appModulePath).href
+      const module = await import(moduleUrl)
+      AppModule = module.AppModule
+    } catch (importError) {
+      const errorMessage = importError instanceof Error ? importError.message : String(importError)
       console.error('Failed to load AppModule:', errorMessage)
       console.warn('Swagger export failed, but continuing build...')
       process.exit(0)

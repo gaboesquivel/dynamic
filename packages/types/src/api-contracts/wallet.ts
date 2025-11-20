@@ -13,6 +13,30 @@ import {
 const c = initContract()
 
 /**
+ * Error details schema for enhanced error responses.
+ * Optional fields provide context for debugging and user guidance.
+ */
+export const ErrorDetailsSchema = z.object({
+  existingWalletAddress: z.string().optional(),
+  chainId: z.union([z.number(), z.string()]).optional(),
+  dynamicNetworkId: z.string().optional(),
+  transactionHash: z.string().optional(),
+  retryAfter: z.number().optional(),
+})
+
+export type ErrorDetails = z.infer<typeof ErrorDetailsSchema>
+
+/**
+ * Error response schema with message and optional details.
+ */
+export const ErrorResponseSchema = z.object({
+  message: z.string(),
+  details: ErrorDetailsSchema.optional(),
+})
+
+export type ErrorResponse = z.infer<typeof ErrorResponseSchema>
+
+/**
  * Wallet API contract defining all wallet-related endpoints.
  * This API contract is shared between backend, SDK, and frontend for type safety.
  */
@@ -30,18 +54,19 @@ export const walletAPIContract = c.router({
     summary: 'Get all wallets for the authenticated user',
   },
   /**
-   * Create a new custodial wallet.
+   * Create a new custodial wallet (idempotent).
    */
   create: {
     method: 'POST',
     path: '/wallets',
     body: CreateWalletInput,
     responses: {
-      201: Wallet,
-      400: z.object({ message: z.string() }),
+      200: Wallet, // Idempotent creation - wallet already exists
+      201: Wallet, // New wallet created
+      400: ErrorResponseSchema,
       401: z.object({ message: z.string() }),
     },
-    summary: 'Create a new custodial wallet',
+    summary: 'Create a new custodial wallet (idempotent)',
   },
   /**
    * Get wallet balance.

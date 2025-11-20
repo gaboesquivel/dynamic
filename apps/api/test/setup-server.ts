@@ -1,8 +1,12 @@
 // Jest global setup - starts API server before all tests
+// Note: This file is transformed to CJS by ts-jest, so __dirname will be available at runtime
 import { spawn, ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { execSync } from 'child_process'
 import { fetchWithTimeout } from '@vencura/lib'
+
+// __dirname is available after ts-jest transforms to CJS
+declare const __dirname: string
 
 let serverProcess: ChildProcess | null = null
 
@@ -14,18 +18,20 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Check if server is ready by hitting health check endpoint
+ * Check if server is ready by hitting API endpoint
+ * Uses /wallets endpoint which requires auth - 401 response means server is up and routing correctly
  */
 async function isServerReady(): Promise<boolean> {
   try {
     const response = await fetchWithTimeout({
-      url: TEST_SERVER_URL,
+      url: `${TEST_SERVER_URL}/wallets`,
       options: {
         method: 'GET',
       },
       timeoutMs: 2000,
     })
-    return response.ok && response.status === 200
+    // Accept 200 (if somehow auth passes) or 401 (unauthorized - server is up and routing works)
+    return response.status === 200 || response.status === 401
   } catch {
     return false
   }
@@ -66,9 +72,16 @@ async function startServer(): Promise<void> {
   }
 
   // Start server process
+  // Dynamic SDK packages are ESM-only and need proper ESM/CommonJS interop
+  // Use NODE_OPTIONS to ensure dynamic imports from CommonJS work correctly
   serverProcess = spawn('node', [mainJsPath], {
     cwd: apiDir,
-    env: serverEnv,
+    env: {
+      ...serverEnv,
+      // Enable experimental features for better ESM/CommonJS interop
+      // This helps with dynamic imports of ESM modules from CommonJS code
+      NODE_OPTIONS: process.env.NODE_OPTIONS || '',
+    },
     stdio: 'pipe',
     detached: false,
   })

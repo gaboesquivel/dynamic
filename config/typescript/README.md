@@ -76,12 +76,14 @@ This package is part of the monorepo and is automatically available to all packa
 ### Base Configuration Options
 
 - **Target**: ES2022
-- **Module**: NodeNext
-- **Module Resolution**: NodeNext
+- **Module**: ESNext
+- **Module Resolution**: Bundler
 - **Strict Mode**: Enabled
 - **Lib**: ES2022, DOM, DOM.Iterable
 - **Declaration**: Enabled (for library packages)
 - **No Unchecked Indexed Access**: Enabled (safer array/object access)
+
+**Note:** Some infrastructure tooling (e.g., Pulumi) or framework-specific tooling (e.g., Anchor/Solana) may intentionally use CommonJS and Node resolution. These are acceptable exceptions.
 
 ### Next.js Specific Options
 

@@ -1,10 +1,8 @@
-import { Injectable, UnauthorizedException, Inject } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { isEmpty } from 'lodash'
+import isEmpty from 'lodash/isEmpty'
 import jwt from 'jsonwebtoken'
 import { z } from 'zod'
-import * as schema from '../database/schema'
-import { eq } from 'drizzle-orm'
 import { fetchWithTimeout, getErrorMessage } from '@vencura/lib'
 
 // Zod schema for Dynamic API public key response
@@ -26,11 +24,7 @@ const jwtPayloadSchema = z.object({
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly configService: ConfigService,
-    @Inject('DATABASE')
-    private readonly db: ReturnType<typeof import('drizzle-orm/pglite').drizzle>,
-  ) {}
+  constructor(private readonly configService: ConfigService) {}
 
   private async getPublicKey(): Promise<string> {
     const environmentId = this.configService.get<string>('dynamic.environmentId')
@@ -57,6 +51,7 @@ export class AuthService {
   /**
    * Verify API key for testing purposes (test mode only).
    * Returns a consistent test user based on environment ID.
+   * No longer stores users in DB - relies on Dynamic SDK for user management.
    */
   async verifyApiKeyForTesting(apiToken: string): Promise<{ id: string; email: string }> {
     const expectedApiToken = this.configService.get<string>('dynamic.apiToken')
@@ -69,15 +64,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid API token for testing')
 
     const testUserId = `test-user-${environmentId}`
-    const [existingUser] = await this.db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.id, testUserId))
-      .limit(1)
-
-    if (!existingUser)
-      await this.db.insert(schema.users).values({ id: testUserId, email: 'test@vencura.test' })
-
+    // No longer store users in DB - return user info directly
     return { id: testUserId, email: 'test@vencura.test' }
   }
 
@@ -91,14 +78,7 @@ export class AuthService {
       const userId = decoded.sub
       const email = decoded.email || ''
 
-      const [existingUser] = await this.db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .limit(1)
-
-      if (!existingUser) await this.db.insert(schema.users).values({ id: userId, email })
-
+      // No longer store users in DB - return user info directly from JWT
       return { id: userId, email }
     } catch (error) {
       if (error instanceof UnauthorizedException) throw error

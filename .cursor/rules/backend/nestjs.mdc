@@ -3,99 +3,42 @@ description: NestJS backend development standards and patterns
 globs: *.ts,**/*module.ts,**/*service.ts,**/*controller.ts
 alwaysApply: false
 ---
+
 # NestJS Rules
 
 ## Module Structure
-- Organize code by domain/feature modules
+- Organize by domain/feature modules
 - Keep modules focused and single-purpose
 
+## ESM Patterns
+**Never use `__dirname` or `__filename`** - use ESM pattern:
+```typescript
+import { fileURLToPath } from 'node:url'
+import { dirname } from 'node:path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+```
+
+**Never use `require()`** - use dynamic `import()`:
+```typescript
+import { pathToFileURL } from 'node:url'
+const moduleUrl = pathToFileURL(join(__dirname, '../dist/app.module.js')).href
+const { AppModule } = await import(moduleUrl)
+```
+
 ## API Design
-- Use DTOs with class-validator for input validation
-  - **DTOs (Data Transfer Objects)** in NestJS controllers should use `class-validator` decorators
-  - This is the NestJS standard and exception to the zod preference
-- Use zod for all other schemas (tool parameters, environment variables, internal validation)
+- **DTOs use `class-validator`** (exception to zod preference for NestJS standard)
+- Use zod for tool parameters, environment variables, and internal validation
 - Document APIs with Swagger/OpenAPI
 
 ## Utility Libraries
-- **@vencura/lib**: Shared utility library for common operations
-  - **Error utilities**: Use `sanitizeErrorMessage` in exception filters for production error sanitization
-  - **Async utilities**: Use `fetchWithTimeout` for external API calls (addresses security LOW-003)
-  - **Error handling**: Use `getErrorMessage` to extract error messages consistently
-  - Import from `@vencura/lib`: `import { sanitizeErrorMessage, fetchWithTimeout } from '@vencura/lib'`
-
-## Database Access
-- Use the repository pattern for database operations
-- Use Drizzle for database interactions
-- Optimize database queries for performance
+- **@vencura/lib**: Use `sanitizeErrorMessage` in exception filters, `fetchWithTimeout` for external APIs, `getErrorMessage` for error extraction
 
 ## AI/Streaming Integration
-- **@ai-sdk/core**: Use for provider-agnostic AI integration
-  - Use `streamText` for streaming chat responses
-  - Use `tool()` function for defining AI tools
-  - Support both streaming and non-streaming modes
-- **Server-Sent Events (SSE)**: Implement streaming responses
-  - Use `@Res()` decorator with Express Response
-  - Set proper headers: `Content-Type: text/event-stream`, `Cache-Control: no-cache`, `Connection: keep-alive`
-  - Stream chunks with `data: {json}\n\n` format
-  - End stream with `data: [DONE]\n\n`
-- **Tool Definitions**: Expose API endpoints as AI tools
-  - Use Zod schemas for tool parameters
-  - Wrap existing service methods
-  - Handle errors and return structured responses
-  - Pass user context for authorization
+- **@ai-sdk/core**: Use `streamText` for streaming, `tool()` for tool definitions
+- **SSE format**: `data: {json}\n\n` chunks, end with `data: [DONE]\n\n`
+- **Tool definitions**: Use Zod schemas, wrap service methods, pass user context
 
 ## Environment Variables
-
-### File Structure Pattern
-
-All NestJS apps follow a consistent environment variable pattern:
-
-**Files:**
-- `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- `.env.development` - Development configuration (committed, non-sensitive)
-- `.env.staging` - Staging configuration (committed, non-sensitive)
-- `.env.production` - Production configuration (committed, non-sensitive)
-- `.env-example` - Template for `.env` file (shows required sensitive variables)
-
-**Loading Priority (highest to lowest):**
-1. `.env` (sensitive data, never committed, overrides everything)
-2. `.env.development` / `.env.staging` / `.env.production` / `.env.test` (based on NODE_ENV, committed configs)
-
-**Manual Loading Required:**
-NestJS requires manual loading via `loadEnv()` function (see `src/config/load-env.ts`). Call this before app initialization.
-
-### Validation Pattern
-
-Always use Zod for environment variable validation:
-
-```typescript
-import { z } from 'zod'
-
-const envSchema = z.object({
-  DYNAMIC_ENVIRONMENT_ID: z.string().min(1, 'DYNAMIC_ENVIRONMENT_ID is required'),
-  DYNAMIC_API_TOKEN: z.string().min(1, 'DYNAMIC_API_TOKEN is required'),
-  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters'),
-  PORT: z.string().regex(/^\d+$/).default('3077').transform(val => parseInt(val, 10)).pipe(z.number().int().positive()),
-})
-
-export type EnvSchema = z.infer<typeof envSchema>
-
-export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}) {
-  const result = envSchema.safeParse(env)
-  if (!result.success) {
-    const errors = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('\n')
-    throw new Error(`Environment validation failed:\n${errors}`)
-  }
-  return result.data
-}
-```
-
-**Key Points:**
-- Use Zod schemas for all environment variable validation
-- Define explicit return types for validation functions
-- Use `.default()` for optional fields with defaults
-- Use `.transform()` and `.pipe()` for type coercion
-- Throw errors with clear messages on validation failure
-
-## Testing
-- Implement API testing, input output validation
+See [Environment Rules](../base/environment.mdc) for pattern. NestJS requires manual `loadEnv()` call before app initialization.

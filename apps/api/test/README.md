@@ -2,22 +2,22 @@
 
 ## Blackbox Testing Strategy
 
-Our testing strategy emphasizes **blackbox testing** using local chains for automation. This approach ensures end-to-end validation while maintaining fast, reliable test execution.
+Our testing strategy emphasizes **blackbox testing** using testnet networks for automation. This approach ensures end-to-end validation while maintaining fast, reliable test execution.
 
 ### Core Principles
 
 1. **Blackbox Testing Only**: All API tests are blackbox - they only interact with HTTP endpoints, no unit tests. This ensures we test the complete flow from HTTP request to blockchain transaction.
 
-2. **Local Chain Automation**: We spin up a local Anvil blockchain automatically before tests run to save gas costs and eliminate network dependencies.
+2. **Testnet-Only Mode**: Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614). We previously explored local blockchain testing (Anvil) but removed it because Dynamic SDK doesn't support localhost chains. Dynamic SDK requires real network IDs that it recognizes, so we cannot use local chains even with RPC URL overrides.
 
-3. **Test Tokens with Open Mint**: We deploy test tokens (USDT, USDC, DNMC) using the `TestToken` contract with open minting functionality, allowing any wallet to mint tokens as a faucet.
+3. **Test Tokens with Open Mint**: Test tokens (USDT, USDC, DNMC) are deployed on Arbitrum Sepolia using the `TestToken` contract with open minting functionality, allowing any wallet to mint tokens as a faucet.
 
 4. **Dynamic SDK Integration**: All transaction signing uses the real Dynamic SDK (no mocks), ensuring we test against actual wallet infrastructure.
 
 ### Testing Flow
 
-1. **Spin up local chain**: Anvil starts automatically before tests run
-2. **Deploy test tokens**: Test tokens (USDT, USDC, DNMC) are automatically deployed to Anvil with open mint functionality
+1. **Use testnet**: All tests run against Arbitrum Sepolia testnet (chain ID: 421614)
+2. **Test tokens**: Test tokens (USDT, USDC, DNMC) are deployed on Arbitrum Sepolia with open mint functionality
 3. **Use Dynamic SDK**: All wallet operations and transaction signing use the real Dynamic SDK
 4. **Blackbox test endpoints**: Tests hit HTTP endpoints only, verifying complete end-to-end functionality
 
@@ -48,10 +48,7 @@ All three tokens are deployed using the `TestToken` contract which provides:
 - Transferring tokens to another address via the API transaction endpoint
 - Verifying transaction success and hash format
 
-**Token Addresses**: Token addresses are automatically detected based on environment:
-
-- **Local Chain**: Tokens are deployed to Anvil and addresses are stored after deployment
-- **Testnet**: Tokens use hardcoded addresses on Arbitrum Sepolia (Chain ID: 421614)
+**Token Addresses**: Token addresses use hardcoded addresses on Arbitrum Sepolia (Chain ID: 421614). All test tokens are deployed on the testnet and their addresses are configured in test fixtures.
 
 See [EVM Contracts README](../../../contracts/evm/README.md) for token contract details.
 
@@ -121,6 +118,34 @@ Since accounts persist and may have existing balances, tests should:
 1. **Read initial balance** before operations using `getInitialBalance()` helper
 2. **Assert balance deltas** instead of absolute values using `assertBalanceDelta()` helper
 3. **Use tolerance** for floating-point comparisons (default: 0.0001)
+4. **Validate responses** using TS-REST runtime schemas from `walletAPIContract.getBalance.responses[200]`
+
+**Delta-Based Testing Example:**
+
+```typescript
+// Get initial balance and validate with TS-REST schema
+const balanceBeforeResponse = await request(TEST_SERVER_URL)
+  .get(`/wallets/${wallet.id}/balance`)
+  .set('Authorization', `Bearer ${authToken}`)
+  .expect(200)
+
+const BalanceSchema = walletAPIContract.getBalance.responses[200]
+const balanceBefore = BalanceSchema.parse(balanceBeforeResponse.body)
+
+// Perform operation (if applicable)
+// ...
+
+// Get balance again and validate
+const balanceAfterResponse = await request(TEST_SERVER_URL)
+  .get(`/wallets/${wallet.id}/balance`)
+  .set('Authorization', `Bearer ${authToken}`)
+  .expect(200)
+
+const balanceAfter = BalanceSchema.parse(balanceAfterResponse.body)
+
+// Assert delta (if no operation performed, balance should be same)
+expect(balanceAfter.balance).toBe(balanceBefore.balance)
+```
 
 ### Example
 
@@ -182,7 +207,9 @@ Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614):
 
 **Prerequisites:**
 
-- `ARB_TESTNET_GAS_FAUCET_KEY` environment variable must be set with a funded Arbitrum Sepolia account private key
+- `ARB_TESTNET_GAS_FAUCET_KEY` environment variable (optional) - if not set, tests will run without automatic funding
+  - If set: Must be a funded Arbitrum Sepolia account private key
+  - If not set: Tests will still run, but wallets won't be automatically funded (manual funding may be required)
 
 **Configuration:**
 
@@ -216,11 +243,70 @@ Wallets are reused across test runs:
 - Existing wallets are re-funded automatically with minimum ETH required
 - This reduces gas costs and test execution time
 
+## Rate Limit Handling
+
+Dynamic SDK SDK endpoints have rate limits: **100 requests per minute per IP**, 10,000 requests per minute per project environment. To prevent hitting rate limits during tests:
+
+1. **Serial Test Execution**: Tests run serially (`maxWorkers: 1` in `jest-e2e.json`) to prevent parallel requests
+2. **Automatic Throttling**: The `createTestWallet()` helper automatically throttles wallet creation calls (minimum 700ms between calls = ~85 req/min, well under 100 req/min limit)
+3. **Retry Logic**: The `createTestWallet()` helper includes retry logic with exponential backoff and jitter for rate limit errors (429):
+   - Default: 5 retries (configurable via `maxRetries` parameter)
+   - Exponential backoff: baseDelay \* 2^attempt + jitter (0-1000ms random jitter)
+   - Max delay cap: 4000ms
+4. **Manual Throttling**: For direct API calls, use the `throttleWalletCreation()` helper:
+
+   ```typescript
+   import { throttleWalletCreation } from './helpers'
+
+   await throttleWalletCreation()
+   const response = await request(TEST_SERVER_URL)
+     .post('/wallets')
+     .set('Authorization', `Bearer ${authToken}`)
+     .send({ chainId })
+   ```
+
+5. **Test Authentication**: Tests use `getTestAuthToken()` helper which uses Dynamic API key directly (bypasses Dynamic auth widget). This is documented for clarity.
+
+**CRITICAL**:
+
+- Rate limit errors (429) are automatically retried by the API's `RateLimitService`
+- Tests should use `getOrCreateTestWallet()` helper which handles rate limits properly
+- Solana tests remain disabled (`.skip`) and are not executed
+
+See [ADR 016](../../src/.adrs/016-dynamic-sdk-rate-limits.md) for detailed rate limit implementation information.
+
 ## Best Practices
 
 1. **Idempotent tests**: Tests should work regardless of account state
-2. **Balance deltas**: Always assert deltas, never absolute values
-3. **Automated funding**: Wallets are automatically funded with minimum ETH required
-4. **Transaction waiting**: Use `waitForTransaction()` helper to allow blockchain confirmation
-5. **Account reuse**: Use `getOrCreateTestWallet()` for most tests, `createTestWallet()` only when testing wallet creation
-6. **Testnet only**: All tests run against Arbitrum Sepolia testnet - ensure `ARB_TESTNET_GAS_FAUCET_KEY` is set
+2. **Idempotent wallet creation**: Wallet creation tests MUST accept both 200 (existing) and 201 (created) as valid responses
+3. **TS-REST runtime schemas**: Always validate API responses using TS-REST contract runtime schemas (e.g., `walletAPIContract.create.responses[201].parse(response.body)`)
+4. **Balance deltas**: Always assert deltas, never absolute values
+5. **Automated funding**: Wallets are automatically funded with minimum ETH required
+6. **Transaction waiting**: Use `waitForTransaction()` helper to allow blockchain confirmation
+7. **Account reuse**: Use `getOrCreateTestWallet()` for most tests, `createTestWallet()` only when testing wallet creation
+8. **Testnet only**: All tests run against Arbitrum Sepolia testnet - ensure `ARB_TESTNET_GAS_FAUCET_KEY` is set
+9. **Use @vencura/lib utilities**: Use `delay`, `getErrorMessage`, and other utilities from `@vencura/lib` for consistency
+10. **Use lodash for type checking**: Use `isEmpty`, `isPlainObject`, `isString` from lodash for consistent type checking
+11. **Throttle wallet creation**: Always throttle wallet creation calls to prevent Dynamic SDK rate limits
+
+## TS-REST Runtime Schema Validation
+
+All tests should validate API responses using TS-REST runtime schemas from the contract:
+
+```typescript
+import { walletAPIContract } from '@vencura/types/api-contracts'
+
+// Validate wallet creation response (both 200 and 201 use same schema)
+const WalletSchema = walletAPIContract.create.responses[201]
+const validatedWallet = WalletSchema.parse(response.body)
+
+// Validate balance response
+const BalanceSchema = walletAPIContract.getBalance.responses[200]
+const validatedBalance = BalanceSchema.parse(response.body)
+
+// Validate wallet list response
+const WalletsSchema = walletAPIContract.list.responses[200]
+const validatedWallets = WalletsSchema.parse(response.body)
+```
+
+This ensures tests validate responses using the same schemas as the API contract, providing type safety and consistency.

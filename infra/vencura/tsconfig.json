@@ -1,4 +1,6 @@
 {
+  // Intentional CommonJS exception: Pulumi infrastructure tooling requires CommonJS
+  // Pulumi's TypeScript runtime expects CommonJS modules for proper execution
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
     "module": "commonjs",

@@ -3,74 +3,28 @@ description: React hooks patterns and best practices
 globs: *.tsx,*.ts,**/hooks/**/*.ts,**/hooks/**/*.tsx
 alwaysApply: false
 ---
+
 # React Hooks Rules
 
 ## Core Principles
-- Use TanStack Query (React Query) as primary data fetching solution
-- Use useAsync/useAsyncFn for one-off async operations
-- Follow hooks naming conventions (use-kebab-case.ts)
-
-## Code Style
-- See [TypeScript Rules](../base/typescript.mdc) for code style guidelines
+- Use TanStack Query for data fetching
+- Use `useAsyncFn` for one-off async operations
+- Follow hooks naming: `use-kebab-case.ts`
 
 ## TanStack Query Patterns
 
-### Query Key Factory Pattern
+### Query Key Factory Pattern (CRITICAL)
+Always use `@lukemorales/query-key-factory` for centralized, type-safe query keys.
 
-TanStack Query makes data caching efficient and predictable through its queryKey system. However, we often run into challenges:
-
-1. Queries and mutations are often defined in different files, making it hard to maintain consistent cache keys
-2. Multiple components may trigger the same query or mutation, which can lead to confusion over which key to use
-3. Inconsistent keys make cache invalidation unreliable and error-prone
-
-To address these challenges, use a Query Key Factory to centralize and standardize all query keys in one place across the app.
-
-#### When to Use Query Key Factory
-
-**Always use Query Key Factory when:**
-- Building features with multiple related queries/mutations
-- Need to invalidate multiple queries together
-- Working in a team (ensures consistency)
-- Building reusable query logic
-
-**Basic pattern is acceptable for:**
-- One-off queries in isolated components
-- Prototyping or temporary code
-- Simple queries that won't scale
-
-#### Query Key Factory Package
-
-Use `@lukemorales/query-key-factory` to generate namespaced, reusable, and type-safe query keys from a single source of truth.
-
-#### File Organization
-
-Structure query keys in dedicated files:
+**File Organization:**
 - `src/queries/articles.ts` - Query key factory for articles
 - `src/queries/users.ts` - Query key factory for users
 - `src/queries/index.ts` - Re-export all query keys
 
-This keeps all query-related logic centralized and discoverable.
-
-#### Create Query Key Factory
-
+**Create Query Key Factory:**
 ```tsx
 import { createQueryKeys } from '@lukemorales/query-key-factory'
 
-export const articles = createQueryKeys('articles', {
-  all: {
-    queryKey: null,
-    queryFn: fetchArticles,
-  },
-})
-```
-
-This generates a namespaced key under `articles.all` which makes it easy to reuse across the app with full type safety.
-
-#### Passing Params
-
-Define keys that accept dynamic parameters:
-
-```tsx
 export const articles = createQueryKeys('articles', {
   all: {
     queryKey: null,
@@ -80,117 +34,51 @@ export const articles = createQueryKeys('articles', {
     queryKey: [id],
     queryFn: () => fetchArticleById(id),
   }),
-  byUser: (userId: string) => ({
-    queryKey: ['user', userId],
-    queryFn: () => fetchArticlesByUser(userId),
-  }),
 })
 ```
 
-This lets us pass params directly into the factory.
-
-#### Using in Queries
-
-Once the key factory is set up, using it in a query is simple:
-
+**Using in Queries:**
 ```tsx
 import { useQuery } from '@tanstack/react-query'
-import { articles } from './query-keys'
+import { articles } from '@/queries/articles'
 
-const { data, isLoading, error } = useQuery(articles.all)
+const { data, isLoading, error } = useQuery(articles.detail(id))
 ```
 
-This pulls in the `queryKey` and `queryFn` from the factory, so no need to manually define them each time.
-
-#### Query Options
-
-Always configure appropriate defaults:
-- `staleTime`: How long data is considered fresh (default: 0)
-- `gcTime`: How long unused data stays in cache (default: 5 minutes)
-- `retry`: Number of retry attempts for failed queries
-- `refetchOnWindowFocus`: Whether to refetch when window regains focus
-
+**Query Options:**
 ```tsx
 const { data } = useQuery({
-  ...articles.all,
-  staleTime: 5 * 60 * 1000, // 5 minutes
-  gcTime: 10 * 60 * 1000, // 10 minutes
-  retry: 3,
-  retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-})
-```
-
-#### Error Handling
-
-Handle errors with proper retry logic:
-
-```tsx
-const { data, error, isError } = useQuery({
   ...articles.detail(id),
+  staleTime: 5 * 60 * 1000,
+  gcTime: 10 * 60 * 1000,
   retry: 3,
   retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 })
-
-if (isError) {
-  return <div>Error: {error.message}</div>
-}
 ```
 
-#### Dependent Queries
-
-Use `enabled` option for queries that depend on other data:
-
+**Dependent Queries:**
 ```tsx
 const { data: user } = useQuery(users.detail(userId))
 const { data: posts } = useQuery({
   ...posts.byUser(userId),
-  enabled: !!user, // Only fetch when user exists
+  enabled: !!user,
 })
 ```
 
-#### Infinite Queries
-
-For paginated data, use infinite queries:
-
-```tsx
-export const articles = createQueryKeys('articles', {
-  infinite: (filters: ArticleFilters) => ({
-    queryKey: ['infinite', filters],
-    queryFn: ({ pageParam = 0 }) => fetchArticlesPage({ ...filters, page: pageParam }),
-  }),
-})
-
-const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
-  articles.infinite(filters)
-)
-```
-
-#### Using in Mutations
-
-Trigger mutations and ensure relevant queries are invalidated using the key factory:
-
+**Mutations with Invalidation:**
 ```tsx
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { articles } from './query-keys'
 
 const queryClient = useQueryClient()
-
 const mutation = useMutation({
   mutationFn: createArticle,
   onSuccess: () => {
-    queryClient.invalidateQueries({
-      queryKey: articles._def,
-    })
+    queryClient.invalidateQueries({ queryKey: articles._def })
   },
 })
 ```
 
-Using `articles._def` ensures we invalidate all keys under the `articles` namespace without hardcoding any queryKey strings.
-
-#### Optimistic Updates
-
-Update the cache optimistically for better UX:
-
+**Optimistic Updates:**
 ```tsx
 const mutation = useMutation({
   mutationFn: updateArticle,
@@ -211,281 +99,90 @@ const mutation = useMutation({
 })
 ```
 
-#### Prefetching
-
-Prefetch queries for better UX (e.g., on link hover or route loader):
-
+**Infinite Queries:**
 ```tsx
-// In a link hover handler or route loader
-queryClient.prefetchQuery(articles.detail(id))
+export const articles = createQueryKeys('articles', {
+  infinite: (filters: ArticleFilters) => ({
+    queryKey: ['infinite', filters],
+    queryFn: ({ pageParam = 0 }) => fetchArticlesPage({ ...filters, page: pageParam }),
+  }),
+})
+
+const { data, fetchNextPage, hasNextPage } = useInfiniteQuery(articles.infinite(filters))
 ```
 
-#### Suspense Integration
-
-When using Suspense with TanStack Query:
-
+**Suspense Integration:**
 ```tsx
-import { Suspense } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 
 function Article({ id }: { id: string }) {
   const { data } = useSuspenseQuery(articles.detail(id))
   return <div>{data.title}</div>
 }
-
-function ArticlePage() {
-  return (
-    <Suspense fallback={<ArticleSkeleton />}>
-      <Article id="123" />
-    </Suspense>
-  )
-}
 ```
 
-#### Benefits
-
-- Less boilerplate
-- Centralized key logic
-- Full type safety
-- Easy to scale
-
-### Anti-Patterns to Avoid
-
-❌ **Don't**: Manually construct query keys in components
+### Anti-Patterns
+❌ **Don't**: Manually construct query keys
 ```tsx
-// Bad
 useQuery({ queryKey: ['articles', id] })
 ```
 
 ✅ **Do**: Use query key factory
 ```tsx
-// Good
 useQuery(articles.detail(id))
 ```
 
 ❌ **Don't**: Hardcode query keys in invalidations
 ```tsx
-// Bad
 queryClient.invalidateQueries({ queryKey: ['articles'] })
 ```
 
 ✅ **Do**: Use namespace invalidation
 ```tsx
-// Good
 queryClient.invalidateQueries({ queryKey: articles._def })
-```
-
-❌ **Don't**: Create new query functions inline
-```tsx
-// Bad
-useQuery({
-  queryKey: ['articles'],
-  queryFn: async () => {
-    const res = await fetch('/api/articles')
-    return res.json()
-  },
-})
-```
-
-✅ **Do**: Define queryFn in the factory
-```tsx
-// Good
-useQuery(articles.all)
 ```
 
 ## Async Operations
 
-### When to Use Each Pattern
-
 **Use TanStack Query for:**
-- Server data fetching (API calls)
+- Server data fetching
 - Data that needs caching
-- Data that needs refetching/background updates
 - Mutations and optimistic updates
 
-**Use `useAsync`/`useAsyncFn` from `react-use` for:**
-- One-off async operations (file uploads, form submissions that don't need caching)
+**Use `useAsyncFn` from `react-use` for:**
+- One-off async operations (file uploads, form submissions without caching)
 - Non-data-fetching async operations
-- Operations that don't benefit from caching
-- **Always use `useAsyncFn` instead of manually managing `isLoading` and `error` states**
+- Always use `useAsyncFn` instead of manually managing `isLoading` and `error` states
 
 ```tsx
 import { useAsyncFn } from 'react-use'
 
-// For one-off async operations that don't need caching
-export function useFileUpload() {
-  const [state, execute] = useAsyncFn(async (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    return await uploadFile(formData)
-  }, [])
-
-  return { ...state, upload: execute }
-}
-
-// Example: Saving game history without manual state management
-export function useGameHistory() {
-  const { user } = useDynamicContext()
-  const { updateUser } = useUserUpdateRequest()
-
-  const [saveGameState, saveGame] = useAsyncFn(
-    async (gameData: GameData) => {
-      if (!user) throw new Error('User not authenticated')
-      
-      const result = await updateUser({ metadata: gameData })
-      if (!result) throw new Error('Failed to save')
-      
-      return result
-    },
-    [user, updateUser],
-  )
-
-  return {
-    saveGame,
-    saveGameLoading: saveGameState.loading,
-    saveGameError: saveGameState.error,
-  }
-}
-```
-
-### Anti-Patterns to Avoid
-
-❌ **Don't**: Manually manage loading and error states
-```tsx
-// Bad
-const [isLoading, setIsLoading] = useState(false)
-const [error, setError] = useState<Error | null>(null)
-
-const saveData = async () => {
-  setIsLoading(true)
-  setError(null)
-  try {
-    await api.save(data)
-  } catch (err) {
-    setError(err)
-  } finally {
-    setIsLoading(false)
-  }
-}
-```
-
-✅ **Do**: Use `useAsyncFn` for automatic state management
-```tsx
-// Good
 const [saveState, saveData] = useAsyncFn(async (data) => {
   return await api.save(data)
 }, [])
 
-// Access loading/error automatically: saveState.loading, saveState.error
+// Access: saveState.loading, saveState.error
 ```
 
-## Memoization Hooks (`useMemo` and `useCallback`)
+## Memoization Hooks
 
-### Default: Don't Use Them
+**Default: Don't use `useMemo` or `useCallback`** - Modern React optimizations handle most cases automatically.
 
-In modern React (18+), `useMemo` and `useCallback` are **mostly obsolete** and should be avoided by default. React's optimizations (Concurrent Mode, automatic batching, React Compiler) handle most performance concerns automatically.
+**Only use when:**
+1. Computationally expensive operations (`useMemo`)
+2. Function identity required as dependency (`useCallback`)
+3. Stable object references in dependency arrays (`useMemo`)
+4. Context Provider functions (`useMemo`)
 
-### Why They're Usually Unnecessary
-
-1. **Modern React Optimizations**: React 18's rendering optimizations and the React Compiler automatically handle most memoization needs
-2. **Memory Overhead**: Overusing these hooks can actually harm performance by holding references longer than necessary
-3. **Inline Functions Are Cheap**: Modern JavaScript engines (V8) efficiently handle inline function creation and garbage collection
-4. **React.memo Is Better**: For component memoization, `React.memo` is usually more effective than `useCallback`
-
-### Best Practice: Start Without Them
-
-**Default approach:**
-- Write code without `useMemo` or `useCallback`
-- Profile your application when you notice performance issues
-- Only add memoization hooks when profiling reveals a real bottleneck
-
-### When to Still Use Them
-
-Only use `useMemo` or `useCallback` in these specific cases:
-
-1. **Computationally Expensive Operations**
-   ```tsx
-   // Only when the computation is truly expensive
-   const result = useMemo(() => computeExpensiveValue(data), [data])
-   ```
-
-2. **Memoizing Dependencies in Custom Hooks**
-   ```tsx
-   // When function identity matters for hook dependencies
-   const fetchData = useCallback(() => fetch(apiUrl), [apiUrl])
-   useEffect(() => { fetchData() }, [fetchData])
-   ```
-
-3. **Stable Object References in Dependency Arrays**
-   ```tsx
-   // When passing objects as dependencies
-   const memoizedOptions = useMemo(() => ({ limit: 10 }), [])
-   useEffect(() => { doSomething() }, [memoizedOptions])
-   ```
-
-4. **Context Provider Functions**
-   ```tsx
-   // When passing functions through Context to prevent consumer re-renders
-   const value = useMemo(() => ({ fetchData }), [fetchData])
-   ```
-
-### Prefer `React.memo` Over `useCallback`
-
-Instead of memoizing functions with `useCallback`, wrap components with `React.memo`:
-
-```tsx
-// Good: Use React.memo for component memoization
-const ExpensiveComponent = React.memo(({ value }) => {
-  return <div>{value}</div>
-})
-
-// Avoid: Don't use useCallback unless profiling shows it's needed
-const handleClick = useCallback(() => { /* ... */ }, [])
-```
-
-### Anti-Patterns to Avoid
-
-❌ **Don't**: Preemptively use `useMemo`/`useCallback` everywhere
-```tsx
-// Bad: Unnecessary memoization
-const handleClick = useCallback(() => {
-  console.log('clicked')
-}, [])
-
-const count = useMemo(() => items.length, [items])
-```
-
-✅ **Do**: Write simple code, optimize only when needed
-```tsx
-// Good: Simple and clear
-const handleClick = () => {
-  console.log('clicked')
-}
-
-const count = items.length
-```
-
-❌ **Don't**: Use `useCallback` to prevent re-renders without `React.memo`
-```tsx
-// Bad: useCallback alone doesn't prevent re-renders
-const handleClick = useCallback(() => {}, [])
-<Child onClick={handleClick} />
-```
-
-✅ **Do**: Use `React.memo` on the child component
-```tsx
-// Good: React.memo prevents unnecessary re-renders
-const Child = React.memo(({ onClick }) => <button onClick={onClick}>Click</button>)
-```
+**Prefer `React.memo` over `useCallback`** for component memoization.
 
 ## Custom Hooks Best Practices
-- Combine multiple queries into single, cohesive hooks
-- Avoid over-fetching data; optimize query dependencies
+- Combine multiple queries into cohesive hooks
 - Extract query logic into custom hooks for reusability
 - Use query key factory for all TanStack Query hooks
-- **Never manually manage `isLoading`, `error`, or `isError` states** - use TanStack Query hooks or `useAsyncFn` which provide these automatically
+- Never manually manage `isLoading`, `error`, or `isError` states
 
 ## Related Rules
-- See [React Rules](./react.mdc) for component patterns
-- See [Frontend Stack](./stack.mdc) for library usage patterns
-- See [TypeScript Rules](../base/typescript.mdc) for type safety patterns
+- [React Rules](./react.mdc) - Component patterns
+- [Frontend Stack](./stack.mdc) - Library usage patterns
+- [TypeScript Rules](../base/typescript.mdc) - Type safety patterns

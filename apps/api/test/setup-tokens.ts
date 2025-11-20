@@ -7,9 +7,14 @@
 
 import { execSync } from 'child_process'
 import { resolve } from 'path'
+import { fileURLToPath } from 'node:url'
+import { dirname } from 'node:path'
 import { createPublicClient, http, type Address } from 'viem'
 import { foundry } from 'viem/chains'
 import { delay } from '@vencura/lib'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const ANVIL_RPC_URL = 'http://localhost:8545'
 const ANVIL_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80' // Anvil's default account

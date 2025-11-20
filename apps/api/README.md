@@ -35,7 +35,8 @@ Vencura is a backend API that enables users to create and manage custodial walle
   - Security headers (HSTS, X-Frame-Options, CSP, etc.)
   - Request size limits (10kb maximum)
   - Request ID tracing for all requests
-  - Error message sanitization in production
+  - Error message sanitization in production using `@vencura/lib`
+  - Proper 429 rate limit error handling (Dynamic SDK rate limits are preserved)
   - Swagger UI protected by feature flag (disabled by default)
   - CORS configuration
   - DDoS protection via Cloudflare
@@ -47,6 +48,8 @@ Vencura is a backend API that enables users to create and manage custodial walle
 - **Framework**: NestJS (see [ADR 002](../../.adrs/002-vencura-api-framework.md))
 - **Authentication**: Dynamic Labs SDK Client
 - **Validation**: Zod for environment variables and runtime validation (see [@vencura/lib](../../packages/lib/README.md))
+- **Utilities**: `@vencura/lib` for error handling, async utilities, and zod utilities
+- **Type Checking**: Lodash utilities (`isEmpty`, `isPlainObject`, `isString`) for consistent type checking
 - **Blockchain**:
   - Viem for EVM chains (see [ADR 009](../../.adrs/009-viem-vs-ethers.md))
   - @solana/web3.js for Solana
@@ -208,6 +211,13 @@ Content-Type: application/json
 
 **Response:**
 
+The API returns different status codes based on whether the wallet was newly created or already existed:
+
+- **201 Created**: Wallet was newly created
+- **200 OK**: Wallet already existed (idempotent operation)
+
+Both responses return the same wallet structure:
+
 ```json
 {
   "id": "wallet-uuid",
@@ -216,6 +226,70 @@ Content-Type: application/json
   "chainType": "evm"
 }
 ```
+
+**Idempotent Behavior:**
+
+Wallet creation is idempotent - calling `POST /wallets` multiple times with the same `chainId` will return the existing wallet with status 200 instead of creating a duplicate. This ensures safe retries and prevents duplicate wallet creation.
+
+## Rate Limit Handling
+
+The API automatically handles Dynamic SDK rate limits with retry logic:
+
+### Dynamic SDK Rate Limits
+
+- **SDK endpoints** (`/sdk`): 100 requests per minute per IP, 10,000 requests per minute per project environment
+- **Developer endpoints**: 1,500 requests per minute per IP, 3,000 requests per minute per project environment
+
+We use SDK endpoints, so the API implements safeguards for **100 req/min per IP** and **10,000 req/min per project environment**.
+
+### Automatic Retry
+
+All Dynamic SDK calls are automatically retried on 429 (Too Many Requests) errors with:
+
+- **Exponential backoff**: Delays increase exponentially (baseDelay \* 2^attempt)
+- **Jitter**: Random 0-1000ms jitter prevents synchronized retries
+- **Retry-After header**: Respects `Retry-After` header from 429 responses if present
+- **Max retries**: Default 5 retries (configurable)
+
+### Configuration
+
+Rate limit behavior can be configured via environment variables:
+
+- `DYNAMIC_RATE_LIMIT_MAX_RETRIES` (default: 5) - Maximum number of retry attempts
+- `DYNAMIC_RATE_LIMIT_BASE_DELAY_MS` (default: 1000) - Base delay in milliseconds for exponential backoff
+- `DYNAMIC_RATE_LIMIT_MAX_DELAY_MS` (default: 30000) - Maximum delay cap in milliseconds
+
+### Error Responses
+
+Rate limit errors (429) are automatically retried. If all retries are exhausted, the API returns a 429 error with details:
+
+```json
+{
+  "message": "Rate limit exceeded after 6 attempts: Dynamic SDK rate limit exceeded",
+  "details": {
+    "retryAfter": 60
+  }
+}
+```
+
+See [ADR 016](../.adrs/016-dynamic-sdk-rate-limits.md) for detailed implementation information.
+
+**Error Response (Multiple Wallets):**
+
+If Dynamic SDK returns an error indicating a wallet already exists, the API handles it gracefully and returns the existing wallet with status 200. In rare cases where the existing wallet cannot be determined, a 400 error may be returned with details:
+
+```json
+{
+  "message": "Multiple wallets per chain not allowed",
+  "details": {
+    "existingWalletAddress": "0x...",
+    "chainId": 421614,
+    "dynamicNetworkId": "421614"
+  }
+}
+```
+
+**Note**: The `createTestWallet()` helper in tests treats both 200 and 201 status codes as SUCCESS (expected behavior). This is because wallet existence is the desired outcome, not an error condition.
 
 ### Get Balance
 
@@ -335,6 +409,80 @@ await fetch('/wallets/:id/send', {
 - **Portable**: No vendor lock-in, works with any backend
 
 **Note**: Token balance and supply reads currently require a generic read endpoint (not yet implemented). For now, use client-side RPC calls or implement a read endpoint if needed.
+
+## Error Handling
+
+The API returns enhanced error responses with detailed information for debugging and user guidance. All error responses preserve the exact error messages from Dynamic SDK. Error handling leverages `@vencura/lib` utilities for consistent error message extraction and sanitization.
+
+### Global Exception Filter
+
+The API uses a global `SentryExceptionFilter` that:
+
+- Captures all exceptions and normalizes error messages
+- Uses `getErrorMessage` from `@vencura/lib` for consistent error extraction
+- Uses `sanitizeErrorMessage` from `@vencura/lib` for production error sanitization
+- Uses lodash `isEmpty` and `isPlainObject` for type checking
+- Reports errors to Sentry (if configured) with safe fields only (no PII)
+- Preserves HTTP status codes from exceptions (including 429 rate limits)
+- Uses optional logger injection to prevent DI failures
+
+### Error Response Format
+
+All error responses follow this structure:
+
+```json
+{
+  "message": "Exact error message from Dynamic SDK",
+  "details": {
+    "existingWalletAddress": "0x...",
+    "chainId": 421614,
+    "dynamicNetworkId": "421614",
+    "transactionHash": "0x..."
+  }
+}
+```
+
+The `details` object is optional and only included when relevant context is available.
+
+### Error Details Fields
+
+- `existingWalletAddress`: Wallet address that already exists (for multiple wallets errors)
+- `chainId`: Chain ID or Dynamic network ID where the error occurred
+- `dynamicNetworkId`: Dynamic network ID string
+- `transactionHash`: Transaction hash (for transaction-related errors)
+
+### Multiple Wallets Per Chain (Idempotent Behavior)
+
+**CRITICAL**: Wallet creation is idempotent. Dynamic SDK does not allow creating multiple wallets per chain with the same API key. When attempting to create a duplicate wallet:
+
+- **If existing wallet can be determined**: API returns status **200 OK** with the existing wallet (idempotent success)
+- **If existing wallet cannot be determined**: API returns status **400 Bad Request** with the existing wallet address in the `details` object:
+
+```json
+{
+  "message": "Multiple wallets per chain not allowed",
+  "details": {
+    "existingWalletAddress": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+    "chainId": 421614,
+    "dynamicNetworkId": "421614"
+  }
+}
+```
+
+**Test Behavior**: In tests, the `createTestWallet()` helper accepts both 200 and 201 status codes as SUCCESS (expected behavior). This is because wallet existence is the desired outcome, not an error condition.
+
+### Error Message Preservation
+
+All error responses preserve the exact error messages from Dynamic SDK, ensuring transparency and easier debugging. Error classification (authentication, rate limit, network, etc.) is handled automatically, but the original Dynamic SDK message is always returned.
+
+### Rate Limit Errors (429)
+
+When Dynamic SDK returns a 429 rate limit error, the API properly classifies and returns it as `429 Too Many Requests` status code. The error classification system checks for:
+
+- HTTP status code 429
+- Error messages containing "rate limit", "throttle", "too many", "quota", or "limit exceeded"
+
+Rate limit errors are properly preserved through the error handling chain, ensuring clients receive the correct status code for rate limit scenarios.
 
 ## Dynamic SDK Integration
 
@@ -512,6 +660,18 @@ E2E tests automatically initialize the database schema and use test environment 
 - **Real Dynamic SDK**: All tests use real Dynamic SDK endpoints (no mocks)
 - **Automated**: Tests run without manual intervention
 - **Comprehensive Coverage**: Tests cover all wallet endpoints, error cases, and multichain scenarios
+- **Error Handling**: Tests handle "multiple wallets per chain" errors as SUCCESS (expected behavior)
+
+### Test Error Handling
+
+**CRITICAL**: Tests treat "multiple wallets per chain" errors as SUCCESS, not failure. This is expected behavior when a wallet already exists for the same API key/chain combination.
+
+- ✅ **SUCCESS**: Wallet creation returns 201 → Test passes
+- ✅ **SUCCESS**: Wallet creation returns 400 with "multiple wallets" → Extract existing wallet, test passes
+- ❌ **FAILURE**: Wallet creation returns 400 with other error → Test fails
+- ❌ **FAILURE**: Wallet creation returns 500 → Test fails
+
+The `createTestWallet()` helper automatically extracts the existing wallet address from error details and returns the existing wallet, ensuring tests pass when wallets already exist.
 
 ### Test Files
 

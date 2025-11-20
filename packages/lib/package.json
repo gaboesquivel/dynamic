@@ -15,8 +15,8 @@
     }
   },
   "scripts": {
-    "build": "tsup",
-    "lint": "eslint . --max-warnings 0"
+    "build": "tsup && node scripts/fix-lodash-imports.js",
+    "lint": "eslint . --max-warnings 0 --ignore-pattern 'scripts/**'"
   },
   "devDependencies": {
     "@types/node": "^20.19.9",

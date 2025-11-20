@@ -1,22 +1,28 @@
-# Google Cloud Deployment Option (Work in Progress)
+# Google Cloud Deployment Option
 
-This document describes the Google Cloud deployment option for the Vencura API, which provides enhanced control, security, and extensibility for production workloads.
+This document describes the Google Cloud deployment option for the Vencura API, providing enhanced control, security, and extensibility for production workloads.
+
+**Status**: Documented but not currently implemented. See [Vercel Portability Strategy](./vercel-portability-strategy.md) for current deployment approach.
 
 ## Overview
 
-We're working on deploying the Vencura API to **Google Cloud Run** with infrastructure managed by **Pulumi** and automated via **GitHub Actions**. This deployment option is designed for production workloads that require:
+Google Cloud Platform provides enhanced security features for production workloads requiring strict data governance:
 
-- **Enhanced Security**: Private networking, VPC isolation, and fine-grained IAM controls
-- **More Control**: Full control over infrastructure, scaling, and resource allocation
-- **Avoid Cold Starts**: Persistent Cloud Run services with minimum instances
-- **Extensibility**: Easy integration with other GCP services (Cloud SQL, Secret Manager, etc.)
-- **Compliance**: Better support for enterprise security and compliance requirements
+- Private networking with VPC isolation
+- HSM-backed key custody and KMS
+- Fine-grained IAM controls
+- Enhanced audit logging and compliance
+- Private IP database connections
 
-## Status
+## When to Use Google Cloud
 
-⚠️ **Work in Progress** - This deployment option is currently under development. The infrastructure code exists in `/infra/vencura` but is not yet fully integrated into the deployment pipeline.
+Consider Google Cloud deployment when production security requirements demand:
 
-**Important**: We are currently deploying everything on Vercel. We are NOT splitting the architecture now. This Google Cloud deployment option is documented as a potential future option ONLY if production security requirements demand it. See [Long-Term Vision: Split Architecture](#long-term-vision-split-architecture) below.
+- Regulatory/compliance requirements for HSM-backed key custody
+- Need for MPC/threshold signing workflows
+- Requirement for private networking and strict egress control
+- Enhanced audit trails and compliance beyond Vercel's capabilities
+- Enterprise security requirements that exceed Vercel's offerings
 
 ## Architecture
 
@@ -38,53 +44,76 @@ Internet → Cloudflare → Cloud Run → VPC Connector → Cloud SQL (Private I
 
 All database connections use private IP addresses only, ensuring no public exposure.
 
-## Why Google Cloud?
+## Security Architecture
 
-### Advantages Over Vercel
+### Defense in Depth
 
-1. **Enhanced Security**
-   - Private networking with VPC isolation
-   - Fine-grained IAM controls
-   - Private IP database connections
-   - Network-level security policies
+Google Cloud deployment implements multiple layers of security:
 
-2. **More Control**
-   - Full control over infrastructure configuration
-   - Custom scaling policies
-   - Resource allocation control
-   - Network topology control
+1. **Authentication Layer**: Dynamic Labs JWT-based authentication
+2. **Application Layer**: User isolation and authorization checks
+3. **Encryption Layer**: AES-256-GCM encryption for private keys
+4. **Database Layer**: Cloud SQL encryption at rest, private IP only
+5. **Network Layer**: VPC isolation, private IP only
+6. **Infrastructure Layer**: Least privilege IAM, service accounts
+7. **Secrets Layer**: Google Cloud Secret Manager
 
-3. **Avoid Cold Starts**
-   - Persistent Cloud Run services with minimum instances
-   - Always-on option for critical workloads
-   - Predictable performance
+### Network Security
 
-4. **Extensibility**
-   - Easy integration with other GCP services
-   - Support for complex architectures
-   - Custom networking and security policies
-   - Advanced monitoring and logging
+#### VPC Architecture
 
-5. **Enterprise Features**
-   - Compliance certifications (SOC 2, ISO 27001, etc.)
-   - Advanced security features
-   - Audit logging
-   - Enterprise support options
+- **Dedicated VPC**: Separate VPC for Vencura, not default network
+- **Private Subnet**: 10.0.0.0/24 for Cloud SQL
+- **VPC Connector**: 10.8.0.0/28 for serverless VPC access
+- **No Internet Gateway**: No direct internet access from VPC
+- **Cloud SQL**: Private IP only, no public IP
+- **Firewall Rules**: Default deny, explicit allow only required traffic
 
-### When to Use Google Cloud
+#### Zero Trust Implementation
 
-Consider using the Google Cloud deployment option when:
+- **Network Zero Trust**: Private IP only, VPC isolation, firewall rules
+- **Identity Zero Trust**: Service accounts only, Workload Identity Federation, JWT verification
+- **Data Zero Trust**: Encryption at rest and in transit, secret references, key separation
+- **Application Zero Trust**: Container isolation, in-memory decryption, request validation
 
-- You need enhanced security and compliance features
-- You require fine-grained control over infrastructure
-- You need to avoid cold starts for critical workloads
-- You want to integrate with other GCP services
-- You need custom networking or security policies
-- You're handling sensitive financial data (wallet API)
+### IAM Security
+
+#### Service Account Management
+
+1. **Cloud Run Service Account**:
+   - `roles/secretmanager.secretAccessor` (scoped to specific secrets)
+   - `roles/cloudsql.client` (Cloud SQL connection only)
+   - Naming: `vencura-{env}-cloud-run-sa`
+
+2. **CI/CD Service Account**:
+   - `roles/artifactregistry.writer` (push images)
+   - `roles/run.admin` (deploy services)
+   - `roles/secretmanager.secretAccessor` (read secrets for deployment)
+   - Naming: `vencura-{env}-cicd-sa`
+
+#### Workload Identity Federation
+
+- **Method**: Workload Identity Federation (WIF) for GitHub Actions
+- **Benefits**: No long-lived credentials, automatic token rotation, fine-grained access control
+- **Setup**: See [infra/README.md](../infra/README.md#step-5-set-up-workload-identity-federation-on-your-computer)
+
+### Secret Management
+
+- **Naming Convention**: `vencura-{env}-{secret-name}`
+- **Access Control**: IAM-based with conditions
+- **Secrets Stored**: `ENCRYPTION_KEY`, `DYNAMIC_ENVIRONMENT_ID`, `DYNAMIC_API_TOKEN`, `DATABASE_URL`, RPC URLs
+- **Key Rotation**: Supported via Secret Manager versions
+
+### Database Security
+
+- **Encryption at Rest**: Enabled by default (Google-managed keys)
+- **Network Access**: Private IP only, Unix socket via Cloud SQL Proxy
+- **SSL/TLS**: Required for all connections
+- **Access Control**: Database user with minimal privileges
 
 ## Infrastructure as Code
 
-The infrastructure is defined using **Pulumi** with TypeScript, providing:
+The infrastructure is defined using **Pulumi** with TypeScript:
 
 - Type-safe infrastructure definitions
 - Version-controlled infrastructure
@@ -120,24 +149,14 @@ See [ADR 010](../.adrs/010-vencura-infra-orchestration.md) for infrastructure or
 - **Database**: PGLite (embedded, no Cloud SQL)
 - **Service**: Ephemeral Cloud Run service
 - **Lifetime**: Auto-deleted on PR close/merge
-- **Custom Domain**: `{branch-name}.vencura.{base_domain}` via Cloudflare
 
 ## CI/CD Integration
 
 ### GitHub Actions Workflows
 
-1. **Quality Checks**: Runs on all PRs and pushes
-   - Lint, type check, unit tests, E2E tests
-
-2. **Dev Deployment**: Automatic on merge to `main`
-   - Infrastructure provisioning via Pulumi
-   - Docker image build and push
-   - Cloud Run service update
-
-3. **Prod Deployment**: Manual workflow dispatch
-   - Full production deployment
-   - Database migrations
-   - Health checks
+1. **Quality Checks**: Runs on all PRs and pushes (lint, type check, tests)
+2. **Dev Deployment**: Automatic on merge to `main` (infrastructure + Docker image)
+3. **Prod Deployment**: Manual workflow dispatch (safety measure)
 
 ### Authentication
 
@@ -151,52 +170,10 @@ For detailed setup instructions, see [infra/README.md](../infra/README.md).
 
 ### Quick Start
 
-1. **Prerequisites**
-   - GCP project with billing enabled
-   - Pulumi Cloud account
-   - GitHub repository with Actions enabled
-
-2. **Initial Setup**
-
-   ```bash
-   cd infra/vencura
-   pnpm install
-   pulumi login
-   gcloud auth application-default login
-   ```
-
-3. **Configure Infrastructure**
-   - Set up Workload Identity Federation
-   - Configure GitHub secrets
-   - Create Pulumi stacks (dev/prod)
-
-4. **Deploy**
-   - Push to `main` branch for dev deployment
-   - Use workflow dispatch for production
-
-## Security Features
-
-For comprehensive Google Cloud security documentation, see [Google Cloud Security Documentation](./google-cloud-security.md).
-
-### Network Security
-
-- **Private IP Only**: Cloud SQL uses private IP addresses only
-- **VPC Isolation**: Dedicated VPC for the application
-- **Firewall Rules**: Explicit deny-all, allow Cloud SQL only
-- **Private Service Connection**: Secure connection to Cloud SQL
-
-### IAM Security
-
-- **Least Privilege**: Service accounts with minimal required permissions
-- **Workload Identity Federation**: No long-lived service account keys
-- **Secret Access**: Scoped access to specific secrets only
-
-### Data Security
-
-- **Encryption at Rest**: Cloud SQL encryption enabled
-- **Encryption in Transit**: TLS for all connections
-- **Secret Management**: All secrets in Secret Manager
-- **Key Rotation**: Supported via Secret Manager versions
+1. **Prerequisites**: GCP project with billing enabled, Pulumi Cloud account, GitHub repository
+2. **Initial Setup**: Install dependencies, login to Pulumi, authenticate with GCP
+3. **Configure Infrastructure**: Set up Workload Identity Federation, configure GitHub secrets, create Pulumi stacks
+4. **Deploy**: Push to `main` branch for dev deployment, use workflow dispatch for production
 
 ## Monitoring and Observability
 
@@ -204,6 +181,17 @@ For comprehensive Google Cloud security documentation, see [Google Cloud Securit
 - **Cloud Monitoring**: Metrics and alerting
 - **Error Reporting**: Automatic error tracking
 - **Trace**: Distributed tracing support
+- **Security Monitoring**: Cloud Monitoring, Security Command Center, audit logs
+
+## Security Audits
+
+### Regular Audits
+
+- IAM Review: Quarterly review of IAM bindings
+- Secret Rotation: Regular secret rotation
+- Access Review: Review who has access to what
+- Code Review: Security-focused code reviews
+- Penetration Testing: Annual penetration tests
 
 ## Cost Considerations
 
@@ -234,49 +222,19 @@ For comprehensive Google Cloud security documentation, see [Google Cloud Securit
 - Next.js frontend applications
 - Thin NestJS adapters for user auth, dashboards, webhooks, notifications
 - Public API facades
-- Leverages Vercel's excellent DX, edge network, and integrations
 
-**Key-Custody & Signing Core on Google Cloud (Only if needed):**
+**Key-Custody & Signing Core on Google Cloud:**
 
-- NestJS "signer" service on Cloud Run in private VPC (this deployment option)
+- NestJS "signer" service on Cloud Run in private VPC
 - Keys in Cloud KMS/HSM (optionally MPC/threshold signing)
 - Direct VPC egress control, firewall rules, VPC Flow Logs
 - Cloud Armor WAF for public endpoints
-- Org-wide controls (IAM conditions, service perimeters, CMEK)
 
 **Edge Between the Two:**
 
 - Single public API on GCP protected by mTLS/OAuth SA tokens
 - IP allowlisting and Cloud Armor
 - Vercel functions call GCP API; everything else stays private
-
-### When This Split Might Be Considered
-
-**Only if production security requirements demand:**
-
-- Regulatory/compliance requirements for HSM-backed key custody
-- Need for MPC/threshold signing workflows
-- Requirement for private networking and strict egress control
-- Enhanced audit trails and compliance beyond Vercel's capabilities
-- Enterprise security requirements that exceed Vercel's offerings
-
-**Vercel's Current Security (Sufficient for Demo/Development):**
-
-- Mature platform security (SOC 2 Type II, ISO 27001)
-- WAF/Firewall, deployment protection
-- Automatic HTTPS, SSL/TLS
-- Secure environment variables
-- Access controls and audit logs
-
-**Google Cloud Advantages (Only if needed for production):**
-
-- HSM-backed keys & KMS with ECDSA support, rotation, IAM, audit logs
-- Option for MPC/threshold flows with Confidential Space + KMS co-signers
-- Private networking & egress control on Cloud Run
-- VPC egress, firewall rules, VPC Flow Logs
-- Cloud Armor WAF in front of public edges
-- Org-wide controls (IAM conditions, service perimeters, CMEK)
-- Standard supply-chain hardening (Artifact Registry, Binary Auth)
 
 ## Migration from Vercel
 
@@ -292,18 +250,10 @@ When ready to migrate to Google Cloud:
 6. Deploy to production
 7. Update DNS records to point to Cloud Run
 
-## Documentation
+## Related Documentation
 
-- [Google Cloud Security Documentation](./google-cloud-security.md) - Comprehensive Google Cloud security details
+- [Vercel Portability Strategy](./vercel-portability-strategy.md) - Current deployment approach
 - [Infrastructure README](../infra/README.md) - Detailed setup and usage
 - [ADR 010](../.adrs/010-vencura-infra-orchestration.md) - Infrastructure orchestration decision
 - [ADR 007](../.adrs/007-vencura-api-infrastructure.md) - Infrastructure platform decision
-
-## Support
-
-For questions or issues with the Google Cloud deployment:
-
-1. Check the [infra/README.md](../infra/README.md) troubleshooting section
-2. Review GitHub Actions workflow logs
-3. Check Pulumi stack outputs
-4. Review Cloud Run service logs
+- [Vencura API Security](../apps/api/SECURITY.md) - Main security documentation (Vercel deployment)

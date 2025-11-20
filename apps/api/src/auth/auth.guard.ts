@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { isString } from 'lodash'
+import isString from 'lodash/isString'
 import type { Request } from 'express'
 import { AuthService } from './auth.service'
 

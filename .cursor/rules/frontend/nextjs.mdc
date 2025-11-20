@@ -3,77 +3,51 @@ description: Next.js development standards and patterns
 globs: *.tsx,*.ts
 alwaysApply: false
 ---
+
 # Next.js Rules
 
-## Core Principles
-
-### React Server Components (CRITICAL)
+## React Server Components (CRITICAL)
 
 **ALWAYS default to Server Components. Only use `'use client'` when absolutely necessary.**
 
-Server Components provide significant performance benefits:
-- Reduced JavaScript bundle size (components render on server)
-- Faster initial page loads
-- Better SEO (content rendered on server)
-- Direct database/API access without exposing credentials
-- Automatic code splitting
-
-**Default Pattern:**
-```tsx
-// ✅ GOOD: Server Component (default, no directive needed)
-export default function Page() {
-  return <div>Server-rendered content</div>
-}
-```
-
 **When to Use Client Components (`'use client'`):**
-Only add `'use client'` when you need:
 - Interactive features: `onClick`, `onChange`, `onSubmit` handlers
 - Browser APIs: `window`, `document`, `localStorage`, `navigator`
 - React hooks: `useState`, `useEffect`, `useContext` (for client-side state)
-- Third-party libraries that require client-side execution
+- Third-party libraries requiring client-side execution
 - Event listeners or real-time subscriptions
 
 **Component Splitting Pattern:**
-Split pages into Server Components (default) and Client Components (when needed):
-
 ```tsx
-// ✅ GOOD: Server Component page
+// ✅ Server Component page
 import { ClientInteractiveSection } from './client-interactive-section'
 
 export default function Page() {
-  // Server Component - can fetch data directly
   const data = await fetchData()
-  
   return (
     <div>
       <h1>{data.title}</h1>
-      {/* Only interactive parts are client components */}
       <ClientInteractiveSection initialData={data} />
     </div>
   )
 }
-```
 
-```tsx
-// ✅ GOOD: Client Component (only when needed)
+// ✅ Client Component (only when needed)
 'use client'
-
 export function ClientInteractiveSection({ initialData }) {
   const [state, setState] = useState(initialData)
-  // Interactive logic here
 }
 ```
 
 **Anti-Patterns:**
 ```tsx
-// ❌ BAD: Unnecessary client component
+// ❌ Unnecessary client component
 'use client'
 export default function Page() {
-  return <div>Static content</div> // No interactivity needed!
+  return <div>Static content</div>
 }
 
-// ❌ BAD: Entire page as client component when only small part needs interactivity
+// ❌ Entire page as client when only small part needs interactivity
 'use client'
 export default function Page() {
   return (
@@ -86,140 +60,26 @@ export default function Page() {
 }
 ```
 
-- Use `nuqs` for URL search parameter state management
-  - Prefer `nuqs` over manual URL state management for filters, search, tabs, pagination
-  - See [React Rules](./react.mdc) for state management decision tree
-  - See [Frontend Stack](./stack.mdc) for nuqs usage patterns and examples
-
 ## Exports
-- **Pages and Layouts**: Next.js requires default exports for pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`)
-  - This is an exception to the general "prefer named exports" rule
-  - ESLint is configured to allow default exports for these specific file patterns
-- **Components**: All other components should use named exports
+- **Pages and Layouts**: Default exports required for `app/**/page.tsx` and `app/**/layout.tsx` (exception to named exports rule)
+- **Components**: Named exports for all other components
 
 ## Environment Variables
+See [Environment Rules](../base/environment.mdc) for pattern. Next.js automatically loads `.env` files.
 
-### File Structure Pattern
-
-All Next.js apps follow a consistent environment variable pattern:
-
-**Files:**
-- `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- `.env.development` - Development configuration (committed, non-sensitive)
-- `.env.staging` - Staging configuration (committed, non-sensitive)
-- `.env.production` - Production configuration (committed, non-sensitive)
-- `.env-example` - Template for `.env` file (shows required sensitive variables)
-
-**Loading Priority (highest to lowest):**
-1. `.env` (sensitive data, never committed, overrides everything)
-2. `.env.development` / `.env.staging` / `.env.production` (based on NODE_ENV, committed configs)
-
-**Next.js automatically loads these files** - no manual loading needed. The pattern matches the backend API.
-
-### Validation Pattern
-
-Always use Zod for environment variable validation:
-
-```typescript
+**Validation Pattern:**
+```tsx
 import { z } from 'zod'
 import { validateEnv } from '@vencura/lib'
 
 const envSchema = z.object({
   NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: z.string().min(1).optional(),
-  NEXT_PUBLIC_API_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
 })
-
-export type Env = z.infer<typeof envSchema>
 
 export function validateAppEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}) {
   return validateEnv({ schema: envSchema, env })
 }
-
-export function getEnv(): Env {
-  const result = validateAppEnv()
-  if (!result.isValid) {
-    const errorMessage = result.errors?.join('\n') || 'Environment validation failed'
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Environment validation failed:\n${errorMessage}`)
-    }
-    console.warn(`Environment validation warnings:\n${errorMessage}`)
-  }
-  return {
-    NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  }
-}
 ```
-
-## Code Style
-- See [TypeScript Rules](../base/typescript.mdc) for code style guidelines
-
-## Related Rules
-- See [React Hooks Rules](./react-hooks.mdc) for TanStack Query patterns
-- See [React Rules](./react.mdc) for component patterns
-
-## Server vs Client Components Decision Tree
-
-**Start here:** Is this a page or layout component?
-- **Yes** → Use Server Component (default, no `'use client'`)
-- **No** → Continue to next question
-
-**Does the component need any of these?**
-- Event handlers (`onClick`, `onChange`, etc.)
-- Browser APIs (`window`, `document`, `localStorage`, etc.)
-- React hooks for client-side state (`useState`, `useEffect`, etc.)
-- Third-party libraries requiring client-side execution
-
-**If YES to any above:**
-- Extract that specific functionality into a separate Client Component
-- Keep the parent as a Server Component
-- Pass data as props to the Client Component
-
-**If NO to all above:**
-- Use Server Component (default)
-
-**Example Refactoring:**
-
-```tsx
-// ❌ BAD: Entire page as client component
-'use client'
-export default function Page() {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
-  return <StaticContent />
-}
-
-// ✅ GOOD: Server Component with client wrapper only where needed
-export default function Page() {
-  return (
-    <ClientHydrationWrapper>
-      <StaticContent />
-    </ClientHydrationWrapper>
-  )
-}
-
-'use client'
-function ClientHydrationWrapper({ children }) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
-  return <>{children}</>
-}
-```
-
-## Performance Optimization
-- Implement streaming with `Suspense` for progressive loading
-- Optimize Core Web Vitals:
-  - Largest Contentful Paint (LCP) < 2.5s
-  - First Input Delay (FID) < 100ms
-  - Cumulative Layout Shift (CLS) < 0.1
-- Optimize images:
-  - Use WebP format
-  - Include proper size data
-  - Implement lazy loading for below-fold images
 
 ## Server Actions
 ```tsx
@@ -231,14 +91,20 @@ export const saveAction = createSafeActionClient()
   .schema(actionSchema)
   .action(async ({ parsedInput }): Promise<ActionResult<T>> => {
     try {
-      // Happy path
       return success(result)
     } catch (error) {
-      return failure({
-        code: 'UNEXPECTED_ERROR',
-        error,
-        label: 'saveAction'
-      })
+      return failure({ code: 'UNEXPECTED_ERROR', error, label: 'saveAction' })
     }
   })
 ```
+
+## Performance Optimization
+- Implement streaming with `Suspense` for progressive loading
+- Optimize Core Web Vitals (LCP < 2.5s, FID < 100ms, CLS < 0.1)
+- Optimize images: WebP format, proper size data, lazy loading
+
+## Related Rules
+- [React Hooks Rules](./react-hooks.mdc) - TanStack Query patterns
+- [React Rules](./react.mdc) - Component patterns
+- [Environment Rules](../base/environment.mdc) - Environment variable patterns
+- [TypeScript Rules](../base/typescript.mdc) - Code style guidelines

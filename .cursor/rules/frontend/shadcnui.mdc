@@ -3,37 +3,33 @@ description: ShadcnUI component guidelines and patterns
 globs: *.tsx
 alwaysApply: false
 ---
+
 # ShadcnUI Rules
 
 ## Core Principles
 - Install ShadcnUI components in `@vencura/ui` (packages/ui)
-- Always import components from `@vencura/ui/components/*`, never directly from packages/ui
-- Update the Tailwind preset or tokens in packages/ui (not per app)
-- Application-specific components go in the Next.js app's `components` folder
-- Hooks and utils must be collocated in the same directory as the component that uses them
+- Always import from `@vencura/ui/components/*`, never directly from packages/ui
+- Update Tailwind preset/tokens in packages/ui (not per app)
+- Application-specific components go in app's `components` folder
+- Hooks and utils must be collocated with components (same directory)
 
 ## Installation Pattern
-When generating UI code, always install ShadcnUI components in `@vencura/ui`:
-- Components are installed in `packages/ui/src/components/`
-- Each app has a `components.json` that points to:
-  - `"utils": "@vencura/ui/lib/utils"`
-  - `"ui": "@vencura/ui/components"`
+Components installed in `packages/ui/src/components/`. Each app's `components.json` points to:
+- `"utils": "@vencura/ui/lib/utils"`
+- `"ui": "@vencura/ui/components"`
 
 ## Import Patterns
-Always import ShadcnUI components using the workspace alias:
-
 ```tsx
-import { Button } from "@vencura/ui/components/button";
-import { cn } from "@vencura/ui/lib/utils";
+import { Button } from "@vencura/ui/components/button"
+import { cn } from "@vencura/ui/lib/utils"
 ```
 
 ## Component Patterns
-- Use the class-variance-authority (cva) pattern for variants
-- Use the cn utility for merging class names
+Use class-variance-authority (cva) pattern for variants and `cn` utility for merging class names:
 
 ```tsx
-import { cn } from "@vencura/ui/lib/utils";
-import { cva } from "class-variance-authority";
+import { cn } from "@vencura/ui/lib/utils"
+import { cva } from "class-variance-authority"
 
 const buttonVariants = cva(
   "rounded-md font-medium transition-colors",
@@ -48,15 +44,13 @@ const buttonVariants = cva(
       variant: "default"
     }
   }
-);
+)
 ```
 
 ## Design System Organization
-- Keep all core UI components in `@vencura/ui`
-- Application-specific components go in the app's `components` folder
-- Hooks and utils should be collocated with the components that use them (same directory)
+- Core UI components in `@vencura/ui`
+- Application-specific components in app's `components` folder
+- Hooks and utils collocated with components
 
 ## Mobile-First Design
-- All components should follow mobile-first responsive design patterns
-- Base styles target mobile devices, then enhance for larger screens using Tailwind breakpoints
-- See [Mobile-First Rules](./mobile-first.mdc) for detailed guidelines
+All components follow mobile-first responsive design. See [Mobile-First Rules](./mobile-first.mdc) for guidelines.

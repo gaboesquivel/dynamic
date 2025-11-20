@@ -1,5 +1,6 @@
 import type { Chain } from 'viem'
-import { isString, isNumber } from 'lodash'
+import isString from 'lodash/isString'
+import isNumber from 'lodash/isNumber'
 import {
   arbitrum,
   arbitrumSepolia,
