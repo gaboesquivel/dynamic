@@ -1,0 +1,183 @@
+# Deployment and Branching Strategy
+
+This document outlines the comprehensive deployment and branching strategy for all systems in the Vencura monorepo, covering GitHub Flow, deployment targets (Vercel and Google Cloud), and hybrid deployment options.
+
+## Overview
+
+The Vencura monorepo uses **GitHub Flow** with `develop` as the primary development branch. All systems (API, Web, Mathler) follow a consistent deployment strategy with multiple deployment target options:
+
+- **Primary**: Vercel (no-lock approach) - all systems deployed to Vercel
+- **Alternative**: Google Cloud with Pulumi - full infrastructure-as-code option
+- **Hybrid**: Split architecture - thin stateless API layer on Vercel Edge, critical systems (auth, key custody) on Google Cloud
+
+## Branching Strategy: GitHub Flow
+
+### Branch Structure
+
+We use **GitHub Flow** with `develop` as the main development branch:
+
+```
+main (production)
+  ↑
+develop (staging/development)
+  ↑
+feature/*, fix/*, chore/* (feature branches)
+```
+
+### Main Branches
+
+#### `develop` - Primary Development Branch
+
+- **Purpose**: Main development branch, serves as the staging environment
+- **Deployment**: Auto-deploys to Vercel Preview (staging environment)
+- **Environment**: Staging/testnet configuration
+- **Protection**: Should be kept stable and deployable
+- **Merges**: Feature branches merge here first for testing
+
+#### `main` - Production Branch
+
+- **Purpose**: Production-ready code
+- **Deployment**: Auto-deploys to Vercel Production (production environment)
+- **Environment**: Production/mainnet configuration
+- **Protection**: Protected branch (requires PR review)
+- **Merges**: Only from `develop` or hotfix branches
+
+### Branch Types
+
+#### Feature Branches (`feature/*`)
+
+- **Created from**: `develop`
+- **Purpose**: New features and enhancements
+- **Workflow**:
+  1. Create from `develop`: `git checkout develop && git checkout -b feature/my-feature`
+  2. Develop and test locally
+  3. Push to GitHub (creates Vercel Preview deployment)
+  4. Open PR targeting `develop`
+  5. After review, merge to `develop`
+  6. After validation on staging, merge `develop` to `main`
+
+#### Fix Branches (`fix/*`)
+
+- **Created from**: `develop` (for non-critical fixes) or `main` (for critical fixes)
+- **Purpose**: Bug fixes
+- **Workflow**: Same as feature branches
+
+#### Hotfix Branches (`hotfix/*`)
+
+- **Created from**: `main`
+- **Purpose**: Critical production fixes that need immediate deployment
+- **Workflow**:
+  1. Create from `main`: `git checkout main && git checkout -b hotfix/critical-fix`
+  2. Fix and test locally
+  3. Merge to `main` first (for immediate production deployment)
+  4. Merge to `develop` to keep branches in sync
+  5. Delete hotfix branch after merge
+
+#### Chore Branches (`chore/*`)
+
+- **Created from**: `develop`
+- **Purpose**: Maintenance tasks, dependencies, documentation
+- **Workflow**: Same as feature branches
+
+## Deployment Strategy
+
+### Current Approach: Vercel No-Lock
+
+**All systems are currently deployed to Vercel** using a no-lock approach:
+
+- ✅ **No vendor lock-in**: Code remains portable and platform-agnostic
+- ✅ **Framework Defined Infrastructure (FDI)**: Uses open frameworks (Next.js, NestJS) without proprietary APIs
+- ✅ **Zero-configuration CI/CD**: Git push = automatic deployment
+- ✅ **Preview deployments**: Every PR gets instant production-like preview URL
+- ✅ **Global distribution**: 100+ edge locations, automatic CDN, edge functions
+- ✅ **Monorepo support**: Automatic project detection, no manual configuration
+
+See [Vercel Portability Strategy](/docs/vercel-portability) for detailed portability approach.
+
+### Deployment Targets
+
+#### Vercel Deployments
+
+**All applications** (`apps/api`, `apps/web`, `apps/mathler`) are configured for Vercel deployment:
+
+| Application                  | Production URL               | Staging URL                              | Branch Mapping                             |
+| ---------------------------- | ---------------------------- | ---------------------------------------- | ------------------------------------------ |
+| **API** (`apps/api`)         | `vencura-api.vercel.app`     | `vencura-api-git-develop.vercel.app`     | `main` → Production<br />`develop` → Preview |
+| **Web** (`apps/web`)         | `vencura-web.vercel.app`     | `vencura-web-git-develop.vercel.app`     | `main` → Production<br />`develop` → Preview |
+| **Mathler** (`apps/mathler`) | `vencura-mathler.vercel.app` | `vencura-mathler-git-develop.vercel.app` | `main` → Production<br />`develop` → Preview |
+
+**Configuration**: Each app has a `vercel.json` file that configures:
+
+- Build commands (monorepo-aware)
+- Output directories
+- Framework detection
+- Git branch deployment settings
+
+#### Google Cloud Deployments (Pulumi)
+
+**Alternative deployment option** using Pulumi infrastructure-as-code:
+
+- **Location**: `infra/vencura/` directory
+- **Stack**: Pulumi TypeScript infrastructure
+- **Target**: Google Cloud Run with Cloud SQL Postgres
+- **Environments**: `dev` and `prod` stacks
+
+**When to Use**:
+
+- Production workloads requiring strict data governance
+- Enhanced security requirements (HSM-backed keys, private networking)
+- Regulatory/compliance requirements
+- Need for MPC/threshold signing workflows
+
+See [Google Cloud Deployment](/docs/google-cloud) for detailed setup.
+
+### Hybrid Deployment Option
+
+**Future option** for production security requirements - split architecture:
+
+#### Architecture Split
+
+**Vercel Edge (Stateless API Layer)**:
+
+- Next.js frontend applications (`apps/web`, `apps/mathler`)
+- Thin NestJS adapters for user authentication facades, dashboards, webhooks, notifications, public API facades
+- Leverages Vercel's edge network, CDN, and excellent DX
+
+**Google Cloud (Critical Systems)**:
+
+- NestJS "signer" service on Cloud Run in private VPC
+- Key custody and signing operations
+- Keys in Cloud KMS/HSM (optionally MPC/threshold signing)
+- Direct VPC egress control, firewall rules, VPC Flow Logs
+- Cloud Armor WAF for public endpoints
+
+**Current Status**: Documented as future option, **not implemented**. Everything stays on Vercel for demo/development phase.
+
+## Environment Mapping
+
+| Branch           | Environment | Blockchain Network                      | Deployment Target | Vercel Environment |
+| ---------------- | ----------- | --------------------------------------- | ----------------- | ------------------ |
+| `main`           | Production  | Mainnet (real chains)                   | Vercel Production | Production         |
+| `develop`        | Staging     | Testnets (Sepolia, Arbitrum Sepolia)    | Vercel Preview    | Preview            |
+| Feature branches | Development | Local Anvil (dev) or Testnets (preview) | Vercel Preview    | Preview            |
+
+## Best Practices
+
+### Branching
+
+1. ✅ **Always branch from `develop`** for new features (except hotfixes)
+2. ✅ **Keep `develop` stable** - it's the staging environment
+3. ✅ **Never push directly to `main`** - use PRs
+4. ✅ **Use descriptive branch names**: `feature/description`, `fix/description`, `hotfix/description`
+5. ✅ **Merge hotfixes to both `main` and `develop`** to keep branches in sync
+6. ✅ **Delete feature branches** after merging
+
+### Deployment
+
+1. ✅ **Test locally first** with `pnpm dev:local`
+2. ✅ **Validate on staging** (`develop` branch) before production
+3. ✅ **Monitor deployments** in Vercel dashboard or GitHub Actions
+4. ✅ **Use preview deployments** for PR validation
+5. ✅ **Keep environment variables in sync** across environments
+6. ✅ **Document deployment changes** in PR descriptions
+

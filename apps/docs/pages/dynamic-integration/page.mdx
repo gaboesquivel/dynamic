@@ -1,0 +1,279 @@
+# Dynamic Integration Architecture
+
+## Overview
+
+This document describes the architecture for integrating with Dynamic SDK, ensuring a single integration point and type-safe token operations.
+
+## Architecture Pattern
+
+### Single Integration Point
+
+All Dynamic SDK calls go through the Ventura backend API:
+
+```
+Web App → Ventura API → Dynamic SDK
+```
+
+**Key Principles:**
+
+- **No direct Dynamic SDK usage** in web layer (except Dynamic widget for UI)
+- **Backend API is the single integration point** to Dynamic SDK
+- **All wallet operations** (create, balance, sign, send) go through Ventura API
+
+### Exception: Dynamic Widget
+
+The Dynamic widget (`DynamicWidget`) is a UI component that uses Dynamic SDK directly. This is acceptable because:
+
+- It's a UI component, not core business logic
+- It handles authentication UI/UX
+- It doesn't bypass the Ventura API for wallet operations
+
+## Token Operations Pattern
+
+### Generic Transaction Endpoint
+
+The backend provides a generic transaction endpoint that supports contract calls:
+
+```http
+POST /wallets/:id/send
+{
+  "to": "0x...",      // Contract address
+  "amount": 0,        // Native token amount (0 for pure contract calls)
+  "data": "0x..."     // Encoded function call data
+}
+```
+
+**Benefits:**
+
+- **Multichain**: Works for EVM, Solana (future), and other chains
+- **Generic**: No need for chain-specific endpoints (mint, burn, etc.)
+- **Flexible**: Supports any contract call, not just tokens
+
+### Type-Safe Client Layer
+
+TypeScript utilities at the client layer provide type safety:
+
+```typescript
+// Client encodes contract calls
+import { encodeTokenMint } from '@vencura/react/utils/token-encoding'
+import { useMintToken } from '@vencura/react'
+
+const mintData = encodeTokenMint({
+  recipient: '0x...',
+  amount: parseUnits('1000', 18),
+  abi: testnetTokenAbi,
+})
+
+// Hook uses generic endpoint
+const mintToken = useMintToken()
+mintToken.mutate({
+  walletId: '...',
+  tokenAddress: '0x...',
+  recipient: '0x...',
+  amount: parseUnits('1000', 18),
+  abi: testnetTokenAbi,
+})
+```
+
+**Pattern:**
+
+1. **Generic API**: Backend provides generic endpoints with `data` parameter
+2. **Type-safe client**: React hooks encode contract calls using TypeScript utilities
+3. **Multichain support**: Works for EVM, Solana (future), and other chains
+4. **Portability**: No vendor lock-in, works with any backend
+
+## Test Account Lifecycle
+
+### Account Creation
+
+- **Test accounts created via API**: Use `createTestWallet()` helper which calls `POST /wallets`
+- **Accounts persist**: Test accounts are NOT deleted after tests complete
+- **Account reuse**: Tests work with existing accounts, not require fresh accounts
+
+### Balance Assertions
+
+Since accounts persist and may have existing balances:
+
+1. **Read initial balance** before operations using `getInitialBalance()` helper
+2. **Assert balance deltas** instead of absolute values using `assertBalanceDelta()` helper
+3. **Use tolerance** for floating-point comparisons (default: 0.0001)
+
+### Example
+
+```typescript
+// Get initial balance before operation
+const initialBalance = await getInitialBalance({ app, authToken, walletId })
+
+// Perform operation (e.g., send transaction)
+await sendTransaction(...)
+
+// Assert balance changed by expected delta
+await assertBalanceDelta({
+  app,
+  authToken,
+  walletId,
+  expectedDelta: -0.0001, // Expected change
+  initialBalance,
+})
+```
+
+## Package Roles
+
+### @vencura/react
+
+- **React hooks** for interacting with Ventura API
+- **Type-safe token operations** (`useMintToken`, `useBurnToken`)
+- **Encoding utilities** (`encodeTokenMint`, `encodeTokenBurn`)
+- **No direct blockchain calls** - all operations go through Ventura API
+
+### @vencura/evm
+
+- **ABIs**: Contract ABIs for encoding contract calls
+- **Node utilities**: Backend utilities for contract interactions
+- **No React hooks**: Hooks removed, use `@vencura/react` instead
+
+### @vencura/core
+
+- **TypeScript SDK** generated from API contracts
+- **Type-safe client** using ts-rest
+- **Contract-first approach**: Types shared across backend, SDK, and frontend
+
+## Migration Guide
+
+### From @vencura/evm hooks to @vencura/react
+
+**Old (removed):**
+
+```tsx
+import { useMint } from '@vencura/evm/hooks'
+
+const { mint } = useMint({
+  tokenAddress: '0x...',
+  amount: parseUnits('1000', 18),
+})
+```
+
+**New:**
+
+```tsx
+import { useMintToken } from '@vencura/react'
+import { testnetTokenAbi } from '@vencura/evm/abis'
+
+const mintToken = useMintToken()
+mintToken.mutate({
+  walletId: '...',
+  tokenAddress: '0x...',
+  recipient: '0x...',
+  amount: parseUnits('1000', 18),
+  abi: testnetTokenAbi,
+})
+```
+
+## Benefits
+
+1. **Single integration point**: All Dynamic SDK calls go through Ventura API
+2. **Type safety**: TypeScript utilities ensure correct function encoding
+3. **Portability**: No vendor lock-in, works with any backend
+4. **Multichain**: Generic endpoints work for all chains
+5. **Testability**: Deterministic tests with account reuse and balance deltas
+
+## Data Storage Strategy
+
+### Database vs Dynamic SDK Metadata
+
+We store all wallet and user data in our own database (PostgreSQL/PGLite) rather than relying on Dynamic SDK metadata.
+
+### What We Store in Our Database
+
+**Wallet Data:**
+
+- Wallet ID (our UUID)
+- User ID (association with our users)
+- Wallet address (from Dynamic SDK's `accountAddress`)
+- Encrypted server-side key shares (from Dynamic SDK's `externalServerKeyShares`)
+- Network/chain type information
+- Creation timestamp
+
+**User Data:**
+
+- User ID
+- Email
+- Creation timestamp
+
+### What Dynamic SDK Stores/Manages
+
+**Dynamic SDK returns when creating a wallet:**
+
+- `accountAddress` - Wallet address (stored in our DB as `address`)
+- `externalServerKeyShares` - Server-side key shares (encrypted and stored in our DB)
+
+**Dynamic SDK manages internally (not stored in our DB):**
+
+- Client-side key share (managed by Dynamic SDK's infrastructure)
+- Threshold signature scheme configuration (2-of-2)
+- Wallet recovery/backup metadata
+- Dynamic's internal wallet metadata and associations
+- Wallet state and transaction history (queried via SDK, not stored locally)
+
+### When to Use Dynamic User Metadata
+
+Dynamic user metadata (via `useUserUpdateRequest()` hook) can be used for:
+
+- **Frontend-only data**: Data that doesn't need backend access
+- **User preferences**: Settings that can be managed entirely client-side
+- **Application state**: Game history, UI preferences, etc.
+
+**Example from Mathler app:**
+
+```typescript
+// Frontend-only game history stored in Dynamic user metadata
+const { updateUser } = useUserUpdateRequest()
+
+await updateUser({
+  metadata: {
+    mathlerHistory: [...gameHistory],
+  },
+})
+```
+
+**Important Limitations:**
+
+- Dynamic user metadata is **frontend-only** - not accessible from backend API
+- Dynamic SDK's node wallet clients **do not support** custom wallet metadata
+- All backend operations require our database for wallet lookups and key retrieval
+
+## Rate Limit Handling
+
+The API automatically handles Dynamic SDK rate limits with centralized retry logic:
+
+### Dynamic SDK Rate Limits
+
+- **SDK endpoints** (`/sdk`): 100 requests per minute per IP, 10,000 requests per minute per project environment
+- **Developer endpoints**: 1,500 requests per minute per IP, 3,000 requests per minute per project environment
+
+We use SDK endpoints, so the API implements safeguards for **100 req/min per IP** and **10,000 req/min per project environment**.
+
+### Retry Strategy
+
+All Dynamic SDK calls are wrapped with `RateLimitService.retryWithBackoff()` which:
+
+- Detects 429 errors via status code or error message
+- Retries with exponential backoff and jitter
+- Respects `Retry-After` header if present
+- Logs retry attempts for monitoring
+- Throws error after max retries exhausted
+
+### Configuration
+
+Rate limit behavior is configurable via environment variables:
+
+- `DYNAMIC_RATE_LIMIT_MAX_RETRIES` (default: 5)
+- `DYNAMIC_RATE_LIMIT_BASE_DELAY_MS` (default: 1000)
+- `DYNAMIC_RATE_LIMIT_MAX_DELAY_MS` (default: 30000)
+
+## Future Enhancements
+
+- **Generic read endpoint**: For token balance and supply reads
+- **Solana support**: Extend pattern to Solana token operations
+- **Batch operations**: Support for batch contract calls
+

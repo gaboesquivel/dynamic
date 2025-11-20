@@ -1,0 +1,88 @@
+# Architecture
+
+This monorepo follows a modular architecture with clear separation between applications, shared packages, and infrastructure. **Built with portability in mind - deploy anywhere without vendor lock-in.**
+
+## Portable by Default
+
+**Critical architectural principle**: Our stack is designed for portability and runs on any Linux distribution:
+
+- **Default approach**: Avoid vendor-specific features to maintain portability
+- **Pragmatic exceptions**: Can leverage vendor features (e.g., Vercel edge functions, optimizations) when scaling/performance needs justify from product/business perspective
+- **Platform-agnostic**: Can be deployed to any containerized platform (Docker, Kubernetes, etc.)
+- **Vercel as convenience**: Vercel is chosen for rapid deployment and excellent developer experience, not as a requirement
+- **All core components** can be migrated to any platform without code changes
+
+**Current Deployment**: All applications (UI + API) are currently deployed on **Vercel**. We are NOT splitting the architecture now - everything stays on Vercel to leverage its unparalleled shipping and distribution capabilities.
+
+## Architecture Structure
+
+```
+dynamic/
+├── apps/              # Applications
+│   ├── api/           # NestJS backend API (multichain custodial wallet platform)
+│   ├── web/           # Next.js frontend for Vencura API (multichain support)
+│   ├── docs/          # Documentation site
+│   └── mathler/       # Next.js Mathler game (Wordle with numbers)
+├── packages/          # Shared packages
+│   ├── core/          # TypeScript SDK for Vencura API (auto-generated)
+│   ├── react/         # React hooks for Vencura API using TanStack Query
+│   ├── ai/            # AI chatbot component and SDK
+│   ├── types/         # Shared API contracts and types
+│   ├── ui/            # Shared Shadcn/ui component library
+│   └── lib/           # Shared utility library (@vencura/lib)
+├── config/            # Shared configurations
+│   ├── eslint/        # Shared ESLint configuration
+│   └── typescript/    # Shared TypeScript configuration
+├── contracts/         # Smart contracts
+│   ├── evm/           # EVM contracts (Foundry)
+│   └── solana/        # Solana programs (Anchor)
+└── infra/             # Infrastructure as Code
+    └── vencura/       # Pulumi infrastructure for Vencura API
+```
+
+**Applications** (`apps/`) are deployable services with their own dependencies and configurations. **Packages** (`packages/`) provide shared code and utilities consumed by applications. **Config** (`config/`) contains shared configuration packages for ESLint and TypeScript. **Infrastructure** (`infra/`) contains infrastructure-as-code definitions using Pulumi.
+
+## Standards & Conventions
+
+This project follows strict coding standards enforced through Cursor rules and documented in Architecture Decision Records (ADRs).
+
+### Key Patterns
+
+- **Mobile-First Design**: All frontend components follow mobile-first responsive design
+- **RORO Pattern**: Functions with multiple parameters use Receive Object, Return Object pattern
+- **Type Inference**: Always enforce type inference - define return types in functions when needed
+- **Functional Code**: Prefer functional and declarative programming patterns
+
+### Cursor Rules
+
+Code standards are defined in `.cursor/rules/` organized by domain:
+
+- **Base**: TypeScript, Environment, General
+- **Frontend**: React, Next.js, React Hooks, Mobile-First, ShadcnUI, Stack
+- **Backend**: NestJS, Testing
+- **Web3**: Viem, Wagmi, Solana, Multichain, Solidity, Ponder, Cosmos
+
+## Projects
+
+### Applications
+
+- **Vencura API** - NestJS backend for multichain custodial wallet management
+- **Vencura Web** - Next.js frontend for Vencura API
+- **Mathler** - Next.js Mathler game
+
+### Packages
+
+- **@vencura/core** - TypeScript SDK for Vencura API (contract-first with ts-rest)
+- **@vencura/react** - React hooks with TanStack Query for Vencura API
+- **@vencura/types** - Shared API contracts and types (Zod schemas, ts-rest contracts)
+- **@vencura/ai** - AI chatbot component and SDK for wallet operations
+- **@vencura/evm** - EVM token contract ABIs and utilities
+- **@vencura/lib** - Shared utility library (error handling, async utilities, env validation)
+- **@vencura/tools** - Development tools enabled by feature flags
+- **@vencura/ui** - Shared Shadcn/ui component library
+
+### Contracts
+
+- **EVM Contracts** - Foundry-based test token contracts for EVM chains
+- **Solana Contracts** - Anchor-based test token programs for Solana
+
