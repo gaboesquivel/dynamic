@@ -45,39 +45,9 @@ export type ErrorDetails = z.infer<typeof ErrorDetailsSchema>
 export function extractDynamicSDKErrorMessage(error: unknown): string | null {
   if (!error) return null
 
-  // FIRST: Check error.error property (works for both Error objects and plain objects)
-  // Dynamic SDK wraps errors but keeps the actual error in error.error
-  // Use lodash isPlainObject and isString for type checking
-  if (error && typeof error === 'object') {
-    const errorObj = error as Record<string, unknown>
-
-    // Check error.error as string (Dynamic SDK's actual error message)
-    // This works for both Error instances and plain objects
-    if (errorObj.error) {
-      // Use lodash isString for type checking
-      if (isString(errorObj.error)) {
-        // This is the actual Dynamic SDK error message
-        return errorObj.error
-      }
-      // Check nested error.error (object with error property)
-      // Use lodash isPlainObject for type checking
-      if (isPlainObject(errorObj.error)) {
-        const nestedError = errorObj.error as Record<string, unknown>
-        // Check nested error.error (string) - Dynamic SDK's actual error
-        if (nestedError.error && isString(nestedError.error)) {
-          return nestedError.error
-        }
-        // Check nested error.message
-        if (isString(nestedError.message)) {
-          return nestedError.message
-        }
-      }
-    }
-  }
-
-  // SECOND: Check error stack for specific error messages (fallback)
-  // Use @vencura/lib's getErrorMessage as fallback after checking error.error
+  // FIRST: Check error stack for specific error messages (most reliable for Dynamic SDK wrapped errors)
   // This is critical because Dynamic SDK wraps errors and the actual message is often in the stack
+  // Check stack FIRST before checking other properties to catch nested errors
   if (error instanceof Error && error.stack) {
     const stack = error.stack
     // Look for "Multiple wallets per chain not allowed" in stack (case-insensitive for robustness)
@@ -104,6 +74,36 @@ export function extractDynamicSDKErrorMessage(error: unknown): string | null {
     for (const errMsg of commonErrors) {
       if (stack.includes(errMsg)) {
         return errMsg
+      }
+    }
+  }
+
+  // SECOND: Check error.error property (works for both Error objects and plain objects)
+  // Dynamic SDK wraps errors but keeps the actual error in error.error
+  // Use lodash isPlainObject and isString for type checking
+  if (error && typeof error === 'object') {
+    const errorObj = error as Record<string, unknown>
+
+    // Check error.error as string (Dynamic SDK's actual error message)
+    // This works for both Error instances and plain objects
+    if (errorObj.error) {
+      // Use lodash isString for type checking
+      if (isString(errorObj.error)) {
+        // This is the actual Dynamic SDK error message
+        return errorObj.error
+      }
+      // Check nested error.error (object with error property)
+      // Use lodash isPlainObject for type checking
+      if (isPlainObject(errorObj.error)) {
+        const nestedError = errorObj.error as Record<string, unknown>
+        // Check nested error.error (string) - Dynamic SDK's actual error
+        if (nestedError.error && isString(nestedError.error)) {
+          return nestedError.error
+        }
+        // Check nested error.message
+        if (isString(nestedError.message)) {
+          return nestedError.message
+        }
       }
     }
   }

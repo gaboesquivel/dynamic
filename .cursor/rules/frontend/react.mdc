@@ -3,330 +3,104 @@ description: React component patterns and best practices
 globs: *.tsx,*.ts
 alwaysApply: false
 ---
+
 # React Rules
 
 ## Component Structure
-- **React components must be function-based** - Always use function components, never class components
-  - ✅ **Good**: `function Component({ title }: { title: string }) { return <div>{title}</div> }`
-  - ✅ **Good**: `const Component = ({ title }: { title: string }) => <div>{title}</div>`
-  - ❌ **Bad**: `class Component extends React.Component { ... }`
-- **No explicit return types for React components** - Return types are inferred automatically
-  - ✅ **Good**: `function Component({ title }: { title: string }) { return <div>{title}</div> }`
-  - ✅ **Good**: `const Component = ({ title }: { title: string }) => <div>{title}</div>`
-  - ❌ **Bad**: `function Component({ title }: { title: string }): JSX.Element { return <div>{title}</div> }`
-  - ❌ **Bad**: `function Component({ title }: { title: string }): React.ReactElement { return <div>{title}</div> }`
-- Separate UI and business logic into different components
+- Function components only (never class components)
+- No explicit return types (inferred automatically)
+- Props always use object destructuring: `function Component({ title }: { title: string })`
+- RORO pattern applies to regular functions only, not React components (see [TypeScript Rules](../base/typescript.mdc))
 
-## Props and State
-- **React components always use object destructuring for props** - This is the standard React pattern, regardless of the number of props
-  - ✅ **Good**: `function Component({ title }: { title: string })` (single prop)
-  - ✅ **Good**: `function Component({ title, onClick }: { title: string; onClick: () => void })` (multiple props)
-  - ❌ **Bad**: `function Component(title: string)` (React components don't use direct parameters)
-- **Note**: RORO pattern applies to regular functions only (see [TypeScript Rules](../base/typescript.mdc)), not React components
-- **Use `useSetState` from `react-use` when multiple related state variables are updated together**
-- Group related state into a single state object instead of multiple `useState` calls
-
-## Rendering Optimization
-- **Default to NOT using `useMemo` or `useCallback`** - Modern React optimizations make them mostly unnecessary
-- Only use `useMemo` for computationally expensive operations (e.g., complex calculations, large data transformations)
-- Only use `useCallback` when:
-  - Function identity is required as a dependency in hooks (useEffect, useMemo, etc.)
-  - Passing functions through React Context to prevent unnecessary re-renders
-  - You've profiled and identified a real performance bottleneck
-- Prefer `React.memo` for pure components that render often instead of wrapping every function with `useCallback`
-- Inline functions are cheap in modern JavaScript engines - don't optimize prematurely
-- Trust React's automatic optimizations and only add memoization when profiling reveals actual UX issues (lagging, stuttering, delays)
-
-## State Management
-
-### State Management Decision Tree
-
-Choose the right state management approach based on your use case:
+## State Management Decision Tree
 
 1. **URL-shareable UI state** → Use `nuqs` (filters, search, tabs, pagination, view preferences)
-2. **Grouped state not in URL** → Use `useSetState` (game engine, form state, ephemeral UI state)
-3. **Loading/error states from async operations** → Use TanStack Query's built-in state (`isLoading`, `isError`, `isFetching`)
+2. **Grouped state not in URL** → Use `useSetState` from `react-use` (game engine, form state, ephemeral UI state)
+3. **Loading/error states from async** → Use TanStack Query's built-in state (`isLoading`, `isError`, `isFetching`)
 4. **Simple independent state** → Use `useState` (rare, prefer other options)
 
-### URL State Management with nuqs
-
-Use `nuqs` for UI state that should be shareable via URL. This makes state bookmarkable, shareable, and persists across page refreshes.
-
-❌ **Don't**: Use `useState` or `useSetState` for URL-shareable state
+### nuqs for URL State
 ```tsx
-// Bad - state not in URL, not shareable
-const [search, setSearch] = useState('')
-const [page, setPage] = useState(1)
-const [activeTab, setActiveTab] = useState('overview')
+import { useQueryState, useQueryStates, parseAsString, parseAsInteger } from 'nuqs'
+
+const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
+const [filters, setFilters] = useQueryStates({
+  search: parseAsString.withDefault(''),
+  page: parseAsInteger.withDefault(1),
+})
 ```
 
-✅ **Do**: Use `nuqs` for URL-shareable state
-```tsx
-// Good - state in URL, shareable and bookmarkable
-import { useQueryState, useQueryStates, parseAsString, parseAsInteger, parseAsStringEnum } from 'nuqs'
+**Use nuqs for:** Search/filter, tabs, pagination, sort options, view preferences, shareable modal state
 
-const tabs = ['overview', 'settings', 'analytics'] as const
-
-export function useFilters() {
-  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
-  const [activeTab, setActiveTab] = useQueryState('tab', parseAsStringEnum(tabs).withDefault('overview'))
-  
-  return { search, setSearch, page, setPage, activeTab, setActiveTab }
-}
-
-// Or use useQueryStates for multiple related URL params
-export function useFilters() {
-  const [filters, setFilters] = useQueryStates({
-    search: parseAsString.withDefault(''),
-    page: parseAsInteger.withDefault(1),
-    sort: parseAsString.withDefault('name'),
-  })
-  
-  return { filters, setFilters }
-}
-```
-
-**When to use `nuqs`:**
-- Search/filter state
-- Tab/panel selection
-- Pagination state
-- Sort/filter options
-- View preferences (grid/list, theme)
-- Modal state (if shareable/bookmarkable)
-- Any state that benefits from being shareable via URL
-
-See [Frontend Stack](./stack.mdc) for more nuqs examples and patterns.
+**Don't use nuqs for:** Game engine state, form input state, component-local UI state, frequently changing state, sensitive data
 
 ### Loading/Error State Management
+Never manually manage `isLoading`, `error`, or `isError` states. Use TanStack Query hooks or `useAsyncFn` which provide these automatically.
 
-For loading spinners, tooltips, and ephemeral flags from async operations, rely on TanStack Query's built-in state management.
-
-❌ **Don't**: Manually manage loading/error states
 ```tsx
-// Bad - manually managing loading/error state
-const [isLoading, setIsLoading] = useState(false)
-const [error, setError] = useState<Error | null>(null)
-
-const fetchData = async () => {
-  setIsLoading(true)
-  setError(null)
-  try {
-    const data = await api.fetch()
-    // use data
-  } catch (err) {
-    setError(err)
-  } finally {
-    setIsLoading(false)
-  }
-}
-```
-
-✅ **Do**: Use TanStack Query's built-in state
-```tsx
-// Good - TanStack Query provides loading/error state automatically
-import { useQuery } from '@tanstack/react-query'
-import { articles } from '@/queries/articles'
-
+// ✅ Good: TanStack Query provides state
 const { data, isLoading, isError, error } = useQuery(articles.all)
 
-// Or for one-off async operations, use useAsyncFn
-import { useAsyncFn } from 'react-use'
-
+// ✅ Good: useAsyncFn provides state
 const [saveState, saveData] = useAsyncFn(async (data) => {
   return await api.save(data)
 }, [])
-
-// Access loading/error automatically: saveState.loading, saveState.error
+// Access: saveState.loading, saveState.error
 ```
 
-**Never manually manage `isLoading`, `error`, or `isError` states** - these are provided automatically by TanStack Query hooks or `useAsyncFn`. See [React Hooks Rules](./react-hooks.mdc) for detailed patterns.
-
-### Grouping Related State
-
-When multiple state variables are consistently updated together, consolidate them into a single state object using `useSetState` from `react-use`. This simplifies state updates and reduces boilerplate.
-
-❌ **Don't**: Use multiple `useState` calls for related state
+### useSetState for Grouped State
 ```tsx
-// Bad
-const [message, setMessage] = useState('')
-const [signedMessage, setSignedMessage] = useState<string | null>(null)
-const [txTo, setTxTo] = useState('')
-const [txAmount, setTxAmount] = useState('')
-const [showBalance, setShowBalance] = useState(false)
-const [addressError, setAddressError] = useState<string | null>(null)
-const [amountError, setAmountError] = useState<string | null>(null)
-
-// Updating multiple states requires multiple calls
-const handleSuccess = () => {
-  setSignedMessage(data.signedMessage)
-  setMessage('')
-}
-```
-
-✅ **Do**: Use `useSetState` for grouped state
-```tsx
-// Good
 import { useSetState } from 'react-use'
-
-interface FormState {
-  message: string
-  signedMessage: string | null
-  txTo: string
-  txAmount: string
-  showBalance: boolean
-  addressError: string | null
-  amountError: string | null
-}
 
 const [state, setState] = useSetState<FormState>({
   message: '',
   signedMessage: null,
   txTo: '',
-  txAmount: '',
-  showBalance: false,
-  addressError: null,
-  amountError: null,
 })
 
 // Update multiple properties atomically
-const handleSuccess = () => {
-  setState({ signedMessage: data.signedMessage, message: '' })
-}
-
-// Partial updates are easy
-setState({ txTo: value, addressError: null })
+setState({ signedMessage: data.signedMessage, message: '' })
 ```
 
-**When to use `useSetState`:**
-- Multiple related state variables updated together
-- Form state with multiple fields (temporary, not shareable)
-- UI state that changes together (modals, panels, etc.) - **only if not URL-shareable**
-- Game/app state with multiple related properties (game engine state)
-- Ephemeral UI state that doesn't belong in URL
+**Use for:** Multiple related state variables updated together, form state, UI state that changes together (if not URL-shareable), game/app state
 
-**When NOT to use `useSetState`:**
-- URL-shareable state (use `nuqs` instead)
-- Loading/error states from async operations (use TanStack Query's built-in state)
+**Don't use for:** URL-shareable state (use `nuqs`), loading/error states (use TanStack Query)
 
-**When to keep separate `useState`:**
-- Completely independent state variables (rare, prefer other options)
-- Simple boolean flags (only if truly independent and not URL-shareable)
-- Single primitive values with no relation to other state (rare, prefer other options)
+## Rendering Optimization
+- Default to NOT using `useMemo` or `useCallback` (modern React optimizations handle most cases)
+- Only use `useMemo` for computationally expensive operations
+- Only use `useCallback` when:
+  - Function identity required as dependency in hooks
+  - Passing functions through React Context
+  - Profiling reveals actual bottleneck
+- Prefer `React.memo` for pure components over wrapping functions with `useCallback`
 
 ## Error Boundaries
-
-Use `react-error-boundary` to catch React errors and provide fallback UI. Error boundaries catch errors during rendering, in lifecycle methods, and in constructors of the whole tree below them.
-
-### Basic Error Boundary
+Use `react-error-boundary` for error handling:
 
 ```tsx
-import { ErrorBoundary } from 'react-error-boundary'
+import { ErrorBoundary, useErrorHandler } from 'react-error-boundary'
 
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
-  return (
-    <div role="alert">
-      <h2>Something went wrong:</h2>
-      <pre>{error.message}</pre>
-      <button onClick={resetErrorBoundary}>Try again</button>
-    </div>
-  )
-}
+// Component
+<ErrorBoundary FallbackComponent={ErrorFallback}>
+  <YourApp />
+</ErrorBoundary>
 
-export function App() {
-  return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <YourApp />
-    </ErrorBoundary>
-  )
+// Async errors
+const handleError = useErrorHandler()
+try {
+  await someAsyncOperation()
+} catch (error) {
+  handleError(error) // Triggers nearest ErrorBoundary
 }
 ```
 
-### Error Boundary with Reset
+**Use for:** App-level, section-level, feature-level error handling, third-party component errors
 
-```tsx
-import { ErrorBoundary } from 'react-error-boundary'
-
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
-  return (
-    <div role="alert">
-      <h2>Something went wrong</h2>
-      <p>{error.message}</p>
-      <button onClick={resetErrorBoundary}>Try again</button>
-    </div>
-  )
-}
-
-export function App() {
-  return (
-    <ErrorBoundary
-      FallbackComponent={ErrorFallback}
-      onReset={() => {
-        // Reset app state, clear cache, etc.
-        window.location.reload()
-      }}
-      resetKeys={['someKey']} // Reset when this key changes
-    >
-      <YourApp />
-    </ErrorBoundary>
-  )
-}
-```
-
-### Async Error Handling
-
-Use `useErrorHandler` hook for async errors (promises, callbacks, etc.):
-
-```tsx
-import { useErrorHandler } from 'react-error-boundary'
-
-function MyComponent() {
-  const handleError = useErrorHandler()
-
-  const handleAsyncOperation = async () => {
-    try {
-      await someAsyncOperation()
-    } catch (error) {
-      handleError(error) // This will trigger the nearest ErrorBoundary
-    }
-  }
-
-  return <button onClick={handleAsyncOperation}>Do something</button>
-}
-```
-
-### When to Use Error Boundaries
-
-✅ **Use error boundaries for:**
-- App-level error handling (wrap root component)
-- Section-level error handling (wrap independent sections)
-- Feature-level error handling (wrap features that can fail independently)
-- Third-party component errors
-
-❌ **Don't use error boundaries for:**
-- Event handlers (use try/catch instead)
-- Async code (use `useErrorHandler` hook)
-- Server-side rendering errors
-- Errors during error boundary rendering itself
-
-**Best Practices:**
-- Place error boundaries at strategic points in your component tree
-- Provide meaningful fallback UI
-- Log errors to error tracking service
-- Use `resetErrorBoundary` to allow recovery
-- Consider different fallbacks for different error types
-
-## Component Composition
-- Use children prop for flexible composition
-- Extract shared logic into custom hooks
-
-## Accessibility
-- Use semantic HTML elements
-- Maintain proper color contrast
-
-## Code Style
-- See [TypeScript Rules](../base/typescript.mdc) for code style guidelines
+**Don't use for:** Event handlers (use try/catch), async code (use `useErrorHandler`), SSR errors
 
 ## Related Rules
-- See [React Hooks Rules](./react-hooks.mdc) for data fetching patterns
-- See [Next.js Rules](./nextjs.mdc) for Next.js-specific patterns
+- [React Hooks Rules](./react-hooks.mdc) - Data fetching patterns
+- [Frontend Stack](./stack.mdc) - Library usage patterns
+- [Next.js Rules](./nextjs.mdc) - Next.js-specific patterns
+- [TypeScript Rules](../base/typescript.mdc) - Code style guidelines

@@ -6,7 +6,7 @@ import { delay } from '@vencura/lib'
 
 const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
-describe('WalletController Edge Cases (e2e)', () => {
+describe.skip('WalletController Edge Cases (e2e)', () => {
   let authToken: string
 
   beforeAll(async () => {

@@ -14,11 +14,11 @@ const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
 /**
  * Throttling mechanism to prevent Dynamic SDK rate limits.
- * Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet operations).
- * This ensures minimum time between wallet creation calls.
+ * Dynamic SDK SDK endpoints have rate limits: 100 req/min per IP, 10,000 req/min per project environment.
+ * This ensures minimum time between wallet creation calls (2000ms = ~30 req/min, conservative to prevent rate limits).
  */
 let lastWalletCreationTime = 0
-const MIN_WALLET_CREATION_INTERVAL_MS = 3000 // 3 seconds between wallet creation calls (increased to prevent rate limits)
+const MIN_WALLET_CREATION_INTERVAL_MS = 2000 // 2 seconds between wallet creation calls (conservative to prevent rate limits)
 
 /**
  * Throttle wallet creation calls to prevent rate limits.
@@ -69,115 +69,87 @@ export async function createTestWallet({
   baseUrl = TEST_SERVER_URL,
   authToken,
   chainId,
-  maxRetries = 3,
 }: {
   baseUrl?: string
   authToken: string
   chainId: number | string
-  maxRetries?: number
 }): Promise<TestWallet> {
-  let lastError: Error | null = null
+  // CRITICAL: Throttle wallet creation calls to prevent Dynamic SDK rate limits
+  await throttleWalletCreation()
 
-  // Retry logic with exponential backoff for rate limit errors
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    // Add delay before retry (exponential backoff: 1000ms, 2000ms, 4000ms)
-    if (attempt > 0) {
-      const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 4000)
-      await delay(backoffDelay)
-    }
+  const response = await request(baseUrl)
+    .post('/wallets')
+    .set('Authorization', `Bearer ${authToken}`)
+    .send({ chainId })
 
-    // CRITICAL: Throttle wallet creation calls to prevent Dynamic SDK rate limits
-    await throttleWalletCreation()
+  // CRITICAL: Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+  if (response.status === 200 || response.status === 201) {
+    // Validate response body using TS-REST contract runtime schema
+    // Use the correct schema based on status code
+    const WalletSchema =
+      response.status === 201
+        ? walletAPIContract.create.responses[201]
+        : walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
+    const validatedWallet = WalletSchema.parse(response.body)
 
-    const response = await request(baseUrl)
-      .post('/wallets')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ chainId })
+    return validatedWallet as TestWallet
+  }
 
-    // CRITICAL: Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
-    if (response.status === 200 || response.status === 201) {
-      // Validate response body using TS-REST contract runtime schema
-      // Use the correct schema based on status code
-      const WalletSchema =
-        response.status === 201
-          ? walletAPIContract.create.responses[201]
-          : walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
-      const validatedWallet = WalletSchema.parse(response.body)
+  // Handle rate limit errors (429) - increase delay for next call
+  if (response.status === 429) {
+    throw new Error(`Rate limit exceeded (429). Increase delays between wallet creation calls.`)
+  }
 
-      // Note: Throttling happens before the request, so no need for additional delay here
+  // Handle "multiple wallets per chain" error as SUCCESS (expected behavior)
+  // CRITICAL: This is expected behavior, not a failure - we cannot create multiple wallets with same API key
+  if (response.status === 400) {
+    // Validate error response structure using zod schema
+    const errorResponse = ErrorResponseSchema.safeParse(response.body)
+    if (errorResponse.success) {
+      const errorMessage = errorResponse.data.message.toLowerCase()
+      if (
+        errorMessage.includes('multiple wallets per chain') ||
+        errorMessage.includes('wallet already exists') ||
+        errorMessage.includes('you cannot create multiple wallets')
+      ) {
+        // Extract existing wallet address from error details
+        const existingWalletAddress = errorResponse.data.details?.existingWalletAddress
 
-      return validatedWallet as TestWallet
-    }
+        if (existingWalletAddress) {
+          // Query wallet by address using GET /wallets endpoint
+          const walletsResponse = await request(baseUrl)
+            .get('/wallets')
+            .set('Authorization', `Bearer ${authToken}`)
+            .expect(200)
 
-    // Handle rate limit errors (429) with retry
-    if (response.status === 429) {
-      lastError = new Error(`Rate limit exceeded (429) on attempt ${attempt + 1}/${maxRetries + 1}`)
-      // Continue to retry if we haven't exceeded max retries
-      if (attempt < maxRetries) {
-        continue
-      }
-      // If we've exhausted retries, throw error
-      throw lastError
-    }
+          const wallets = walletsResponse.body as TestWallet[]
+          const existingWallet = wallets.find(w => w.address === existingWalletAddress)
 
-    // Handle "multiple wallets per chain" error as SUCCESS (expected behavior)
-    // CRITICAL: This is expected behavior, not a failure - we cannot create multiple wallets with same API key
-    if (response.status === 400) {
-      // Validate error response structure using zod schema
-      const errorResponse = ErrorResponseSchema.safeParse(response.body)
-      if (errorResponse.success) {
-        const errorMessage = errorResponse.data.message.toLowerCase()
-        if (
-          errorMessage.includes('multiple wallets per chain') ||
-          errorMessage.includes('wallet already exists') ||
-          errorMessage.includes('you cannot create multiple wallets')
-        ) {
-          // Extract existing wallet address from error details
-          const existingWalletAddress = errorResponse.data.details?.existingWalletAddress
-
-          if (existingWalletAddress) {
-            // Query wallet by address using GET /wallets endpoint
-            const walletsResponse = await request(baseUrl)
-              .get('/wallets')
-              .set('Authorization', `Bearer ${authToken}`)
-              .expect(200)
-
-            const wallets = walletsResponse.body as TestWallet[]
-            const existingWallet = wallets.find(w => w.address === existingWalletAddress)
-
-            if (existingWallet) {
-              // Validate using TS-REST contract runtime schema (200 response for existing wallet)
-              const WalletSchema =
-                walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
-              const validatedWallet = WalletSchema.parse(existingWallet)
-              return validatedWallet as TestWallet
-            }
+          if (existingWallet) {
+            // Validate using TS-REST contract runtime schema (200 response for existing wallet)
+            const WalletSchema =
+              walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
+            const validatedWallet = WalletSchema.parse(existingWallet)
+            return validatedWallet as TestWallet
           }
-
-          // Fallback: use getOrCreateTestWallet if we can't find wallet by address
-          return getOrCreateTestWallet({ baseUrl, authToken, chainId })
         }
+
+        // Fallback: use getOrCreateTestWallet if we can't find wallet by address
+        return getOrCreateTestWallet({ baseUrl, authToken, chainId })
       }
-    }
-
-    // Log error response for debugging
-    console.error('createTestWallet failed:', {
-      status: response.status,
-      body: response.body,
-      chainId,
-      headers: response.headers,
-    })
-
-    // If we've exhausted retries, throw error
-    if (attempt === maxRetries) {
-      throw new Error(
-        `Failed to create wallet after ${maxRetries + 1} attempts. Last status: ${response.status}`,
-      )
     }
   }
 
-  // This should never be reached, but TypeScript requires a return
-  throw new Error('Unexpected end of createTestWallet function')
+  // Log error response for debugging
+  console.error('createTestWallet failed:', {
+    status: response.status,
+    body: response.body,
+    chainId,
+    headers: response.headers,
+  })
+
+  // Throw error for other status codes
+  throw new Error(`Failed to create wallet. Status: ${response.status}`)
 }
 
 /**

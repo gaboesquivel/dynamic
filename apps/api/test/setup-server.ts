@@ -18,18 +18,20 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Check if server is ready by hitting health check endpoint
+ * Check if server is ready by hitting API endpoint
+ * Uses /wallets endpoint which requires auth - 401 response means server is up and routing correctly
  */
 async function isServerReady(): Promise<boolean> {
   try {
     const response = await fetchWithTimeout({
-      url: TEST_SERVER_URL,
+      url: `${TEST_SERVER_URL}/wallets`,
       options: {
         method: 'GET',
       },
       timeoutMs: 2000,
     })
-    return response.ok && response.status === 200
+    // Accept 200 (if somehow auth passes) or 401 (unauthorized - server is up and routing works)
+    return response.status === 200 || response.status === 401
   } catch {
     return false
   }

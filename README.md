@@ -103,11 +103,12 @@ Architectural decisions are documented in [Architecture Decision Records (ADRs)]
 
 This project leverages AI tools throughout the development workflow:
 
+- **[Development Workflow](.cursor/workflow.md)**: Guidelines for using AI effectively in large, full-stack TypeScript codebases
 - **[v0.dev](https://v0.dev)**: UI component generation via MCP integration (configured in [`.cursor/mcp.json`](.cursor/mcp.json))
 - **Cursor Rules**: Automated code standards enforcement (see [Standards & Conventions](#standards--conventions))
 - **MCP Servers**: Enhanced AI capabilities via Model Context Protocol (see [`.cursor/README.md`](.cursor/README.md))
 
-See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration details.
+See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration details and [`.cursor/workflow.md`](.cursor/workflow.md) for AI-assisted development workflow guidelines.
 
 ## Projects
 

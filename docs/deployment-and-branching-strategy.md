@@ -356,57 +356,9 @@ See [Infrastructure README](../infra/README.md) for detailed Pulumi setup and co
 
 ### Environment Variables
 
-Environment variables are configured per environment in Vercel dashboard:
+Environment variables are configured per environment in Vercel dashboard. See [Environment Strategy](./environment-strategy.md) for detailed configuration and required variables.
 
-#### Production (`main` branch)
-
-**API** (`apps/api`):
-
-```
-DYNAMIC_ENVIRONMENT_ID=your_production_environment_id
-DYNAMIC_API_TOKEN=your_production_api_token
-ENCRYPTION_KEY=your_32_char_encryption_key
-USE_LOCAL_BLOCKCHAIN=false
-RPC_URL_42161=https://arbitrum-mainnet.infura.io/v3/your_key
-RPC_URL_8453=https://base-mainnet.infura.io/v3/your_key
-SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
-NODE_ENV=production
-```
-
-**Web/Mathler** (`apps/web`, `apps/mathler`):
-
-```
-NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_production_environment_id
-NEXT_PUBLIC_API_URL=https://vencura-api.vercel.app
-NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
-NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
-```
-
-#### Staging (`develop` branch)
-
-**API** (`apps/api`):
-
-```
-DYNAMIC_ENVIRONMENT_ID=your_staging_environment_id
-DYNAMIC_API_TOKEN=your_staging_api_token
-ENCRYPTION_KEY=your_32_char_encryption_key
-USE_LOCAL_BLOCKCHAIN=false
-RPC_URL_421614=https://arbitrum-sepolia.infura.io/v3/your_key
-RPC_URL_84532=https://base-sepolia.infura.io/v3/your_key
-SOLANA_RPC_URL=https://api.testnet.solana.com
-NODE_ENV=staging
-```
-
-**Web/Mathler** (`apps/web`, `apps/mathler`):
-
-```
-NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_staging_environment_id
-NEXT_PUBLIC_API_URL=https://vencura-api-git-develop.vercel.app
-NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id
-NEXT_PUBLIC_SENTRY_ENVIRONMENT=staging
-```
-
-See [Deployment Guide](./deployment-guide.md) for detailed environment variable configuration.
+See [Environment Strategy](./environment-strategy.md) for detailed environment variable configuration.
 
 ## Monorepo Deployment Strategy
 
@@ -631,13 +583,35 @@ See [Infrastructure README](../infra/README.md) for detailed CI/CD setup.
 - ✅ Rollback Cloud Run service to previous revision
 - ✅ Use Pulumi state to track changes
 
+## Troubleshooting
+
+### Deployment Fails
+
+1. Check build logs in Vercel dashboard
+2. Verify environment variables are set correctly
+3. Check build command in `vercel.json`
+4. Verify dependencies are installed correctly
+
+### Environment Variables Not Loading
+
+1. Check `NODE_ENV` is set correctly
+2. Verify file names match environment (`.env.development`, `.env.staging`, `.env.production`)
+3. Check Vercel dashboard for environment variable configuration
+4. Verify variable names match exactly (case-sensitive)
+
+### Blockchain Connection Issues
+
+1. Check RPC URLs are correct for the environment
+2. Verify `USE_LOCAL_BLOCKCHAIN` is set correctly (should be `false` for staging/production)
+3. Check RPC provider status and rate limits
+4. Verify chain IDs match the network
+
 ## Related Documentation
 
-- [Deployment Guide](./deployment-guide.md) - Detailed deployment instructions
-- [Git Workflow](./git-workflow.md) - Branching strategy details
 - [Vercel Portability Strategy](./vercel-portability-strategy.md) - Portability approach
 - [Infrastructure README](../infra/README.md) - Pulumi setup and usage
 - [Environment Strategy](./environment-strategy.md) - Environment variable configuration
+- [Google Cloud Deployment](./google-cloud-deployment.md) - GCP deployment option
 
 ## Summary
 

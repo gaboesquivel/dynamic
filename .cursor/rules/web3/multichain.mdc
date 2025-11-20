@@ -3,6 +3,7 @@ description: General multichain address validation patterns and best practices
 globs: *.tsx,*.ts
 alwaysApply: false
 ---
+
 # Multichain Rules
 
 ## Core Principles
@@ -13,7 +14,6 @@ alwaysApply: false
 - Document address formats per chain in code comments
 
 ## Address Validation Pattern
-
 ```tsx
 import { getAddress } from 'viem' // For EVM
 import { PublicKey } from '@solana/web3.js' // For Solana
@@ -30,7 +30,7 @@ export function validateAddress({
   switch (chainType) {
     case 'evm':
       try {
-        getAddress(address) // Use viem's getAddress (per viem rules)
+        getAddress(address) // Use viem's getAddress (see viem.mdc)
         return true
       } catch {
         return false
@@ -43,10 +43,9 @@ export function validateAddress({
         return false
       }
     case 'cosmos':
-      // Bech32 validation
+      // Bech32 validation (see cosmos.mdc)
       const bech32Regex = /^[a-z]{1,5}1[a-z0-9]{6,}$/i
       return bech32Regex.test(address) && address.length >= 20 && address.length <= 45
-    // Add other chain validators...
     default:
       return false
   }
@@ -54,15 +53,12 @@ export function validateAddress({
 ```
 
 ## Chain-Specific Libraries
-
-- **EVM**: Use `getAddress()` from `viem` (never cast directly)
-- **Solana**: Use `PublicKey` from `@solana/web3.js`
-- **Cosmos**: Use Bech32 validation or chain-specific libraries
-- **Bitcoin**: Use Base58 or Bech32 validation
+- **EVM**: Use `getAddress()` from `viem` (see [Viem Rules](./viem.mdc))
+- **Solana**: Use `PublicKey` from `@solana/web3.js` (see [Solana Rules](./solana.mdc))
+- **Cosmos**: Use Bech32 validation (see [Cosmos Rules](./cosmos.mdc))
 - **Other chains**: Use appropriate validation libraries when available
 
 ## Error Handling
-
 ```tsx
 // Provide chain-aware error messages
 if (!validateAddress({ address: to, chainType })) {
@@ -73,9 +69,13 @@ if (!validateAddress({ address: to, chainType })) {
 ```
 
 ## Best Practices
-
 1. **Validate Early**: Check address format before creating transactions
 2. **Chain-Aware Errors**: Provide helpful error messages indicating expected format
 3. **Use Libraries**: Leverage existing validation libraries instead of custom regex when possible
 4. **Document Formats**: Comment address formats in code for reference
 5. **Fail Fast**: Return false immediately on validation failure
+
+## Related Rules
+- [Viem Rules](./viem.mdc) - EVM address validation
+- [Solana Rules](./solana.mdc) - Solana address validation
+- [Cosmos Rules](./cosmos.mdc) - Cosmos address validation

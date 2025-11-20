@@ -5,181 +5,43 @@ alwaysApply: false
 ---
 # Environment Variable Pattern
 
-## File Structure
+**This pattern applies consistently across all apps in the stack** - Next.js frontend apps, NestJS API (`apps/api`), and other Node.js apps.
 
-All apps (Next.js, NestJS, and other Node.js apps) follow a consistent environment variable pattern:
+## File Structure
 
 **Files:**
 - `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- `.env.development` - Development configuration (committed, non-sensitive)
-- `.env.staging` - Staging configuration (committed, non-sensitive)
-- `.env.production` - Production configuration (committed, non-sensitive)
-- `.env-example` - Template for `.env` file (shows required sensitive variables)
+- `.env.development` / `.env.staging` / `.env.production` / `.env.test` - Non-sensitive configuration (committed)
+- `.env-example` - Template for `.env` file (committed)
 
 **Loading Priority (highest to lowest):**
-1. `.env` (sensitive data, never committed, overrides everything)
-2. `.env.development` / `.env.staging` / `.env.production` / `.env.test` (based on NODE_ENV, committed configs)
-
-## File Purposes
-
-### `.env` (Sensitive Data)
-- Contains API keys, tokens, secrets, private keys
-- **NEVER COMMIT** - must be in `.gitignore`
-- Highest priority - overrides all other env files
-- Copy from `.env-example` and fill in actual values
-
-### `.env.{environment}` (Configuration)
-- Contains non-sensitive configuration (URLs, feature flags, ports, RPC endpoints)
-- **COMMITTED** to repository
-- Contains actual values (not placeholders)
-- Examples:
-  - `PORT=3077`
-  - `USE_LOCAL_BLOCKCHAIN=true`
-  - `NEXT_PUBLIC_API_URL=http://localhost:3077`
-  - `RPC_URL_421614=http://localhost:8545`
-
-### `.env-example` (Template)
-- Template showing required sensitive variables
-- **COMMITTED** to repository
-- Shows variable names and descriptions
-- No actual values (use placeholders like `your_api_token_here`)
+1. `.env` (sensitive, never committed, overrides everything)
+2. `.env.{environment}` (based on NODE_ENV, committed configs)
 
 ## Validation Pattern
 
-**Always use Zod for environment variable validation** - consistent across all apps.
+**Always use Zod for environment variable validation** - consistent across all apps (Next.js, NestJS API, etc.).
 
-### Next.js Pattern
+- Define schema with `z.object()`
+- Use `z.infer<typeof envSchema>` for type inference
+- Validation functions must have explicit return types
+- Next.js: Use `validateEnv` from `@vencura/lib`, handle warnings/errors based on NODE_ENV
+- NestJS: Use `safeParse`, throw errors on validation failure
+- NestJS requires manual `loadEnv()` call in app initialization
 
-```typescript
-import { z } from 'zod'
-import { validateEnv } from '@vencura/lib'
-
-const envSchema = z.object({
-  NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: z.string().min(1).optional(),
-  NEXT_PUBLIC_API_URL: z.string().url().optional(),
-  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
-})
-
-export type Env = z.infer<typeof envSchema>
-
-export function validateAppEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}) {
-  const envData: NodeJS.ProcessEnv = {
-    ...env,
-    NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID,
-    NEXT_PUBLIC_API_URL: env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_SENTRY_DSN: env.NEXT_PUBLIC_SENTRY_DSN,
-  }
-  return validateEnv({ schema: envSchema, env: envData })
-}
-
-export function getEnv(): Env {
-  const result = validateAppEnv()
-  if (!result.isValid) {
-    const errorMessage = result.errors?.join('\n') || 'Environment validation failed'
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error(`Environment validation failed:\n${errorMessage}`)
-    }
-    console.warn(`Environment validation warnings:\n${errorMessage}`)
-  }
-  return {
-    NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID,
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  }
-}
-```
-
-### NestJS Pattern
-
-```typescript
-import { z } from 'zod'
-
-const envSchema = z.object({
-  DYNAMIC_ENVIRONMENT_ID: z.string().min(1, 'DYNAMIC_ENVIRONMENT_ID is required'),
-  DYNAMIC_API_TOKEN: z.string().min(1, 'DYNAMIC_API_TOKEN is required'),
-  ENCRYPTION_KEY: z.string().min(32, 'ENCRYPTION_KEY must be at least 32 characters'),
-  PORT: z.string().regex(/^\d+$/).default('3077').transform(val => parseInt(val, 10)).pipe(z.number().int().positive()),
-})
-
-export type EnvSchema = z.infer<typeof envSchema>
-
-export function validateEnv({ env = process.env }: { env?: NodeJS.ProcessEnv } = {}): EnvSchema {
-  const result = envSchema.safeParse(env)
-  if (!result.success) {
-    const errors = result.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('\n')
-    throw new Error(`Environment validation failed:\n${errors}`)
-  }
-  return result.data
-}
-```
-
-**Manual Loading Required for NestJS:**
-```typescript
-// In main.ts or app initialization
-import { loadEnv } from './config/load-env'
-
-loadEnv() // Load .env files before app initialization
-```
-
-**Note:** In bundler-mode TypeScript, relative imports must NOT include `.js` extensions. Extensions are only used when importing compiled runtime files from `dist/` (special cases).
-
-**ESM Pattern for load-env.ts:**
-```typescript
-import { config } from 'dotenv'
-import { resolve } from 'path'
-import { fileURLToPath } from 'node:url'
-import { dirname } from 'node:path'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-export function loadEnv(): void {
-  const nodeEnv = process.env.NODE_ENV || 'development'
-  const envDir = resolve(__dirname, '../../')
-  
-  const envFileMap: Record<string, string> = {
-    development: '.env.development',
-    staging: '.env.staging',
-    production: '.env.production',
-    test: '.env.test',
-  }
-  
-  const envFileName = envFileMap[nodeEnv] || '.env.development'
-  
-  // Load environment-specific config first
-  config({ path: resolve(envDir, envFileName) })
-  
-  // Load .env last (highest priority, sensitive data)
-  config({ path: resolve(envDir, '.env') })
-}
-```
+**load-env.ts (ESM):**
+- Load `.env.{environment}` first (based on NODE_ENV)
+- Load `.env` last (highest priority)
+- Use `fileURLToPath` and `dirname` for ESM path resolution
 
 ## Key Principles
 
-1. **Sensitive vs Non-Sensitive**: Clear separation between sensitive data (`.env`) and configuration (`.env.{environment}`)
+1. **Sensitive vs Non-Sensitive**: Clear separation - `.env` (sensitive, never commit) vs `.env.{environment}` (non-sensitive, committed)
 2. **Zod Validation**: Always use Zod for runtime validation and type inference
 3. **Type Safety**: Use `z.infer<typeof envSchema>` for type inference
 4. **Explicit Return Types**: Validation functions must have explicit return types
-5. **Consistent Pattern**: All apps follow the same pattern (Next.js, NestJS, etc.)
-6. **No Example Files**: Remove all `.env.{environment}.example` files - update `.env.{environment}` directly with values
+5. **No Example Files**: Remove all `.env.{environment}.example` files - update `.env.{environment}` directly with values
 
 ## Git Configuration
 
-**`.gitignore` should include:**
-```
-# Sensitive environment files (never commit)
-.env
-```
-
-**`.env.{environment}` files are committed** - they contain non-sensitive configuration.
-
-## Migration Guide
-
-When migrating existing apps:
-
-1. **Remove** all `.env.{environment}.example` files
-2. **Create** `.env-example` with sensitive variable templates
-3. **Update** `.env.{environment}` files with actual non-sensitive values
-4. **Update** `.gitignore` to ignore `.env` (not `.env.{environment}`)
-5. **Update** validation code to use Zod consistently
-6. **Update** load-env.ts to load `.env` last (highest priority)
+**`.gitignore` should include `.env`** (never commit). `.env.{environment}` files are committed.

@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module'
 import { WalletModule } from './wallet/wallet.module'
 import { ChatModule } from './chat/chat.module'
 import { LoggerModule } from './common/logger/logger.module'
+import { CommonModule } from './common/common.module'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
 import { SentryExceptionFilter } from './filters/sentry-exception.filter'
 import configuration from './config/configuration'
@@ -26,6 +27,7 @@ const isTestMode = process.env.NODE_ENV === 'test'
       load: [configuration],
     }),
     LoggerModule,
+    CommonModule,
     // Disable throttling in test mode to prevent 429 errors during test execution
     ...(isTestMode
       ? []

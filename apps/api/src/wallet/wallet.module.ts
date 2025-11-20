@@ -6,9 +6,10 @@ import { WalletService } from './wallet.service'
 import { EncryptionService } from '../common/encryption.service'
 import { WalletClientFactory } from './clients/wallet-client-factory'
 import { AuthModule } from '../auth/auth.module'
+import { CommonModule } from '../common/common.module'
 
 @Module({
-  imports: [ConfigModule, AuthModule],
+  imports: [ConfigModule, AuthModule, CommonModule],
   controllers: [WalletController, WalletContractController],
   providers: [WalletService, EncryptionService, WalletClientFactory],
   exports: [WalletService],

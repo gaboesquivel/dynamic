@@ -87,7 +87,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/evm
       '@vencura/lib':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../packages/lib
       '@vencura/types':
         specifier: workspace:*
@@ -816,7 +816,7 @@ importers:
         specifier: ^3.40.0
         version: 3.52.1(@types/node@24.10.1)(zod@3.25.76)
       zod:
-        specifier: ^3.24.1
+        specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
       '@workspace/eslint-config':

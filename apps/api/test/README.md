@@ -245,16 +245,14 @@ Wallets are reused across test runs:
 
 ## Rate Limit Handling
 
-Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet operations). To prevent hitting rate limits during tests:
+Dynamic SDK SDK endpoints have rate limits: **100 requests per minute per IP**, 10,000 requests per minute per project environment. To prevent hitting rate limits during tests:
 
 1. **Serial Test Execution**: Tests run serially (`maxWorkers: 1` in `jest-e2e.json`) to prevent parallel requests
-2. **Automatic Throttling**: The `createTestWallet()` helper automatically throttles wallet creation calls (minimum 3 seconds between calls)
-3. **Test-Level Throttling**: Tests that create wallets directly should use `beforeEach` hooks with delays:
-   ```typescript
-   beforeEach(async () => {
-     await delay(3000) // Wait 3 seconds before each test
-   })
-   ```
+2. **Automatic Throttling**: The `createTestWallet()` helper automatically throttles wallet creation calls (minimum 700ms between calls = ~85 req/min, well under 100 req/min limit)
+3. **Retry Logic**: The `createTestWallet()` helper includes retry logic with exponential backoff and jitter for rate limit errors (429):
+   - Default: 5 retries (configurable via `maxRetries` parameter)
+   - Exponential backoff: baseDelay \* 2^attempt + jitter (0-1000ms random jitter)
+   - Max delay cap: 4000ms
 4. **Manual Throttling**: For direct API calls, use the `throttleWalletCreation()` helper:
 
    ```typescript
@@ -267,9 +265,15 @@ Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet oper
      .send({ chainId })
    ```
 
-5. **Retry Logic**: The `createTestWallet()` helper includes retry logic with exponential backoff for rate limit errors (429)
+5. **Test Authentication**: Tests use `getTestAuthToken()` helper which uses Dynamic API key directly (bypasses Dynamic auth widget). This is documented for clarity.
 
-**CRITICAL**: Rate limit errors (429) are NOT valid test responses. Tests must throttle to prevent them.
+**CRITICAL**:
+
+- Rate limit errors (429) are automatically retried by the API's `RateLimitService`
+- Tests should use `getOrCreateTestWallet()` helper which handles rate limits properly
+- Solana tests remain disabled (`.skip`) and are not executed
+
+See [ADR 016](../../src/.adrs/016-dynamic-sdk-rate-limits.md) for detailed rate limit implementation information.
 
 ## Best Practices
 

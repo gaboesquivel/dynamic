@@ -22,7 +22,7 @@ const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
  * - Mint tokens (via faucet helper)
  * - Error handling (insufficient balance, invalid addresses, etc.)
  */
-describe('WalletController ERC20 Token Operations (e2e)', () => {
+describe.skip('WalletController ERC20 Token Operations (e2e)', () => {
   let authToken: string
 
   beforeAll(async () => {

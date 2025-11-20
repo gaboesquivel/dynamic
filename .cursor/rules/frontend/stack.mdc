@@ -9,108 +9,52 @@ alwaysApply: false
 ## Core Technologies
 
 ### Data Fetching & State Management
-- **@tanstack/react-query**: Primary data fetching and caching solution
-  - Use for all server data fetching
-  - Use `@lukemorales/query-key-factory` for centralized, type-safe query keys
-  - Implement proper query keys and invalidation strategies
-  - Combine multiple queries into cohesive custom hooks
-  - See [React Hooks Rules](./react-hooks.mdc) for detailed patterns
-- **nuqs**: URL-based state management
-  - Use for shareable, bookmarkable UI state that should be in the URL
-  - Decouples components from internal state logic
-  - Prefer over local state when state should be in URL
-  - See [React Rules](./react.mdc) for detailed state management patterns
+- **@tanstack/react-query**: Primary data fetching solution
+  - Use `@lukemorales/query-key-factory` for centralized query keys
+  - See [React Hooks Rules](./react-hooks.mdc) for patterns
+- **nuqs**: URL-based state for shareable UI state (filters, search, tabs, pagination)
+  - See [React Rules](./react.mdc) for state management decision tree
 
 ### Ethereum Integration
-- **viem**: Type-safe Ethereum interface
-  - Low-level Ethereum interactions
-  - Modern TypeScript API
-  - Use for direct contract interactions
-- **wagmi**: React hooks for Ethereum
-  - Built on top of react-query and viem
-  - Provides consistent data fetching patterns
-  - Use for wallet connections and contract reads/writes
+- **viem**: Low-level Ethereum interactions
+- **wagmi**: React hooks for Ethereum (built on react-query and viem)
+  - See [Web3 Rules](../web3/wagmi.mdc) for patterns
 
 ### Validation & Type Safety
-- **zod**: Schema validation (primary choice for all schemas)
-  - **CRITICAL: Use zod as the primary schema validation tool**
-  - Use for runtime type validation
-  - Validate API responses and form inputs
-  - Validate environment variables
-  - Use for tool parameters in AI integrations
-  - Integrate with TypeScript for type inference
-  - **Exception**: NestJS DTOs use `class-validator` (per NestJS conventions)
-- **zod-validation-error**: Better Zod error messages
-  - Use `fromZodError` to format Zod errors into user-friendly messages
-  - Provides structured error information for better error handling
-  - Use when displaying validation errors to users
+- **zod**: Primary schema validation tool (CRITICAL)
+  - Exception: NestJS DTOs use `class-validator`
+- **zod-validation-error**: Use `fromZodError` for user-friendly error messages
 
 ### Authentication & Actions
-- **@dynamic-labs/sdk-react-core**: Secure wallet authentication solution
-  - Multi-chain wallet connection (Ethereum, Solana, etc.)
-  - JWT-based authentication with RS256 algorithm
-  - Server-side token verification via public key
-  - Secure token handling and user session management
-  - See [Web3 Rules](../web3/wagmi.mdc) for wallet integration patterns
-- **next-safe-action**: Type-safe server actions
-  - Use for all server actions
-  - Provides type safety and error handling
-  - Follow the ActionResult pattern with success/failure
+- **@dynamic-labs/sdk-react-core**: Multi-chain wallet authentication with JWT
+  - See [Web3 Rules](../web3/wagmi.mdc) for patterns
+- **next-safe-action**: Type-safe server actions with ActionResult pattern
 
 ### Error Handling
-- **react-error-boundary**: Error boundary component library
-  - Use `ErrorBoundary` component to catch React errors
-  - Provides fallback UI when errors occur
-  - Use `useErrorHandler` hook for async error handling
-  - Wrap app sections that might fail independently
-  - See [React Rules](./react.mdc) for error boundary patterns
+- **react-error-boundary**: Use `ErrorBoundary` and `useErrorHandler` for async errors
+  - See [React Rules](./react.mdc) for patterns
 
 ### Utility Libraries
-- **@vencura/lib**: Shared utility library for common operations
-  - **Async utilities**: `delay`, `fetchWithTimeout`
-    - Use `delay` for promise-based delays: `await delay(1000)`
-    - Use `fetchWithTimeout` for fetch calls with timeout (addresses security LOW-003)
-  - **Error utilities**: `getErrorMessage`, `formatZodError`, `sanitizeErrorMessage`, `isZodError`
-    - Use `getErrorMessage` to extract error messages from unknown errors: `getErrorMessage(error)`
-    - Use `formatZodError` for user-friendly zod error messages (RORO pattern for multiple params)
-    - Use `sanitizeErrorMessage` in production to prevent information leakage (RORO pattern)
-    - Use `isZodError` type guard: `isZodError(error)`
-  - **Date utilities**: `getDateKey`
-    - Use for YYYY-MM-DD date formatting: `getDateKey(date)` or `getDateKey()` for today
-  - **Environment utilities**: `validateEnv`
-    - Generic zod-based env validation helper
-  - **Zod utilities**: `formatZodErrors`
-    - Formats zod errors into readable string array
-  - Import from `@vencura/lib`: `import { delay, getErrorMessage } from '@vencura/lib'`
-  - **Prefer @vencura/lib over custom implementations** for these utilities
-- **react-use**: React hooks library
-  - Use `useAsync`/`useAsyncFn` for one-off async operations
-  - Prefer TanStack Query for data fetching
-  - Use for non-data-fetching async operations
+- **@vencura/lib**: Prefer over custom implementations
+  - Async: `delay`, `fetchWithTimeout`
+  - Error: `getErrorMessage`, `formatZodError`, `sanitizeErrorMessage`, `isZodError`
+  - Date: `getDateKey`
+  - Env: `validateEnv` (see [Environment Rules](../base/environment.mdc))
+- **react-use**: Use `useAsyncFn` for one-off async operations (not data fetching)
 - **nanoid**: Unique ID generation
-  - Use for generating unique identifiers (IDs, keys, etc.)
-  - Smaller and faster than UUID
-  - URL-safe by default
-  - Use when you need unique IDs: `import { nanoid } from 'nanoid'`
-- **lodash**: Utility functions
-  - **CRITICAL: Prefer lodash over custom implementations** for common operations
-  - Use lodash for array manipulation (`isEmpty`, `uniq`, `groupBy`, `chunk`, `filter`, `map` when complex)
-  - Use lodash for object operations (`merge`, `pick`, `omit`, `isEmpty`, `isPlainObject`)
-  - Use lodash for type checking (`isString`, `isNumber`, `isEmpty`, `isPlainObject`, `isArray`)
-  - Use lodash for string transformations (`camelCase`, `kebabCase`, `startCase`)
-  - Use lodash for functional utilities (`debounce`, `throttle`, `memoize`)
-  - Import specific functions to reduce bundle size: `import { debounce, isEmpty, merge } from 'lodash'`
-  - Only use native JavaScript when lodash doesn't provide a clear benefit or adds unnecessary complexity
-  - **Anti-pattern**: Don't write custom `isEmpty`, `uniq`, `debounce`, or similar utilities - use lodash
+- **lodash**: Prefer over custom implementations for common operations
+  - Array: `isEmpty`, `uniq`, `groupBy`, `chunk`
+  - Object: `merge`, `pick`, `omit`, `isPlainObject`
+  - Type checking: `isString`, `isNumber`, `isEmpty`, `isPlainObject`, `isArray`
+  - String: `camelCase`, `kebabCase`, `startCase`
+  - Functional: `debounce`, `throttle`, `memoize`
+  - Import specific: `import { debounce, isEmpty } from 'lodash'`
 
 ## Usage Patterns
 
-### Data Fetching with TanStack Query
-
-Use Query Key Factory pattern for all TanStack Query usage. See [React Hooks Rules](./react-hooks.mdc) for complete patterns.
-
+### Query Key Factory Pattern
 ```tsx
-// Query key factory (src/queries/users.ts)
+// src/queries/users.ts
 import { createQueryKeys } from '@lukemorales/query-key-factory'
 
 export const users = createQueryKeys('users', {
@@ -120,342 +64,65 @@ export const users = createQueryKeys('users', {
   }),
 })
 
-// Usage in component
+// Usage
 import { useQuery } from '@tanstack/react-query'
 import { users } from '@/queries/users'
 
-export function useUserData(userId: string) {
-  return useQuery(users.detail(userId))
-}
+const { data } = useQuery(users.detail(userId))
 ```
 
-### URL State with nuqs
-
-Use `nuqs` for UI state that should be shareable via URL. This includes filters, search, tabs, pagination, sort options, and view preferences.
-
-#### Basic Usage
-
+### nuqs URL State
 ```tsx
-import { useQueryState, parseAsString } from 'nuqs'
+import { useQueryState, parseAsString, parseAsInteger } from 'nuqs'
 
-export function useSearchFilter() {
-  const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
-  return { search, setSearch }
-}
-```
+// Single state
+const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''))
 
-#### Multiple Query States
-
-```tsx
-import { useQueryStates, parseAsString, parseAsInteger } from 'nuqs'
-
-export function useFilters() {
-  const [filters, setFilters] = useQueryStates({
-    search: parseAsString.withDefault(''),
-    page: parseAsInteger.withDefault(1),
-    sort: parseAsString.withDefault('name'),
-    view: parseAsString.withDefault('grid'), // 'grid' | 'list'
-  })
-  
-  return { filters, setFilters }
-}
-```
-
-#### Tab/Panel Selection
-
-```tsx
-import { useQueryState, parseAsStringEnum } from 'nuqs'
-
-const tabs = ['overview', 'settings', 'analytics'] as const
-
-export function useTabNavigation() {
-  const [activeTab, setActiveTab] = useQueryState(
-    'tab',
-    parseAsStringEnum(tabs).withDefault('overview')
-  )
-  return { activeTab, setActiveTab }
-}
-```
-
-#### Pagination
-
-```tsx
-import { useQueryState, parseAsInteger } from 'nuqs'
-
-export function usePagination() {
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
-  const [pageSize, setPageSize] = useQueryState('size', parseAsInteger.withDefault(20))
-  
-  return { page, setPage, pageSize, setPageSize }
-}
-```
-
-#### When to Use nuqs
-
-✅ **Use nuqs for:**
-- Search/filter state
-- Tab/panel selection
-- Pagination state
-- Sort/filter options
-- View preferences (grid/list, theme)
-- Modal state (if shareable/bookmarkable)
-- Any state that benefits from being shareable via URL
-
-❌ **Don't use nuqs for:**
-- Game engine state (use `useSetState` instead)
-- Form input state (temporary, not shareable)
-- Component-local UI state (use TanStack Query's built-in state instead)
-- State that changes too frequently (would pollute URL)
-- Sensitive data
-
-### Ethereum with wagmi
-```tsx
-import { useAccount, useReadContract } from 'wagmi'
-
-export function useUserBalance(address: string) {
-  const { address: userAddress } = useAccount()
-  return useReadContract({
-    address: contractAddress,
-    abi: contractAbi,
-    functionName: 'balanceOf',
-    args: [userAddress]
-  })
-}
-```
-
-### Validation with zod
-```tsx
-import { z } from 'zod'
-import { fromZodError } from 'zod-validation-error'
-
-const userSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email()
+// Multiple states
+const [filters, setFilters] = useQueryStates({
+  search: parseAsString.withDefault(''),
+  page: parseAsInteger.withDefault(1),
 })
-
-type User = z.infer<typeof userSchema>
-
-// Better error messages
-try {
-  userSchema.parse(invalidData)
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    const validationError = fromZodError(error)
-    console.error(validationError.message) // User-friendly error message
-  }
-}
 ```
 
-### Secure Wallet Authentication with Dynamic Labs
-
-Dynamic Labs provides secure, multi-chain wallet authentication. Use it for all wallet-related authentication flows.
-
-#### Setup
-
+### Server Actions Pattern
 ```tsx
-// app/layout.tsx or providers.tsx
-'use client'
+'use server'
+import { type ActionResult, success, failure } from '@repo/next'
+import { createSafeActionClient } from 'next-safe-action'
 
-import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core'
-import { EthereumWalletConnectors } from '@dynamic-labs/ethereum'
-import { SolanaWalletConnectors } from '@dynamic-labs/solana'
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <DynamicContextProvider
-      settings={{
-        environmentId: process.env.NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID!,
-        walletConnectors: [EthereumWalletConnectors, SolanaWalletConnectors],
-      }}
-    >
-      {children}
-    </DynamicContextProvider>
-  )
-}
-```
-
-#### Usage in Components
-
-```tsx
-'use client'
-
-import { useDynamicContext, getAuthToken } from '@dynamic-labs/sdk-react-core'
-
-export function WalletAuth() {
-  const { user, isAuthenticated } = useDynamicContext()
-  const authToken = getAuthToken() // JWT token for API requests
-
-  if (!isAuthenticated) {
-    return <DynamicWidget /> // Shows wallet connection UI
-  }
-
-  return <div>Welcome, {user?.email}</div>
-}
-```
-
-#### Secure Token Handling
-
-```tsx
-// hooks/use-vencura-headers.ts
-'use client'
-
-import { getAuthToken } from '@dynamic-labs/sdk-react-core'
-
-export function useVencuraHeaders() {
-  const token = getAuthToken()
-  
-  return {
-    Authorization: token ? `Bearer ${token}` : undefined,
-  }
-}
-```
-
-**Security Best Practices:**
-- Always verify JWT tokens on the server using Dynamic's public key
-- Never expose private keys or sensitive wallet data to the client
-- Use RS256 algorithm for token verification (not HS256)
-- Handle token expiration and refresh appropriately
-- Store tokens securely (not in localStorage for sensitive apps)
-
-### Utility Functions with lodash
-
-Prefer lodash over custom implementations for common operations. Lodash provides well-tested, optimized utilities.
-
-#### Common lodash Patterns
-
-```tsx
-// Array operations
-import { isEmpty, uniq, groupBy, chunk } from 'lodash'
-
-const uniqueItems = uniq([1, 2, 2, 3]) // [1, 2, 3]
-const grouped = groupBy(users, 'role')
-const chunks = chunk(array, 10) // Split into chunks of 10
-
-// Object operations
-import { merge, pick, omit, isEmpty } from 'lodash'
-
-const merged = merge({ a: 1 }, { b: 2 }) // { a: 1, b: 2 }
-const selected = pick(user, ['id', 'name']) // Extract specific keys
-const filtered = omit(user, ['password']) // Remove specific keys
-
-// String operations
-import { camelCase, kebabCase, startCase } from 'lodash'
-
-const camel = camelCase('hello world') // 'helloWorld'
-const kebab = kebabCase('HelloWorld') // 'hello-world'
-
-// Functional utilities
-import { debounce, throttle, memoize } from 'lodash'
-
-const debouncedSearch = debounce((query) => {
-  searchAPI(query)
-}, 300)
-
-const memoizedExpensive = memoize((input) => {
-  return expensiveCalculation(input)
-})
-
-// Type checking
-import { isString, isNumber, isEmpty, isPlainObject } from 'lodash'
-
-if (isString(value)) { /* ... */ }
-if (isEmpty(array)) { /* ... */ }
-```
-
-#### When to Use lodash vs Native JavaScript
-
-✅ **Use lodash for:**
-- Complex array/object manipulations (groupBy, merge, pick, omit)
-- Functional utilities (debounce, throttle, memoize)
-- Type checking utilities (isEmpty, isPlainObject, etc.)
-- String transformations (camelCase, kebabCase, etc.)
-- Operations that benefit from lodash's optimizations
-
-✅ **Use native JavaScript for:**
-- Simple operations (array.map, array.filter, Object.keys)
-- Basic type checks (typeof, Array.isArray)
-- Simple string operations (toLowerCase, includes, etc.)
-- When bundle size is critical and lodash adds unnecessary weight
-
-**Anti-Patterns:**
-```tsx
-// ❌ BAD: Custom implementation when lodash exists
-function uniqueArray(arr) {
-  return [...new Set(arr)]
-}
-// ✅ GOOD: Use lodash
-import { uniq } from 'lodash'
-const unique = uniq(arr)
-
-// ❌ BAD: Custom debounce implementation
-let timeout
-function debounce(fn, delay) {
-  clearTimeout(timeout)
-  timeout = setTimeout(fn, delay)
-}
-// ✅ GOOD: Use lodash debounce
-import { debounce } from 'lodash'
-const debouncedFn = debounce(fn, delay)
+export const saveAction = createSafeActionClient()
+  .schema(actionSchema)
+  .action(async ({ parsedInput }): Promise<ActionResult<T>> => {
+    try {
+      return success(result)
+    } catch (error) {
+      return failure({ code: 'UNEXPECTED_ERROR', error, label: 'saveAction' })
+    }
+  })
 ```
 
 ## Best Practices
+- Use Query Key Factory for all TanStack Query keys
+- Use nuqs for URL-shareable state (filters, search, tabs, pagination)
+- Use TanStack Query's built-in state (`isLoading`, `isError`) - never manually manage
+- Use `useSetState` for grouped state not in URL (game engine, form state)
+- Prefer lodash over custom implementations
+- Prefer `@vencura/lib` utilities over custom implementations
+- Mobile-first design (see [Mobile-First Rules](./mobile-first.mdc))
 
-- **Prefer TanStack Query** over react-use for data fetching
-- **Use Query Key Factory** (`@lukemorales/query-key-factory`) for all TanStack Query keys
-- **Use nuqs** for UI state that should be shareable via URL (filters, search, tabs, pagination)
-- **Use TanStack Query's built-in state** (`isLoading`, `isError`, `isFetching`) for loading/error states - never manually manage these with `useState`
-- **Use `useSetState`** for grouped state that doesn't belong in URL (game engine, form state, ephemeral UI state)
-- **Prefer lodash** over custom implementations for common operations (array/object manipulation, utilities, type checking)
-- **Use Dynamic Labs** for secure wallet authentication with JWT token verification
-- **Validate all external data** with zod schemas
-- **Type-safe server actions** with next-safe-action
-- **Import utilities selectively** to reduce bundle size (lodash, react-use)
-- **Combine related queries** into cohesive custom hooks
-- **Follow fractal component patterns** for consistent structure
-- **Mobile-first design** - Always design and develop mobile-first, then enhance for larger screens
+## Development Tools
+- **@tanstack/react-query-devtools**: Add conditionally in development only
 
-### Development Tools
-- **@tanstack/react-query-devtools**: TanStack Query development tools
-  - Add to provider components in development mode only
-  - Provides query inspection, cache debugging, and performance monitoring
-  - Use `ReactQueryDevtools` component conditionally: `{process.env.NODE_ENV === 'development' ? <ReactQueryDevtools /> : null}`
-  - Must be placed inside `QueryClientProvider` to work correctly
-
-### Optional Packages (Add When Needed)
-- **@tanstack/query-sync-storage-persister**: Persist queries to localStorage/sessionStorage
-  - Use for specific use cases where persisted cache improves UX
-  - Consider for offline-first applications or slow networks
-  - Not recommended for all apps - evaluate per use case
-- **@tanstack/virtual**: Virtual scrolling for large lists
-  - Use when rendering large lists (1000+ items) for performance
-  - Provides efficient rendering of long lists
-  - Add when needed for performance optimization
-- **@tanstack/react-table**: Powerful table component library
-  - Use when building complex data tables with sorting, filtering, pagination
-  - Provides headless table primitives for custom UI
-  - Add if tables are needed in the application
-- **@tanstack/react-form**: Form library from TanStack
-  - Alternative to react-hook-form
-  - Currently using react-hook-form in mathler (current approach is fine)
-  - Consider if TanStack Form fits better for specific use cases
-
-### AI Integration
-- **@ai-sdk/react**: Use for AI chat functionality with streaming support
-  - Use `useChat` hook from `@ai-sdk/react` for chat state management
-  - Prefer streaming responses for better UX
-  - Handle errors gracefully with user-friendly messages
-- **ai-elements**: Use Vercel AI Elements components for chat UI
-  - `Conversation`, `Message`, `PromptInput` for chat interface
-  - `ChainOfThought` for reasoning visualization
-  - `Confirmation` for tool approval workflows
-  - `Checkpoint` for conversation history
-- **Voice Input**: Use Web Speech API for browser-native speech recognition
-  - Graceful degradation for unsupported browsers
-  - Visual feedback during recording
-  - Integrate with `PromptInput` component
+## Optional Packages (Add When Needed)
+- **@tanstack/query-sync-storage-persister**: Persist queries to localStorage
+- **@tanstack/virtual**: Virtual scrolling for large lists (1000+ items)
+- **@tanstack/react-table**: Complex data tables
+- **@ai-sdk/react**: AI chat functionality with streaming
+- **ai-elements**: Vercel AI Elements components
 
 ## Related Rules
-- See [React Hooks Rules](./react-hooks.mdc) for detailed TanStack Query patterns
-- See [React Rules](./react.mdc) for component patterns
-- See [Next.js Rules](./nextjs.mdc) for Next.js-specific patterns
-- See [TypeScript Rules](../base/typescript.mdc) for type safety and code style
+- [React Hooks Rules](./react-hooks.mdc) - TanStack Query patterns
+- [React Rules](./react.mdc) - Component and state patterns
+- [Next.js Rules](./nextjs.mdc) - Next.js-specific patterns
+- [TypeScript Rules](../base/typescript.mdc) - Type safety patterns

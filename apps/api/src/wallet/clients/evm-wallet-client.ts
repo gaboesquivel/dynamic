@@ -35,8 +35,10 @@ import {
   type SendTransactionParams,
   handleDynamicSDKError,
   extractDynamicSDKErrorMessage,
+  classifyDynamicSDKError,
 } from './base-wallet-client'
 import { LoggerService } from '../../common/logger/logger.service'
+import { RateLimitService } from '../../common/rate-limit.service'
 
 // Safe fields to log from Dynamic SDK responses
 const SAFE_SDK_FIELDS = ['accountAddress', 'chainId', 'networkId'] as const
@@ -71,6 +73,7 @@ export class EvmWalletClient extends BaseWalletClient {
   constructor(
     private readonly configService: ConfigService,
     private readonly chainMetadata: ChainMetadata,
+    private readonly rateLimitService: RateLimitService,
     @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     super()
@@ -194,6 +197,7 @@ export class EvmWalletClient extends BaseWalletClient {
       const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')
 
       // Leverage Dynamic SDK return type directly - no unnecessary mapping
+      // Retry logic removed - delays are handled at test level to prevent rate limits
       const wallet = await dynamicEvmClient.createWalletAccount({
         thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
         backUpToClientShareService: false,
@@ -219,56 +223,73 @@ export class EvmWalletClient extends BaseWalletClient {
       // Extract error message for logging
       const errorMessage = extractDynamicSDKErrorMessage(error) || 'Unknown error'
 
-      // Log full error structure for debugging (only in test/dev mode)
-      if (process.env.NODE_ENV !== 'production') {
-        const errorStack = error instanceof Error ? error.stack : ''
-        const errorDetails: Record<string, unknown> = {
-          errorType: error?.constructor?.name,
-          hasMessage: !!(error as any)?.message,
-          message: (error as any)?.message,
-          hasStatus: !!(error as any)?.status,
-          status: (error as any)?.status,
-          hasError: !!(error as any)?.error,
-          errorProperty: (error as any)?.error,
-          hasCause: !!(error as any)?.cause,
-          cause: (error as any)?.cause,
-          errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
-          stack: errorStack,
-          extractedMessage: errorMessage,
-        }
-        // Try to get all properties including non-enumerable ones
-        if (error && typeof error === 'object') {
-          const errorObj = error as Record<string, unknown>
-          // Check for nested error structures
-          if (errorObj.error) {
-            errorDetails.nestedError = errorObj.error
-            if (typeof errorObj.error === 'object' && errorObj.error !== null) {
-              const nested = errorObj.error as Record<string, unknown>
-              errorDetails.nestedErrorKeys = Object.keys(nested)
-              errorDetails.nestedErrorMessage = nested.message
-              errorDetails.nestedErrorError = nested.error
+      // Check if this is a "multiple wallets" error - don't log as error (it's expected behavior)
+      const classification = classifyDynamicSDKError(error, errorMessage)
+      const isMultipleWalletsError = classification.type === 'multiple_wallets'
+      const lowerMessage = errorMessage.toLowerCase()
+      const errorStack = error instanceof Error ? error.stack : ''
+      const stackLower = errorStack.toLowerCase()
+      const isExpectedError =
+        isMultipleWalletsError ||
+        lowerMessage.includes('multiple wallets per chain') ||
+        lowerMessage.includes('wallet already exists') ||
+        stackLower.includes('multiple wallets per chain')
+
+      // Only log as error if it's NOT an expected "multiple wallets" error
+      if (!isExpectedError) {
+        // Log full error structure for debugging (only in test/dev mode)
+        if (process.env.NODE_ENV !== 'production') {
+          const errorStack = error instanceof Error ? error.stack : ''
+          const errorDetails: Record<string, unknown> = {
+            errorType: error?.constructor?.name,
+            hasMessage: !!(error as any)?.message,
+            message: (error as any)?.message,
+            hasStatus: !!(error as any)?.status,
+            status: (error as any)?.status,
+            hasError: !!(error as any)?.error,
+            errorProperty: (error as any)?.error,
+            hasCause: !!(error as any)?.cause,
+            cause: (error as any)?.cause,
+            errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+            stack: errorStack,
+            extractedMessage: errorMessage,
+          }
+          // Try to get all properties including non-enumerable ones
+          if (error && typeof error === 'object') {
+            const errorObj = error as Record<string, unknown>
+            // Check for nested error structures
+            if (errorObj.error) {
+              errorDetails.nestedError = errorObj.error
+              if (typeof errorObj.error === 'object' && errorObj.error !== null) {
+                const nested = errorObj.error as Record<string, unknown>
+                errorDetails.nestedErrorKeys = Object.keys(nested)
+                errorDetails.nestedErrorMessage = nested.message
+                errorDetails.nestedErrorError = nested.error
+              }
             }
           }
+          try {
+            errorDetails.errorStringified = JSON.stringify(error, null, 2)
+          } catch {
+            errorDetails.errorStringified = '[Circular or non-serializable]'
+          }
+          this.logger.error('Full error structure from Dynamic SDK', {
+            ...errorDetails,
+            chainId: this.chainMetadata.chainId,
+            dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
+          })
         }
-        try {
-          errorDetails.errorStringified = JSON.stringify(error, null, 2)
-        } catch {
-          errorDetails.errorStringified = '[Circular or non-serializable]'
-        }
-        this.logger.error('Full error structure from Dynamic SDK', {
-          ...errorDetails,
-          chainId: this.chainMetadata.chainId,
-          dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
-        })
       }
 
       // Use shared error handling utility
-      // Try to extract existing wallet address from error
+      // Try to extract existing wallet address from error BEFORE calling handleDynamicSDKError
+      // This allows us to pass the address in error details for proper handling
       const { extractExistingWalletAddress } = await import('./base-wallet-client')
       const existingAddress =
         extractExistingWalletAddress(error) || params.existingWalletAddress || undefined
 
-      // Include error details for multiple wallets error
+      // For "multiple wallets" errors, include existing wallet address in details
+      // This allows wallet.service to return the existing wallet instead of throwing error
       handleDynamicSDKError(error, 'create wallet', {
         existingWalletAddress: existingAddress,
         chainId: params.chainId,
@@ -316,6 +337,7 @@ export class EvmWalletClient extends BaseWalletClient {
 
       const dynamicEvmClient = await this.getDynamicEvmClient()
 
+      // Retry logic removed - delays are handled at test level to prevent rate limits
       const signature = await dynamicEvmClient.signMessage({
         accountAddress: address,
         externalServerKeyShares,
@@ -419,6 +441,9 @@ export class EvmWalletClient extends BaseWalletClient {
         transport: http(rpcUrl),
       })
 
+      // Retry logic removed - delays are handled at test level to prevent rate limits
+      // Dynamic SDK calls happen inside account.signMessage/signTypedData/signTransaction
+      // which are called by viem during sendTransaction
       const hash = await walletClient.sendTransaction({
         to: to as `0x${string}`,
         value: parseEther(amount.toString()),

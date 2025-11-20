@@ -110,17 +110,58 @@ export class WalletService {
 
   /**
    * Extract wallet address from error details when "wallet already exists" error occurs.
+   * Checks multiple sources: error response details, error object properties, nested error structures.
    */
   private extractWalletAddressFromError(error: unknown): string | null {
+    if (!error || typeof error !== 'object') return null
+
+    // Check HttpException response details
     if (isHttpException(error)) {
       const response = error.getResponse()
-      if (typeof response === 'object' && response !== null && 'details' in response) {
-        const details = (response as { details?: { existingWalletAddress?: string } }).details
-        if (details?.existingWalletAddress) {
-          return details.existingWalletAddress
+      if (isPlainObject(response) && response !== null) {
+        const obj = response as Record<string, unknown>
+        if (obj.details && isPlainObject(obj.details)) {
+          const details = obj.details as Record<string, unknown>
+          if (typeof details.existingWalletAddress === 'string') {
+            return details.existingWalletAddress
+          }
         }
       }
     }
+
+    // Check error object directly (for non-HttpException errors)
+    const errorObj = error as Record<string, unknown>
+
+    // Check error.response.data.address (AxiosError structure)
+    if (errorObj.response && isPlainObject(errorObj.response)) {
+      const response = errorObj.response as Record<string, unknown>
+      if (response.data && isPlainObject(response.data)) {
+        const data = response.data as Record<string, unknown>
+        if (typeof data.address === 'string') {
+          return data.address
+        }
+      }
+    }
+
+    // Check error.data.address
+    if (errorObj.data && isPlainObject(errorObj.data)) {
+      const data = errorObj.data as Record<string, unknown>
+      if (typeof data.address === 'string') {
+        return data.address
+      }
+    }
+
+    // Check error.walletAddress or error.wallet
+    if (typeof errorObj.walletAddress === 'string') {
+      return errorObj.walletAddress
+    }
+    if (errorObj.wallet && isPlainObject(errorObj.wallet)) {
+      const wallet = errorObj.wallet as Record<string, unknown>
+      if (typeof wallet.address === 'string') {
+        return wallet.address
+      }
+    }
+
     return null
   }
 
@@ -306,22 +347,79 @@ export class WalletService {
             }
           }
 
-          // If we can't find existing wallet but know it's a "wallet already exists" error,
-          // throw BadRequestException with wallet info in details (if we can extract from error)
-          const extractedAddress = this.extractWalletAddressFromError(error)
-          if (extractedAddress) {
-            const walletId = generateWalletId(extractedAddress, dynamicNetworkId)
-            throw new BadRequestException({
-              message: errorMessage,
-              details: {
-                existingWalletAddress: extractedAddress,
-                chainId,
-                dynamicNetworkId,
-              },
-            })
+          // If we can't find existing wallet in DB but Dynamic SDK says it exists,
+          // query DB again by network (wallet might exist but not be associated with this user)
+          // This handles the case where wallet exists in Dynamic SDK but not yet in our DB
+          const [keyShare] = await this.db
+            .select()
+            .from(schema.keyShares)
+            .where(eq(schema.keyShares.network, dynamicNetworkId))
+            .limit(1)
+
+          if (keyShare) {
+            const walletId = generateWalletId(keyShare.address, dynamicNetworkId)
+            return {
+              id: walletId,
+              address: keyShare.address,
+              network: dynamicNetworkId,
+              chainType,
+              isNew: false,
+            }
           }
 
-          // If we can't extract address, re-throw original error
+          // If we still can't find it, re-check getUserWallets one more time
+          // (race condition: wallet might have been created between checks)
+          const finalCheckWallets = await this.getUserWallets(userId)
+          const finalCheckWallet = finalCheckWallets.find(w => w.network === dynamicNetworkId)
+          if (finalCheckWallet) {
+            return {
+              id: finalCheckWallet.id,
+              address: finalCheckWallet.address,
+              network: finalCheckWallet.network,
+              chainType: finalCheckWallet.chainType,
+              isNew: false,
+            }
+          }
+
+          // If we can't find existing wallet but know it's a "wallet already exists" error,
+          // try to extract address from the original error (before handleDynamicSDKError wrapped it)
+          // Check the original error object for wallet address
+          const { extractExistingWalletAddress } = await import('./clients/base-wallet-client')
+          const extractedAddress =
+            extractExistingWalletAddress(error) || this.extractWalletAddressFromError(error)
+
+          if (extractedAddress) {
+            const walletId = generateWalletId(extractedAddress, dynamicNetworkId)
+            // Return the wallet instead of throwing - this is expected behavior
+            return {
+              id: walletId,
+              address: extractedAddress,
+              network: dynamicNetworkId,
+              chainType,
+              isNew: false,
+            }
+          }
+
+          // If we still can't find it, check DB one more time (race condition)
+          const [finalKeyShare] = await this.db
+            .select()
+            .from(schema.keyShares)
+            .where(eq(schema.keyShares.network, dynamicNetworkId))
+            .limit(1)
+
+          if (finalKeyShare) {
+            const walletId = generateWalletId(finalKeyShare.address, dynamicNetworkId)
+            return {
+              id: walletId,
+              address: finalKeyShare.address,
+              network: dynamicNetworkId,
+              chainType,
+              isNew: false,
+            }
+          }
+
+          // If we can't find wallet anywhere, re-throw original error
+          // This should not happen if Dynamic SDK says wallet exists
           throw error
         }
 
@@ -338,57 +436,117 @@ export class WalletService {
         const stackLower = errorStack.toLowerCase()
 
         // Check if this is a "multiple wallets" error
+        // For BadRequestException, check the message and status code
         const classification = classifyDynamicSDKError(error, errorMessage)
         const isMultipleWalletsError =
           classification.type === 'multiple_wallets' ||
           lowerMessage.includes('multiple wallets per chain') ||
           lowerMessage.includes('wallet already exists') ||
+          lowerMessage.includes('you cannot create multiple wallets') ||
           stackLower.includes('multiple wallets per chain') ||
+          stackLower.includes('wallet already exists') ||
           (error.getStatus() === HttpStatus.BAD_REQUEST &&
             (lowerMessage.includes('multiple wallets') ||
+              lowerMessage.includes('wallet already exists') ||
               lowerMessage.includes('error creating') ||
               stackLower.includes('multiple wallets')))
 
         if (isMultipleWalletsError) {
-          // Try to find existing wallet using getUserWallets (more reliable)
+          // Get chain metadata to find dynamicNetworkId
           const chainMetadata = getChainMetadata(chainId)
           if (chainMetadata) {
             const dynamicNetworkId = getDynamicNetworkId(chainId)
             if (dynamicNetworkId) {
-              // Use getUserWallets to get wallets for this user
-              const existingWallets = await this.getUserWallets(userId)
-              const existingWallet = existingWallets.find(w => w.network === dynamicNetworkId)
+              const chainType = getChainType(chainId)
+              if (chainType) {
+                // Try to extract wallet address from error details first
+                let existingAddress = this.extractWalletAddressFromError(error)
 
-              if (existingWallet) {
-                const chainType = getChainType(chainId)
-                if (chainType) {
+                // Check error response details
+                if (!existingAddress) {
+                  const response = error.getResponse()
+                  if (isPlainObject(response) && response !== null) {
+                    const obj = response as Record<string, unknown>
+                    if (obj.details && isPlainObject(obj.details)) {
+                      const details = obj.details as Record<string, unknown>
+                      if (typeof details.existingWalletAddress === 'string') {
+                        existingAddress = details.existingWalletAddress
+                      }
+                    }
+                  }
+                }
+
+                // Try getUserWallets first
+                if (!existingAddress) {
+                  const existingWallets = await this.getUserWallets(userId)
+                  const existingWallet = existingWallets.find(w => w.network === dynamicNetworkId)
+                  if (existingWallet) {
+                    return {
+                      id: existingWallet.id,
+                      address: existingWallet.address,
+                      network: existingWallet.network,
+                      chainType: existingWallet.chainType,
+                      isNew: false,
+                    }
+                  }
+                }
+
+                // Fallback to direct DB query
+                if (!existingAddress) {
+                  const [keyShare] = await this.db
+                    .select()
+                    .from(schema.keyShares)
+                    .where(eq(schema.keyShares.network, dynamicNetworkId))
+                    .limit(1)
+
+                  if (keyShare) {
+                    existingAddress = keyShare.address
+                  }
+                }
+
+                // If we found an address, return wallet info
+                if (existingAddress) {
+                  const walletId = generateWalletId(existingAddress, dynamicNetworkId)
                   return {
-                    id: existingWallet.id,
-                    address: existingWallet.address,
-                    network: existingWallet.network,
+                    id: walletId,
+                    address: existingAddress,
+                    network: dynamicNetworkId,
                     chainType,
                     isNew: false,
                   }
                 }
-              } else {
-                // Fallback to direct DB query if getUserWallets doesn't find it
-                const [keyShare] = await this.db
+
+                // Final fallback: try to extract from original error using extractExistingWalletAddress
+                const { extractExistingWalletAddress } = await import(
+                  './clients/base-wallet-client'
+                )
+                const finalExtractedAddress = extractExistingWalletAddress(error)
+                if (finalExtractedAddress) {
+                  const walletId = generateWalletId(finalExtractedAddress, dynamicNetworkId)
+                  return {
+                    id: walletId,
+                    address: finalExtractedAddress,
+                    network: dynamicNetworkId,
+                    chainType,
+                    isNew: false,
+                  }
+                }
+
+                // Last resort: query DB one more time (race condition)
+                const [lastKeyShare] = await this.db
                   .select()
                   .from(schema.keyShares)
                   .where(eq(schema.keyShares.network, dynamicNetworkId))
                   .limit(1)
 
-                if (keyShare) {
-                  const chainType = getChainType(chainId)
-                  if (chainType) {
-                    const walletId = generateWalletId(keyShare.address, dynamicNetworkId)
-                    return {
-                      id: walletId,
-                      address: keyShare.address,
-                      network: dynamicNetworkId,
-                      chainType,
-                      isNew: false,
-                    }
+                if (lastKeyShare) {
+                  const walletId = generateWalletId(lastKeyShare.address, dynamicNetworkId)
+                  return {
+                    id: walletId,
+                    address: lastKeyShare.address,
+                    network: dynamicNetworkId,
+                    chainType,
+                    isNew: false,
                   }
                 }
               }
@@ -400,15 +558,28 @@ export class WalletService {
         throw error
       }
 
-      // Log full error details for debugging
+      // Check if this is a "multiple wallets" error - don't log as error (it's expected behavior)
       const errorMessage = getErrorMessage(error) || 'Unknown error'
-      const errorStack = error instanceof Error ? error.stack : undefined
-      this.logger.error('WalletService.createWallet error', {
-        message: errorMessage,
-        stack: errorStack,
-        chainId,
-        userId,
-      })
+      const classification = classifyDynamicSDKError(error, errorMessage)
+      const lowerMessage = errorMessage.toLowerCase()
+      const errorStack = error instanceof Error ? error.stack : ''
+      const stackLower = errorStack.toLowerCase()
+      const isMultipleWalletsError =
+        classification.type === 'multiple_wallets' ||
+        lowerMessage.includes('multiple wallets per chain') ||
+        lowerMessage.includes('wallet already exists') ||
+        stackLower.includes('multiple wallets per chain')
+
+      // Only log as error if it's NOT an expected "multiple wallets" error
+      if (!isMultipleWalletsError) {
+        // Log full error details for debugging
+        this.logger.error('WalletService.createWallet error', {
+          message: errorMessage,
+          stack: errorStack,
+          chainId,
+          userId,
+        })
+      }
 
       // Convert unexpected errors to InternalServerErrorException
       throw new InternalServerErrorException(`Failed to create wallet: ${errorMessage}`)

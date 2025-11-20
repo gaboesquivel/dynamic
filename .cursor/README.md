@@ -1,66 +1,66 @@
 # Cursor Directory
 
-This directory contains rules, context information, and configurations for AI assistants (like GitHub Copilot, Claude, etc.) to better understand and work with our codebase.
+Configuration and guidelines for AI assistants working with this codebase.
 
-## Context
+## Structure
 
-The `context` directory holds specialized context or role files that provide factual information and background about the project:
+### Context (`context/`)
 
-- `architecture.md`: High-level architecture of the project
-- `backend.md`: Backend architecture and infrastructure details
-- `frontend.md`: Frontend architecture and technology stack
-- `project.md`: Overall project information and guidelines
+Factual information about the project (not behavioral rules):
 
-Context files should contain factual information, not behavioral rules. They help AI assistants understand how the system works but don't prescribe how to write code.
+- `architecture.md`: High-level architecture
+- `backend.md`: Backend architecture and infrastructure
+- `frontend.md`: Frontend architecture and tech stack
+- `project.md`: Project information and guidelines
 
-## Rules
+### Rules (`rules/`)
 
-The `rules` directory contains coding standards, patterns, and best practices that should be followed when writing code for this project. Rules are organized by domain:
+Coding standards and best practices organized by domain:
 
-- `base/`: Foundational rules applicable across the codebase
-- `frontend/`: Frontend-specific rules (React, Next.js, etc.)
-- `web3/`: Web3 and blockchain-specific rules
-- `backend/`: Backend-specific rules
-- `ai/`: AI integration rules and patterns
+- `base/`: Foundational rules (TypeScript, environment variables, MCP, general patterns)
+- `frontend/`: Frontend rules (React, Next.js, mobile-first, ShadcnUI, testing)
+- `web3/`: Web3 rules (Cosmos, Solana, Solidity, Viem, Wagmi, Ponder, multichain)
+- `backend/`: Backend rules (NestJS, testing)
 
-### Rule Structure
+**Rule guidelines:**
 
-Good rules are focused, actionable, and scoped:
+- Focused, actionable, and scoped (~1.5K words max)
+- Include frontmatter with `description` and `globs` patterns
+- Use clear, direct language with code examples
 
-- Each rule file has frontmatter with `description` and appropriate `globs` patterns
-- Rules use clear, direct language stating what to do and what to avoid
-- Each rule file focuses on a specific technology or concern
-- Rules include practical code examples to illustrate patterns
-- Rules are under ~1.5K words to remain focused and digestible
-
-### Using Rules
-
-Rules can be referenced in prompts to AI assistants:
+**Usage:**
 
 ```
 Please apply the TypeScript rules from .cursor/rules/base/typescript.mdc when refactoring this code.
 ```
 
-## MCP Configuration
+### Prompts (`prompts/`)
 
-The `mcp.json` file configures Model Context Protocol (MCP) servers that enhance AI assistants with specialized capabilities:
+Reusable prompt templates:
 
-- `shadcn`: Provides UI component management capabilities using shadcn/ui
-- `v0`: Connects to v0.dev for UI design and generation capabilities
-- `github`: Connects to GitHub for repository management and operations
-- `vercel`: Connects to Vercel for deployment and project management
+- `refine-plan.md`: Checklist for refining implementation plans
+- `debug-plan.md`: Guidelines for investigating failures and creating fix plans
 
-### Authentication
+### MCP Configuration (`mcp.json`)
 
-- **shadcn**: Uses local CLI command execution (no API key required)
-- **v0**: Requires `V0_API_KEY` environment variable
-- **github**: Requires `GITHUB_TOKEN` environment variable
-- **vercel**: Requires `VERCEL_API_TOKEN` environment variable
+Model Context Protocol servers for specialized capabilities:
 
-### Package Manager
+- `shadcn`: UI component management (shadcn/ui)
+- `v0`: UI design and generation (v0.dev)
+- `github`: Repository management
+- `vercel`: Deployment and project management
 
-All MCP servers use `pnpm dlx` to execute commands, consistent with the project's package manager choice.
+**Authentication:**
 
-For detailed usage documentation, see [MCP Servers Guide](../../docs/mcp-servers.md).
+- `shadcn`: Local CLI (no API key)
+- `v0`: `V0_API_KEY`
+- `github`: `GITHUB_TOKEN`
+- `vercel`: `VERCEL_API_TOKEN`
 
-For more information on Cursor rules and MCP, see the [official documentation](https://cursor.com/docs/context/rules) and [MCP documentation](https://cursor.com/docs/context/model-context-protocol).
+**Package Manager:** All MCP servers use `pnpm dlx` for command execution.
+
+## Documentation
+
+- [MCP Servers Guide](../../docs/mcp-servers.md)
+- [Cursor Rules](https://cursor.com/docs/context/rules)
+- [MCP Documentation](https://cursor.com/docs/context/model-context-protocol)

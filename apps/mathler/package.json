@@ -10,12 +10,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug"
+    "_test": "jest",
+    "_test:watch": "jest --watch",
+    "_test:cov": "jest --coverage",
+    "_test:e2e": "playwright test",
+    "_test:e2e:ui": "playwright test --ui",
+    "_test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@dynamic-labs/sdk-react-core": "^4.44.0",

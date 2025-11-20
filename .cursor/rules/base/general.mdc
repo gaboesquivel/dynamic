@@ -7,16 +7,15 @@ alwaysApply: true
 
 ## Code Quality
 - Organize code logically with related functionality grouped together, aka "collocation"
-- Always enforce type inference - define return types in functions, never in consumers
 
 ## Agent Behavior
 - Provide concise executive summaries when finishing tasks
 - Suggest improvements proactively when spotting issues
 - Always read readme files before coding
-- Always run `pnpm run qa` at the root of the monorepo to verify it all works
 - Always update readme files after making code changes
+- Always run format, lint and test to verify changes work
 
-## Stack
-- Always prefer on Zod based solutions, unless a good for not using it
-- Prefer importing types from `@vencura/core` over `@vencura/types` when types are re-exported (e.g., `ChainType`, `Wallet`, etc.). Schema imports should continue to use `@vencura/types/schemas` since schemas are not re-exported from `@vencura/core`
-
+## Tooling
+- Use **pnpm** for package management (not bun, npm, or yarn)
+- Use **eslint + prettier** for linting and formatting
+- Run `pnpm format` to format code, `pnpm run lint` to lint code

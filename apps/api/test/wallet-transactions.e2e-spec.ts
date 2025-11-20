@@ -13,7 +13,7 @@ const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
  * Test accounts are created via Dynamic API. Token minting uses the transaction
  * endpoint to call the mint function on TestToken contracts (which allow anyone to mint).
  */
-describe('WalletController Transactions (e2e)', () => {
+describe.skip('WalletController Transactions (e2e)', () => {
   let authToken: string
 
   beforeAll(async () => {

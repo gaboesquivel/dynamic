@@ -231,6 +231,49 @@ Both responses return the same wallet structure:
 
 Wallet creation is idempotent - calling `POST /wallets` multiple times with the same `chainId` will return the existing wallet with status 200 instead of creating a duplicate. This ensures safe retries and prevents duplicate wallet creation.
 
+## Rate Limit Handling
+
+The API automatically handles Dynamic SDK rate limits with retry logic:
+
+### Dynamic SDK Rate Limits
+
+- **SDK endpoints** (`/sdk`): 100 requests per minute per IP, 10,000 requests per minute per project environment
+- **Developer endpoints**: 1,500 requests per minute per IP, 3,000 requests per minute per project environment
+
+We use SDK endpoints, so the API implements safeguards for **100 req/min per IP** and **10,000 req/min per project environment**.
+
+### Automatic Retry
+
+All Dynamic SDK calls are automatically retried on 429 (Too Many Requests) errors with:
+
+- **Exponential backoff**: Delays increase exponentially (baseDelay \* 2^attempt)
+- **Jitter**: Random 0-1000ms jitter prevents synchronized retries
+- **Retry-After header**: Respects `Retry-After` header from 429 responses if present
+- **Max retries**: Default 5 retries (configurable)
+
+### Configuration
+
+Rate limit behavior can be configured via environment variables:
+
+- `DYNAMIC_RATE_LIMIT_MAX_RETRIES` (default: 5) - Maximum number of retry attempts
+- `DYNAMIC_RATE_LIMIT_BASE_DELAY_MS` (default: 1000) - Base delay in milliseconds for exponential backoff
+- `DYNAMIC_RATE_LIMIT_MAX_DELAY_MS` (default: 30000) - Maximum delay cap in milliseconds
+
+### Error Responses
+
+Rate limit errors (429) are automatically retried. If all retries are exhausted, the API returns a 429 error with details:
+
+```json
+{
+  "message": "Rate limit exceeded after 6 attempts: Dynamic SDK rate limit exceeded",
+  "details": {
+    "retryAfter": 60
+  }
+}
+```
+
+See [ADR 016](../.adrs/016-dynamic-sdk-rate-limits.md) for detailed implementation information.
+
 **Error Response (Multiple Wallets):**
 
 If Dynamic SDK returns an error indicating a wallet already exists, the API handles it gracefully and returns the existing wallet with status 200. In rare cases where the existing wallet cannot be determined, a 400 error may be returned with details:

@@ -21,6 +21,7 @@ export const ErrorDetailsSchema = z.object({
   chainId: z.union([z.number(), z.string()]).optional(),
   dynamicNetworkId: z.string().optional(),
   transactionHash: z.string().optional(),
+  retryAfter: z.number().optional(),
 })
 
 export type ErrorDetails = z.infer<typeof ErrorDetailsSchema>

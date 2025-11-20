@@ -30,6 +30,7 @@ import {
   extractDynamicSDKErrorMessage,
 } from './base-wallet-client'
 import { LoggerService } from '../../common/logger/logger.service'
+import { RateLimitService } from '../../common/rate-limit.service'
 
 // Safe fields to log from Dynamic SDK responses
 const SAFE_SDK_FIELDS = ['accountAddress', 'chainId', 'networkId'] as const
@@ -88,6 +89,7 @@ export class SolanaWalletClient extends BaseWalletClient {
   constructor(
     private readonly configService: ConfigService,
     private readonly chainMetadata: ChainMetadata,
+    private readonly rateLimitService: RateLimitService,
     @Inject(LoggerService) private readonly logger: LoggerService,
   ) {
     super()
@@ -229,6 +231,7 @@ export class SolanaWalletClient extends BaseWalletClient {
       const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')
 
       // Leverage Dynamic SDK return type directly - no unnecessary mapping
+      // Retry logic removed - delays are handled at test level to prevent rate limits
       const wallet = await dynamicSvmClient.createWalletAccount({
         thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
         backUpToClientShareService: false,
@@ -322,6 +325,7 @@ export class SolanaWalletClient extends BaseWalletClient {
 
       const dynamicSvmClient = await this.getDynamicSvmClient()
 
+      // Retry logic removed - delays are handled at test level to prevent rate limits
       const signature = await dynamicSvmClient.signMessage({
         accountAddress: address,
         externalServerKeyShares,
@@ -383,6 +387,7 @@ export class SolanaWalletClient extends BaseWalletClient {
       transaction.feePayer = fromPublicKey
 
       // Sign transaction using Dynamic SDK
+      // Retry logic removed - delays are handled at test level to prevent rate limits
       const signedTransaction = await dynamicSvmClient.signTransaction({
         accountAddress: address,
         externalServerKeyShares,

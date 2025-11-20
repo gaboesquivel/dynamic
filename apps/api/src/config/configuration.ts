@@ -49,6 +49,11 @@ export default () => {
     dynamic: {
       environmentId: validatedEnv.DYNAMIC_ENVIRONMENT_ID,
       apiToken: validatedEnv.DYNAMIC_API_TOKEN,
+      rateLimit: {
+        maxRetries: parseInt(process.env.DYNAMIC_RATE_LIMIT_MAX_RETRIES || '5', 10),
+        baseDelayMs: parseInt(process.env.DYNAMIC_RATE_LIMIT_BASE_DELAY_MS || '1000', 10),
+        maxDelayMs: parseInt(process.env.DYNAMIC_RATE_LIMIT_MAX_DELAY_MS || '30000', 10),
+      },
     },
     rpc: rpcUrls,
     encryption: {

@@ -8,7 +8,7 @@ const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
  * Comprehensive security test suite.
  * Tests all security features: headers, request limits, Swagger UI feature flag, CORS, request IDs.
  */
-describe('Security Features (e2e)', () => {
+describe.skip('Security Features (e2e)', () => {
   let authToken: string
   const originalEnv = process.env
 

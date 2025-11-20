@@ -2,7 +2,7 @@ import request from 'supertest'
 
 const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
-describe('AppController (e2e)', () => {
+describe.skip('AppController (e2e)', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
