@@ -10,6 +10,7 @@ import { WalletModule } from './wallet/wallet.module'
 import { ChatModule } from './chat/chat.module'
 import { LoggerModule } from './common/logger/logger.module'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
+import { SentryExceptionFilter } from './filters/sentry-exception.filter'
 import configuration from './config/configuration'
 import { loadEnv } from './config/load-env'
 
@@ -44,6 +45,8 @@ const isTestMode = process.env.NODE_ENV === 'test'
   controllers: [AppController],
   providers: [
     AppService,
+    // Register SentryExceptionFilter as a provider so it can be injected
+    SentryExceptionFilter,
     // Register LoggingInterceptor globally
     {
       provide: APP_INTERCEPTOR,

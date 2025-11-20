@@ -69,9 +69,6 @@ async function bootstrap(): Promise<void> {
     middleware.use(req, res, next)
   })
 
-  // Add Sentry exception filter globally
-  app.useGlobalFilters(new SentryExceptionFilter())
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -82,6 +79,11 @@ async function bootstrap(): Promise<void> {
 
   // Validate environment variables
   const validatedEnv = validateEnv()
+
+  // Add Sentry exception filter globally (must use DI container)
+  // Register after app is fully bootstrapped to ensure LoggerService is available
+  const exceptionFilter = app.get(SentryExceptionFilter)
+  app.useGlobalFilters(exceptionFilter)
 
   // Swagger UI setup (conditional based on feature flag)
   const config = new DocumentBuilder()

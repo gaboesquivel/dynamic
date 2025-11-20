@@ -118,6 +118,34 @@ Since accounts persist and may have existing balances, tests should:
 1. **Read initial balance** before operations using `getInitialBalance()` helper
 2. **Assert balance deltas** instead of absolute values using `assertBalanceDelta()` helper
 3. **Use tolerance** for floating-point comparisons (default: 0.0001)
+4. **Validate responses** using TS-REST runtime schemas from `walletAPIContract.getBalance.responses[200]`
+
+**Delta-Based Testing Example:**
+
+```typescript
+// Get initial balance and validate with TS-REST schema
+const balanceBeforeResponse = await request(TEST_SERVER_URL)
+  .get(`/wallets/${wallet.id}/balance`)
+  .set('Authorization', `Bearer ${authToken}`)
+  .expect(200)
+
+const BalanceSchema = walletAPIContract.getBalance.responses[200]
+const balanceBefore = BalanceSchema.parse(balanceBeforeResponse.body)
+
+// Perform operation (if applicable)
+// ...
+
+// Get balance again and validate
+const balanceAfterResponse = await request(TEST_SERVER_URL)
+  .get(`/wallets/${wallet.id}/balance`)
+  .set('Authorization', `Bearer ${authToken}`)
+  .expect(200)
+
+const balanceAfter = BalanceSchema.parse(balanceAfterResponse.body)
+
+// Assert delta (if no operation performed, balance should be same)
+expect(balanceAfter.balance).toBe(balanceBefore.balance)
+```
 
 ### Example
 
@@ -179,7 +207,9 @@ Tests run exclusively against Arbitrum Sepolia testnet (chain ID: 421614):
 
 **Prerequisites:**
 
-- `ARB_TESTNET_GAS_FAUCET_KEY` environment variable must be set with a funded Arbitrum Sepolia account private key
+- `ARB_TESTNET_GAS_FAUCET_KEY` environment variable (optional) - if not set, tests will run without automatic funding
+  - If set: Must be a funded Arbitrum Sepolia account private key
+  - If not set: Tests will still run, but wallets won't be automatically funded (manual funding may be required)
 
 **Configuration:**
 
@@ -213,11 +243,66 @@ Wallets are reused across test runs:
 - Existing wallets are re-funded automatically with minimum ETH required
 - This reduces gas costs and test execution time
 
+## Rate Limit Handling
+
+Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet operations). To prevent hitting rate limits during tests:
+
+1. **Serial Test Execution**: Tests run serially (`maxWorkers: 1` in `jest-e2e.json`) to prevent parallel requests
+2. **Automatic Throttling**: The `createTestWallet()` helper automatically throttles wallet creation calls (minimum 3 seconds between calls)
+3. **Test-Level Throttling**: Tests that create wallets directly should use `beforeEach` hooks with delays:
+   ```typescript
+   beforeEach(async () => {
+     await delay(3000) // Wait 3 seconds before each test
+   })
+   ```
+4. **Manual Throttling**: For direct API calls, use the `throttleWalletCreation()` helper:
+
+   ```typescript
+   import { throttleWalletCreation } from './helpers'
+
+   await throttleWalletCreation()
+   const response = await request(TEST_SERVER_URL)
+     .post('/wallets')
+     .set('Authorization', `Bearer ${authToken}`)
+     .send({ chainId })
+   ```
+
+5. **Retry Logic**: The `createTestWallet()` helper includes retry logic with exponential backoff for rate limit errors (429)
+
+**CRITICAL**: Rate limit errors (429) are NOT valid test responses. Tests must throttle to prevent them.
+
 ## Best Practices
 
 1. **Idempotent tests**: Tests should work regardless of account state
-2. **Balance deltas**: Always assert deltas, never absolute values
-3. **Automated funding**: Wallets are automatically funded with minimum ETH required
-4. **Transaction waiting**: Use `waitForTransaction()` helper to allow blockchain confirmation
-5. **Account reuse**: Use `getOrCreateTestWallet()` for most tests, `createTestWallet()` only when testing wallet creation
-6. **Testnet only**: All tests run against Arbitrum Sepolia testnet - ensure `ARB_TESTNET_GAS_FAUCET_KEY` is set
+2. **Idempotent wallet creation**: Wallet creation tests MUST accept both 200 (existing) and 201 (created) as valid responses
+3. **TS-REST runtime schemas**: Always validate API responses using TS-REST contract runtime schemas (e.g., `walletAPIContract.create.responses[201].parse(response.body)`)
+4. **Balance deltas**: Always assert deltas, never absolute values
+5. **Automated funding**: Wallets are automatically funded with minimum ETH required
+6. **Transaction waiting**: Use `waitForTransaction()` helper to allow blockchain confirmation
+7. **Account reuse**: Use `getOrCreateTestWallet()` for most tests, `createTestWallet()` only when testing wallet creation
+8. **Testnet only**: All tests run against Arbitrum Sepolia testnet - ensure `ARB_TESTNET_GAS_FAUCET_KEY` is set
+9. **Use @vencura/lib utilities**: Use `delay`, `getErrorMessage`, and other utilities from `@vencura/lib` for consistency
+10. **Use lodash for type checking**: Use `isEmpty`, `isPlainObject`, `isString` from lodash for consistent type checking
+11. **Throttle wallet creation**: Always throttle wallet creation calls to prevent Dynamic SDK rate limits
+
+## TS-REST Runtime Schema Validation
+
+All tests should validate API responses using TS-REST runtime schemas from the contract:
+
+```typescript
+import { walletAPIContract } from '@vencura/types/api-contracts'
+
+// Validate wallet creation response (both 200 and 201 use same schema)
+const WalletSchema = walletAPIContract.create.responses[201]
+const validatedWallet = WalletSchema.parse(response.body)
+
+// Validate balance response
+const BalanceSchema = walletAPIContract.getBalance.responses[200]
+const validatedBalance = BalanceSchema.parse(response.body)
+
+// Validate wallet list response
+const WalletsSchema = walletAPIContract.list.responses[200]
+const validatedWallets = WalletsSchema.parse(response.body)
+```
+
+This ensures tests validate responses using the same schemas as the API contract, providing type safety and consistency.

@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common'
 import { getErrorMessage } from '@vencura/lib'
 import isPlainObject from 'lodash/isPlainObject'
+import isString from 'lodash/isString'
+import isEmpty from 'lodash/isEmpty'
 import { z } from 'zod'
 
 /**
@@ -43,56 +45,90 @@ export type ErrorDetails = z.infer<typeof ErrorDetailsSchema>
 export function extractDynamicSDKErrorMessage(error: unknown): string | null {
   if (!error) return null
 
-  // Check nested error structures first (before getErrorMessage)
-  if (isPlainObject(error)) {
-    const obj = error as Record<string, unknown>
+  // FIRST: Check error.error property (works for both Error objects and plain objects)
+  // Dynamic SDK wraps errors but keeps the actual error in error.error
+  // Use lodash isPlainObject and isString for type checking
+  if (error && typeof error === 'object') {
+    const errorObj = error as Record<string, unknown>
 
-    // CRITICAL: Dynamic SDK error structure has error.error as string and error.status as number
-    // Example: { error: 'Multiple wallets per chain not allowed', status: 400 }
-    if (obj.error) {
-      // Check error.error as string (Dynamic SDK's actual error message)
-      if (typeof obj.error === 'string') {
-        return obj.error
+    // Check error.error as string (Dynamic SDK's actual error message)
+    // This works for both Error instances and plain objects
+    if (errorObj.error) {
+      // Use lodash isString for type checking
+      if (isString(errorObj.error)) {
+        // This is the actual Dynamic SDK error message
+        return errorObj.error
       }
-      // Check error.error as object with nested error
-      if (isPlainObject(obj.error)) {
-        const nestedError = obj.error as Record<string, unknown>
+      // Check nested error.error (object with error property)
+      // Use lodash isPlainObject for type checking
+      if (isPlainObject(errorObj.error)) {
+        const nestedError = errorObj.error as Record<string, unknown>
         // Check nested error.error (string) - Dynamic SDK's actual error
-        if (nestedError.error && typeof nestedError.error === 'string') {
+        if (nestedError.error && isString(nestedError.error)) {
           return nestedError.error
         }
         // Check nested error.message
-        if (typeof nestedError.message === 'string') {
+        if (isString(nestedError.message)) {
           return nestedError.message
-        }
-        // Check nested error.error (object with message)
-        if (nestedError.error && isPlainObject(nestedError.error)) {
-          const doubleNested = nestedError.error as Record<string, unknown>
-          if (typeof doubleNested.message === 'string') {
-            return doubleNested.message
-          }
-          // Check doubleNested.error (string) - deepest level
-          if (typeof doubleNested.error === 'string') {
-            return doubleNested.error
-          }
         }
       }
     }
+  }
+
+  // SECOND: Check error stack for specific error messages (fallback)
+  // Use @vencura/lib's getErrorMessage as fallback after checking error.error
+  // This is critical because Dynamic SDK wraps errors and the actual message is often in the stack
+  if (error instanceof Error && error.stack) {
+    const stack = error.stack
+    // Look for "Multiple wallets per chain not allowed" in stack (case-insensitive for robustness)
+    const stackLower = stack.toLowerCase()
+    if (stackLower.includes('multiple wallets per chain not allowed')) {
+      return 'Multiple wallets per chain not allowed'
+    }
+    if (stackLower.includes('wallet already exists')) {
+      return 'Wallet already exists'
+    }
+    if (stackLower.includes('you cannot create multiple wallets')) {
+      return 'You cannot create multiple wallets'
+    }
+    // Also check original case-sensitive for exact matches
+    if (stack.includes('Multiple wallets per chain not allowed')) {
+      return 'Multiple wallets per chain not allowed'
+    }
+    // Look for other common Dynamic SDK errors in stack
+    const commonErrors = [
+      'Multiple wallets per chain not allowed',
+      'Wallet already exists',
+      'You cannot create multiple wallets',
+    ]
+    for (const errMsg of commonErrors) {
+      if (stack.includes(errMsg)) {
+        return errMsg
+      }
+    }
+  }
+
+  // THIRD: Check nested error structures (for plain objects)
+  // Use lodash isPlainObject for type checking
+  if (isPlainObject(error)) {
+    const obj = error as Record<string, unknown>
 
     // Check error.cause.message (Node.js error chaining)
     if (obj.cause && isPlainObject(obj.cause)) {
       const cause = obj.cause as Record<string, unknown>
       // Check cause.error (string) - Dynamic SDK error in cause
-      if (cause.error && typeof cause.error === 'string') {
+      // Use lodash isString for type checking
+      if (cause.error && isString(cause.error)) {
         return cause.error
       }
-      if (typeof cause.message === 'string') {
+      if (isString(cause.message)) {
         return cause.message
       }
     }
 
     // Check error.message
-    if (typeof obj.message === 'string') {
+    // Use lodash isString for type checking
+    if (isString(obj.message)) {
       // If message is generic wrapper, try to find more specific error
       const message = obj.message
       if (
@@ -100,7 +136,30 @@ export function extractDynamicSDKErrorMessage(error: unknown): string | null {
         message.includes('Error in') ||
         message.includes('Failed to')
       ) {
-        // Try to find more specific error in nested structures
+        // FIRST: Check error stack for specific error messages (Dynamic SDK wraps errors)
+        // This is critical - check stack BEFORE checking nested structures
+        if (error instanceof Error && error.stack) {
+          const stack = error.stack
+          const stackLower = stack.toLowerCase()
+          // Check case-insensitive first for robustness
+          if (stackLower.includes('multiple wallets per chain not allowed')) {
+            return 'Multiple wallets per chain not allowed'
+          }
+          if (stackLower.includes('wallet already exists')) {
+            return 'Wallet already exists'
+          }
+          if (stackLower.includes('you cannot create multiple wallets')) {
+            return 'You cannot create multiple wallets'
+          }
+          // Also check case-sensitive for exact matches
+          if (stack.includes('Multiple wallets per chain not allowed')) {
+            return 'Multiple wallets per chain not allowed'
+          }
+          if (stack.includes('Wallet already exists')) {
+            return 'Wallet already exists'
+          }
+        }
+        // SECOND: Try to find more specific error in nested structures (recursive)
         if (obj.error) {
           const nestedMsg = extractDynamicSDKErrorMessage(obj.error)
           if (nestedMsg && nestedMsg !== message) {
@@ -118,32 +177,57 @@ export function extractDynamicSDKErrorMessage(error: unknown): string | null {
     }
   }
 
-  // Use @vencura/lib's getErrorMessage as fallback
+  // FOURTH: Use @vencura/lib's getErrorMessage as fallback
   const baseMessage = getErrorMessage(error)
-  if (baseMessage) return baseMessage
-
-  // Check error stack for specific error messages
-  if (error instanceof Error && error.stack) {
-    const stack = error.stack
-    // Look for "Multiple wallets per chain not allowed" in stack
-    if (stack.includes('Multiple wallets per chain not allowed')) {
-      return 'Multiple wallets per chain not allowed'
-    }
-    // Look for other common Dynamic SDK errors in stack
-    const commonErrors = [
-      'Multiple wallets per chain not allowed',
-      'Wallet already exists',
-      'You cannot create multiple wallets',
-    ]
-    for (const errMsg of commonErrors) {
-      if (stack.includes(errMsg)) {
-        return errMsg
-      }
-    }
+  if (baseMessage && !isEmpty(baseMessage)) {
+    return baseMessage
   }
 
   // Fallback to string conversion
   return String(error)
+}
+
+/**
+ * Extracts existing wallet address from Dynamic SDK error structure.
+ * Dynamic SDK may include wallet address in error.response.data or error.data
+ */
+export function extractExistingWalletAddress(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null
+
+  const obj = error as Record<string, unknown>
+
+  // Use lodash isPlainObject and isString for type checking
+  // Check error.response.data.address (AxiosError structure)
+  if (obj.response && isPlainObject(obj.response)) {
+    const response = obj.response as Record<string, unknown>
+    if (response.data && isPlainObject(response.data)) {
+      const data = response.data as Record<string, unknown>
+      if (isString(data.address)) {
+        return data.address
+      }
+    }
+  }
+
+  // Check error.data.address
+  if (obj.data && isPlainObject(obj.data)) {
+    const data = obj.data as Record<string, unknown>
+    if (isString(data.address)) {
+      return data.address
+    }
+  }
+
+  // Check error.walletAddress or error.wallet
+  if (isString(obj.walletAddress)) {
+    return obj.walletAddress
+  }
+  if (obj.wallet && isPlainObject(obj.wallet)) {
+    const wallet = obj.wallet as Record<string, unknown>
+    if (isString(wallet.address)) {
+      return wallet.address
+    }
+  }
+
+  return null
 }
 
 /**
@@ -184,30 +268,30 @@ export function classifyDynamicSDKError(
   error: unknown,
   errorMessage: string,
 ): DynamicSDKErrorClassification {
-  const lowerMessage = errorMessage.toLowerCase()
+  // Use lodash isEmpty to check if errorMessage is empty
+  const lowerMessage = isEmpty(errorMessage) ? '' : errorMessage.toLowerCase()
   const errorStack = error instanceof Error ? error.stack : ''
-  const stackLower = errorStack.toLowerCase()
+  const stackLower = isEmpty(errorStack) ? '' : errorStack.toLowerCase()
 
   // Check error status code if available (Dynamic SDK error structure)
-  // Check error.status, error.error.status, or nested error.status
+  // Use lodash utilities for type checking
   const errorStatus =
     (error as any)?.status ||
     (error as any)?.error?.status ||
-    ((error as any)?.error &&
-      typeof (error as any).error === 'object' &&
-      (error as any).error.status)
+    ((error as any)?.error && isPlainObject((error as any).error) && (error as any).error.status)
 
   // Check nested error message (Dynamic SDK wraps errors)
+  // Use lodash isPlainObject and isString for type checking
   const nestedError = (error as any)?.error
   let nestedErrorMessage = ''
   if (nestedError) {
-    if (typeof nestedError === 'string') {
+    if (isString(nestedError)) {
       nestedErrorMessage = nestedError.toLowerCase()
     } else if (isPlainObject(nestedError)) {
       // Check nestedError.error (string) - Dynamic SDK's actual error
-      if (typeof nestedError.error === 'string') {
+      if (nestedError.error && isString(nestedError.error)) {
         nestedErrorMessage = nestedError.error.toLowerCase()
-      } else if (typeof nestedError.message === 'string') {
+      } else if (isString(nestedError.message)) {
         nestedErrorMessage = nestedError.message.toLowerCase()
       } else {
         nestedErrorMessage = String(nestedError).toLowerCase()
@@ -218,24 +302,26 @@ export function classifyDynamicSDKError(
   }
 
   // Check error.cause for Node.js error chaining
+  // Use lodash utilities for type checking
   let causeMessage = ''
   const cause = (error as any)?.cause
   if (cause) {
-    if (typeof cause.error === 'string') {
+    if (isString(cause.error)) {
       causeMessage = cause.error.toLowerCase()
-    } else if (typeof cause.message === 'string') {
+    } else if (isString(cause.message)) {
       causeMessage = cause.message.toLowerCase()
-    } else if (isPlainObject(cause) && cause.error && typeof cause.error === 'string') {
+    } else if (isPlainObject(cause) && cause.error && isString(cause.error)) {
       causeMessage = cause.error.toLowerCase()
     }
   }
 
   // Check if nested error is an object with message or error property
+  // Use lodash utilities for type checking
   let nestedErrorObjMessage = ''
   if (nestedError && isPlainObject(nestedError)) {
-    if (typeof nestedError.error === 'string') {
+    if (isString(nestedError.error)) {
       nestedErrorObjMessage = nestedError.error.toLowerCase()
-    } else if (typeof nestedError.message === 'string') {
+    } else if (isString(nestedError.message)) {
       nestedErrorObjMessage = nestedError.message.toLowerCase()
     }
   }
@@ -249,8 +335,14 @@ export function classifyDynamicSDKError(
   }
 
   // Multiple wallets per chain not allowed (400) - Check FIRST before other error types
+  // Check stack FIRST (most reliable for Dynamic SDK wrapped errors)
   const isMultipleWalletsError =
+    stackLower.includes('multiple wallets per chain') ||
+    stackLower.includes('wallet already exists') ||
+    stackLower.includes('you cannot create multiple wallets') ||
+    // Then check error status
     errorStatus === 400 ||
+    // Then check error messages
     lowerMessage.includes('multiple wallets per chain') ||
     lowerMessage.includes('wallet already exists') ||
     lowerMessage.includes('you cannot create multiple wallets') ||
@@ -266,9 +358,6 @@ export function classifyDynamicSDKError(
     errorString.includes('multiple wallets per chain') ||
     errorString.includes('wallet already exists') ||
     errorString.includes('you cannot create multiple wallets') ||
-    stackLower.includes('multiple wallets per chain') ||
-    stackLower.includes('wallet already exists') ||
-    stackLower.includes('you cannot create multiple wallets') ||
     // Check if error message indicates wallet creation failure that might be due to existing wallet
     (lowerMessage.includes('error creating') &&
       lowerMessage.includes('wallet') &&
@@ -293,8 +382,9 @@ export function classifyDynamicSDKError(
     return { type: 'authentication', statusCode: HttpStatus.UNAUTHORIZED }
   }
 
-  // Rate limit errors (429)
+  // Rate limit errors (429) - Check status code FIRST, then message strings
   if (
+    errorStatus === 429 ||
     lowerMessage.includes('rate limit') ||
     lowerMessage.includes('throttle') ||
     lowerMessage.includes('too many') ||
@@ -361,10 +451,22 @@ export function handleDynamicSDKError(
   }
 
   // Extract error message
-  const errorMessage = extractDynamicSDKErrorMessage(error) || 'Unknown error'
+  let errorMessage = extractDynamicSDKErrorMessage(error) || 'Unknown error'
 
   // Classify error
   const classification = classifyDynamicSDKError(error, errorMessage)
+
+  // Override error message for multiple wallets errors if we detected it via classification
+  // but the extracted message is a generic wrapper (e.g., "Error creating evm wallet account")
+  if (
+    classification.type === 'multiple_wallets' &&
+    (errorMessage.toLowerCase().includes('error creating') ||
+      errorMessage.toLowerCase().includes('error in') ||
+      errorMessage.toLowerCase().includes('failed to'))
+  ) {
+    // Use the more specific error message
+    errorMessage = 'Multiple wallets per chain not allowed'
+  }
 
   // Build error response object
   const errorResponse: { message: string; details?: ErrorDetails } = {

@@ -34,10 +34,17 @@ export class WalletContractController {
         const user = req.user
         const { chainId } = body
 
-        const wallet = await this.walletService.createWallet(user.id, chainId)
+        const walletResult = await this.walletService.createWallet(user.id, chainId)
+
+        // Return 200 if wallet already existed, 201 if newly created (idempotent creation)
         return {
-          status: 201 as const,
-          body: wallet,
+          status: walletResult.isNew ? (201 as const) : (200 as const),
+          body: {
+            id: walletResult.id,
+            address: walletResult.address,
+            network: walletResult.network,
+            chainType: walletResult.chainType,
+          },
         }
       },
       getBalance: async ({ params }: { params: { id: string } }) => {

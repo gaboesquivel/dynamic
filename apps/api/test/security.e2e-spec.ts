@@ -61,6 +61,12 @@ describe('Security Features (e2e)', () => {
   })
 
   describe('Request Size Limits', () => {
+    // CRITICAL: Throttle before wallet creation tests to prevent Dynamic SDK rate limits
+    beforeEach(async () => {
+      const { delay } = await import('@vencura/lib')
+      await delay(3000)
+    })
+
     it('should reject requests larger than 10kb', async () => {
       const largePayload = {
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
@@ -86,11 +92,8 @@ describe('Security Features (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send(normalPayload)
 
-      // Accept both 201 (created) and 400 (already exists) as valid responses
-      expect([201, 400]).toContain(response.status)
-      if (response.status === 400) {
-        expect(response.body.message).toContain('Wallet already exists')
-      }
+      // Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+      expect([200, 201]).toContain(response.status)
     })
   })
 

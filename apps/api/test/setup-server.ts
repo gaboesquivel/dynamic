@@ -3,9 +3,7 @@
 import { spawn, ChildProcess } from 'child_process'
 import { resolve } from 'path'
 import { execSync } from 'child_process'
-// Use absolute path for workspace package in Jest global setup
-// Import from CJS build for CJS Jest compatibility
-import { fetchWithTimeout } from '../../../packages/lib/dist/cjs/index.cjs'
+import { fetchWithTimeout } from '@vencura/lib'
 
 // __dirname is available after ts-jest transforms to CJS
 declare const __dirname: string

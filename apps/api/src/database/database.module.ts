@@ -10,26 +10,15 @@ import * as schema from './schema/index'
  */
 async function initializeTestDatabase(client: PGlite): Promise<void> {
   try {
-    // Create users table
+    // Create key_shares table - stores encrypted server-side key shares for wallet signing
+    // Keyed by address + network (Dynamic network ID)
     await client.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        id TEXT PRIMARY KEY,
-        email TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
-      )
-    `)
-
-    // Create wallets table
-    await client.exec(`
-      CREATE TABLE IF NOT EXISTS wallets (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
+      CREATE TABLE IF NOT EXISTS key_shares (
         address TEXT NOT NULL,
-        private_key_encrypted TEXT NOT NULL,
-        network TEXT NOT NULL DEFAULT '421614',
-        chain_type TEXT NOT NULL DEFAULT 'evm',
+        network TEXT NOT NULL,
+        encrypted_key_shares TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        PRIMARY KEY (address, network)
       )
     `)
 

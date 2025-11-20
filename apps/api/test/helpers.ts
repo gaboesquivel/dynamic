@@ -1,14 +1,52 @@
 import request from 'supertest'
 import { getTestAuthToken } from './auth'
-// Use absolute path for workspace package in Jest (CJS build for CJS Jest compatibility)
-import { delay } from '../../../packages/lib/dist/cjs/index.cjs'
+import { delay, getErrorMessage } from '@vencura/lib'
+import isEmpty from 'lodash/isEmpty'
 import type { Address } from 'viem'
 import { createWalletClient, createPublicClient, http } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { arbitrumSepolia } from 'viem/chains'
-import { ErrorResponseSchema } from '@vencura/types/api-contracts'
+import { walletAPIContract, ErrorResponseSchema } from '@vencura/types/api-contracts'
+import { Wallet } from '@vencura/types/schemas'
+import { z } from 'zod'
 
 const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
+
+/**
+ * Throttling mechanism to prevent Dynamic SDK rate limits.
+ * Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet operations).
+ * This ensures minimum time between wallet creation calls.
+ */
+let lastWalletCreationTime = 0
+const MIN_WALLET_CREATION_INTERVAL_MS = 3000 // 3 seconds between wallet creation calls (increased to prevent rate limits)
+
+/**
+ * Throttle wallet creation calls to prevent rate limits.
+ * Ensures minimum time interval between wallet creation API calls.
+ *
+ * This function is called automatically by createTestWallet() helper.
+ * For direct API calls in tests, call this before making wallet creation requests.
+ *
+ * @example
+ * ```ts
+ * await throttleWalletCreation()
+ * const response = await request(TEST_SERVER_URL)
+ *   .post('/wallets')
+ *   .set('Authorization', `Bearer ${authToken}`)
+ *   .send({ chainId })
+ * ```
+ */
+export async function throttleWalletCreation(): Promise<void> {
+  const now = Date.now()
+  const timeSinceLastCall = now - lastWalletCreationTime
+
+  if (timeSinceLastCall < MIN_WALLET_CREATION_INTERVAL_MS) {
+    const waitTime = MIN_WALLET_CREATION_INTERVAL_MS - timeSinceLastCall
+    await delay(waitTime)
+  }
+
+  lastWalletCreationTime = Date.now()
+}
 
 export interface TestWallet {
   id: string
@@ -31,102 +69,162 @@ export async function createTestWallet({
   baseUrl = TEST_SERVER_URL,
   authToken,
   chainId,
+  maxRetries = 3,
 }: {
   baseUrl?: string
   authToken: string
   chainId: number | string
+  maxRetries?: number
 }): Promise<TestWallet> {
-  const response = await request(baseUrl)
-    .post('/wallets')
-    .set('Authorization', `Bearer ${authToken}`)
-    .send({ chainId })
+  let lastError: Error | null = null
 
-  // Handle "multiple wallets per chain" error as SUCCESS (expected behavior)
-  // CRITICAL: This is expected behavior, not a failure - we cannot create multiple wallets with same API key
-  if (response.status === 400) {
-    // Validate error response structure using zod schema
-    const errorResponse = ErrorResponseSchema.safeParse(response.body)
-    if (errorResponse.success) {
-      const errorMessage = errorResponse.data.message.toLowerCase()
-      if (
-        errorMessage.includes('multiple wallets per chain') ||
-        errorMessage.includes('wallet already exists') ||
-        errorMessage.includes('you cannot create multiple wallets')
-      ) {
-        // Extract existing wallet address from error details
-        const existingWalletAddress = errorResponse.data.details?.existingWalletAddress
+  // Retry logic with exponential backoff for rate limit errors
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Add delay before retry (exponential backoff: 1000ms, 2000ms, 4000ms)
+    if (attempt > 0) {
+      const backoffDelay = Math.min(1000 * Math.pow(2, attempt - 1), 4000)
+      await delay(backoffDelay)
+    }
 
-        if (existingWalletAddress) {
-          // Query wallet by address using GET /wallets endpoint
-          const walletsResponse = await request(baseUrl)
-            .get('/wallets')
-            .set('Authorization', `Bearer ${authToken}`)
-            .expect(200)
+    // CRITICAL: Throttle wallet creation calls to prevent Dynamic SDK rate limits
+    await throttleWalletCreation()
 
-          const wallets = walletsResponse.body as TestWallet[]
-          const existingWallet = wallets.find(w => w.address === existingWalletAddress)
+    const response = await request(baseUrl)
+      .post('/wallets')
+      .set('Authorization', `Bearer ${authToken}`)
+      .send({ chainId })
 
-          if (existingWallet) {
-            // Return existing wallet - this is SUCCESS (wallet exists, which is what we want)
-            return existingWallet
+    // CRITICAL: Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+    if (response.status === 200 || response.status === 201) {
+      // Validate response body using TS-REST contract runtime schema
+      // Use the correct schema based on status code
+      const WalletSchema =
+        response.status === 201
+          ? walletAPIContract.create.responses[201]
+          : walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
+      const validatedWallet = WalletSchema.parse(response.body)
+
+      // Note: Throttling happens before the request, so no need for additional delay here
+
+      return validatedWallet as TestWallet
+    }
+
+    // Handle rate limit errors (429) with retry
+    if (response.status === 429) {
+      lastError = new Error(`Rate limit exceeded (429) on attempt ${attempt + 1}/${maxRetries + 1}`)
+      // Continue to retry if we haven't exceeded max retries
+      if (attempt < maxRetries) {
+        continue
+      }
+      // If we've exhausted retries, throw error
+      throw lastError
+    }
+
+    // Handle "multiple wallets per chain" error as SUCCESS (expected behavior)
+    // CRITICAL: This is expected behavior, not a failure - we cannot create multiple wallets with same API key
+    if (response.status === 400) {
+      // Validate error response structure using zod schema
+      const errorResponse = ErrorResponseSchema.safeParse(response.body)
+      if (errorResponse.success) {
+        const errorMessage = errorResponse.data.message.toLowerCase()
+        if (
+          errorMessage.includes('multiple wallets per chain') ||
+          errorMessage.includes('wallet already exists') ||
+          errorMessage.includes('you cannot create multiple wallets')
+        ) {
+          // Extract existing wallet address from error details
+          const existingWalletAddress = errorResponse.data.details?.existingWalletAddress
+
+          if (existingWalletAddress) {
+            // Query wallet by address using GET /wallets endpoint
+            const walletsResponse = await request(baseUrl)
+              .get('/wallets')
+              .set('Authorization', `Bearer ${authToken}`)
+              .expect(200)
+
+            const wallets = walletsResponse.body as TestWallet[]
+            const existingWallet = wallets.find(w => w.address === existingWalletAddress)
+
+            if (existingWallet) {
+              // Validate using TS-REST contract runtime schema (200 response for existing wallet)
+              const WalletSchema =
+                walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
+              const validatedWallet = WalletSchema.parse(existingWallet)
+              return validatedWallet as TestWallet
+            }
           }
-        }
 
-        // Fallback: use getOrCreateTestWallet if we can't find wallet by address
-        return getOrCreateTestWallet({ baseUrl, authToken, chainId })
+          // Fallback: use getOrCreateTestWallet if we can't find wallet by address
+          return getOrCreateTestWallet({ baseUrl, authToken, chainId })
+        }
       }
     }
-  }
 
-  if (response.status !== 201) {
     // Log error response for debugging
     console.error('createTestWallet failed:', {
       status: response.status,
-      statusText: response.statusText,
       body: response.body,
       chainId,
       headers: response.headers,
     })
+
+    // If we've exhausted retries, throw error
+    if (attempt === maxRetries) {
+      throw new Error(
+        `Failed to create wallet after ${maxRetries + 1} attempts. Last status: ${response.status}`,
+      )
+    }
   }
 
-  expect(response.status).toBe(201)
-
-  return response.body as TestWallet
+  // This should never be reached, but TypeScript requires a return
+  throw new Error('Unexpected end of createTestWallet function')
 }
 
 /**
  * Fund a wallet with minimum ETH required for transactions on Arbitrum Sepolia.
  * Uses ARB_TESTNET_GAS_FAUCET_KEY to send only the minimum amount needed.
+ * If faucet key is missing, returns balance info without funding.
  *
  * @param address - Wallet address to fund
  * @param rpcUrl - RPC URL for Arbitrum Sepolia (defaults to env or public RPC)
- * @returns Success status and transaction hash if successful
+ * @returns Balance info and funding status
  */
 export async function fundWalletWithGas({
   address,
   rpcUrl,
 }: {
-  address: `0x${string}`
+  address: string
   rpcUrl?: string
-}): Promise<{ success: boolean; txHash?: string; error?: string }> {
-  try {
-    const faucetPrivateKey = process.env.ARB_TESTNET_GAS_FAUCET_KEY
-    if (!faucetPrivateKey) {
-      return {
-        success: false,
-        error: 'ARB_TESTNET_GAS_FAUCET_KEY environment variable is required',
-      }
+}): Promise<{
+  balanceBefore: bigint
+  balanceAfter: bigint
+  funded: boolean
+  transactionHash?: string
+}> {
+  const effectiveRpcUrl =
+    rpcUrl || process.env.RPC_URL_421614 || 'https://sepolia-rollup.arbitrum.io/rpc'
+
+  const publicClient = createPublicClient({
+    chain: arbitrumSepolia,
+    transport: http(effectiveRpcUrl),
+  })
+
+  // Get current balance
+  const balanceBefore = await publicClient.getBalance({ address: address as Address })
+
+  // Use isEmpty() from lodash to detect missing key
+  const faucetPrivateKey = process.env.ARB_TESTNET_GAS_FAUCET_KEY
+  if (isEmpty(faucetPrivateKey)) {
+    // No faucet key - return balance info without funding
+    return {
+      balanceBefore,
+      balanceAfter: balanceBefore,
+      funded: false,
     }
+  }
 
-    const effectiveRpcUrl =
-      rpcUrl || process.env.RPC_URL_421614 || 'https://sepolia-rollup.arbitrum.io/rpc'
-
+  try {
     const account = privateKeyToAccount(faucetPrivateKey as `0x${string}`)
-
-    const publicClient = createPublicClient({
-      chain: arbitrumSepolia,
-      transport: http(effectiveRpcUrl),
-    })
 
     const walletClient = createWalletClient({
       account,
@@ -147,16 +245,31 @@ export async function fundWalletWithGas({
 
     const hash = await walletClient.sendTransaction({
       account,
-      to: address,
+      to: address as Address,
       value: amountWithBuffer,
     })
 
-    return { success: true, txHash: hash }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
+    // Wait for transaction to be mined
+    await publicClient.waitForTransactionReceipt({ hash })
+
+    const balanceAfter = await publicClient.getBalance({ address: address as Address })
+
     return {
-      success: false,
-      error: `Failed to fund wallet: ${errorMessage}`,
+      balanceBefore,
+      balanceAfter,
+      funded: true,
+      transactionHash: hash,
+    }
+  } catch (error) {
+    // Use getErrorMessage() from @vencura/lib for error extraction
+    const errorMessage = getErrorMessage(error) || 'Unknown error'
+    console.error('Failed to fund wallet:', errorMessage)
+
+    // Return balance info even on error (never throw)
+    return {
+      balanceBefore,
+      balanceAfter: balanceBefore,
+      funded: false,
     }
   }
 }
@@ -181,9 +294,14 @@ export async function getOrCreateTestWallet({
   authToken: string
   chainId?: number | string
 }): Promise<TestWallet> {
-  const wallets = (
-    await request(baseUrl).get('/wallets').set('Authorization', `Bearer ${authToken}`).expect(200)
-  ).body as TestWallet[]
+  const walletsResponse = await request(baseUrl)
+    .get('/wallets')
+    .set('Authorization', `Bearer ${authToken}`)
+    .expect(200)
+
+  // Validate wallets array using TS-REST contract runtime schema
+  const ListWalletsSchema = walletAPIContract.list.responses[200]
+  const wallets = ListWalletsSchema.parse(walletsResponse.body) as TestWallet[]
 
   const existingWallet = wallets.find(w => w.network === String(chainId))
 
@@ -191,7 +309,7 @@ export async function getOrCreateTestWallet({
     // Only auto-fund Arbitrum Sepolia wallets (chain ID 421614)
     if (existingWallet.chainType === 'evm' && String(chainId) === '421614') {
       await fundWalletWithGas({
-        address: existingWallet.address as `0x${string}`,
+        address: existingWallet.address,
       })
     }
     return existingWallet
@@ -201,8 +319,10 @@ export async function getOrCreateTestWallet({
 
   // Only auto-fund Arbitrum Sepolia wallets (chain ID 421614)
   if (wallet.chainType === 'evm' && String(chainId) === '421614') {
+    // CRITICAL: Throttle before funding to prevent rate limits
+    await delay(300)
     await fundWalletWithGas({
-      address: wallet.address as `0x${string}`,
+      address: wallet.address,
     })
   }
 
@@ -336,7 +456,11 @@ export async function getInitialBalance({
     .set('Authorization', `Bearer ${authToken}`)
     .expect(200)
 
-  return response.body.balance as number
+  // Validate response using TS-REST contract runtime schema
+  const BalanceSchema = walletAPIContract.getBalance.responses[200]
+  const validatedBalance = BalanceSchema.parse(response.body)
+
+  return validatedBalance.balance
 }
 
 /**

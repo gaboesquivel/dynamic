@@ -11,8 +11,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname } from 'node:path'
 import { createPublicClient, http, type Address } from 'viem'
 import { foundry } from 'viem/chains'
-// Use absolute path for workspace package in Jest (CJS build for CJS Jest compatibility)
-import { delay } from '../../../packages/lib/dist/cjs/index.cjs'
+import { delay } from '@vencura/lib'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

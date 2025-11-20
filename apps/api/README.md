@@ -35,7 +35,8 @@ Vencura is a backend API that enables users to create and manage custodial walle
   - Security headers (HSTS, X-Frame-Options, CSP, etc.)
   - Request size limits (10kb maximum)
   - Request ID tracing for all requests
-  - Error message sanitization in production
+  - Error message sanitization in production using `@vencura/lib`
+  - Proper 429 rate limit error handling (Dynamic SDK rate limits are preserved)
   - Swagger UI protected by feature flag (disabled by default)
   - CORS configuration
   - DDoS protection via Cloudflare
@@ -47,6 +48,8 @@ Vencura is a backend API that enables users to create and manage custodial walle
 - **Framework**: NestJS (see [ADR 002](../../.adrs/002-vencura-api-framework.md))
 - **Authentication**: Dynamic Labs SDK Client
 - **Validation**: Zod for environment variables and runtime validation (see [@vencura/lib](../../packages/lib/README.md))
+- **Utilities**: `@vencura/lib` for error handling, async utilities, and zod utilities
+- **Type Checking**: Lodash utilities (`isEmpty`, `isPlainObject`, `isString`) for consistent type checking
 - **Blockchain**:
   - Viem for EVM chains (see [ADR 009](../../.adrs/009-viem-vs-ethers.md))
   - @solana/web3.js for Solana
@@ -208,6 +211,13 @@ Content-Type: application/json
 
 **Response:**
 
+The API returns different status codes based on whether the wallet was newly created or already existed:
+
+- **201 Created**: Wallet was newly created
+- **200 OK**: Wallet already existed (idempotent operation)
+
+Both responses return the same wallet structure:
+
 ```json
 {
   "id": "wallet-uuid",
@@ -217,9 +227,13 @@ Content-Type: application/json
 }
 ```
 
+**Idempotent Behavior:**
+
+Wallet creation is idempotent - calling `POST /wallets` multiple times with the same `chainId` will return the existing wallet with status 200 instead of creating a duplicate. This ensures safe retries and prevents duplicate wallet creation.
+
 **Error Response (Multiple Wallets):**
 
-If a wallet already exists for the chain, the API returns a 400 error with details:
+If Dynamic SDK returns an error indicating a wallet already exists, the API handles it gracefully and returns the existing wallet with status 200. In rare cases where the existing wallet cannot be determined, a 400 error may be returned with details:
 
 ```json
 {
@@ -232,7 +246,7 @@ If a wallet already exists for the chain, the API returns a 400 error with detai
 }
 ```
 
-**Note**: The `createTestWallet()` helper in tests treats this error as SUCCESS (expected behavior) and returns the existing wallet. This is because Dynamic SDK does not allow creating multiple wallets per chain with the same API key.
+**Note**: The `createTestWallet()` helper in tests treats both 200 and 201 status codes as SUCCESS (expected behavior). This is because wallet existence is the desired outcome, not an error condition.
 
 ### Get Balance
 
@@ -355,7 +369,19 @@ await fetch('/wallets/:id/send', {
 
 ## Error Handling
 
-The API returns enhanced error responses with detailed information for debugging and user guidance. All error responses preserve the exact error messages from Dynamic SDK.
+The API returns enhanced error responses with detailed information for debugging and user guidance. All error responses preserve the exact error messages from Dynamic SDK. Error handling leverages `@vencura/lib` utilities for consistent error message extraction and sanitization.
+
+### Global Exception Filter
+
+The API uses a global `SentryExceptionFilter` that:
+
+- Captures all exceptions and normalizes error messages
+- Uses `getErrorMessage` from `@vencura/lib` for consistent error extraction
+- Uses `sanitizeErrorMessage` from `@vencura/lib` for production error sanitization
+- Uses lodash `isEmpty` and `isPlainObject` for type checking
+- Reports errors to Sentry (if configured) with safe fields only (no PII)
+- Preserves HTTP status codes from exceptions (including 429 rate limits)
+- Uses optional logger injection to prevent DI failures
 
 ### Error Response Format
 
@@ -382,9 +408,12 @@ The `details` object is optional and only included when relevant context is avai
 - `dynamicNetworkId`: Dynamic network ID string
 - `transactionHash`: Transaction hash (for transaction-related errors)
 
-### Multiple Wallets Per Chain
+### Multiple Wallets Per Chain (Idempotent Behavior)
 
-**CRITICAL**: Dynamic SDK does not allow creating multiple wallets per chain with the same API key. When attempting to create a duplicate wallet, the API returns a 400 error with the existing wallet address in the `details` object:
+**CRITICAL**: Wallet creation is idempotent. Dynamic SDK does not allow creating multiple wallets per chain with the same API key. When attempting to create a duplicate wallet:
+
+- **If existing wallet can be determined**: API returns status **200 OK** with the existing wallet (idempotent success)
+- **If existing wallet cannot be determined**: API returns status **400 Bad Request** with the existing wallet address in the `details` object:
 
 ```json
 {
@@ -397,11 +426,20 @@ The `details` object is optional and only included when relevant context is avai
 }
 ```
 
-**Test Behavior**: In tests, the `createTestWallet()` helper treats this error as SUCCESS (expected behavior) and returns the existing wallet. This is because wallet existence is the desired outcome, not an error condition.
+**Test Behavior**: In tests, the `createTestWallet()` helper accepts both 200 and 201 status codes as SUCCESS (expected behavior). This is because wallet existence is the desired outcome, not an error condition.
 
 ### Error Message Preservation
 
 All error responses preserve the exact error messages from Dynamic SDK, ensuring transparency and easier debugging. Error classification (authentication, rate limit, network, etc.) is handled automatically, but the original Dynamic SDK message is always returned.
+
+### Rate Limit Errors (429)
+
+When Dynamic SDK returns a 429 rate limit error, the API properly classifies and returns it as `429 Too Many Requests` status code. The error classification system checks for:
+
+- HTTP status code 429
+- Error messages containing "rate limit", "throttle", "too many", "quota", or "limit exceeded"
+
+Rate limit errors are properly preserved through the error handling chain, ensuring clients receive the correct status code for rate limit scenarios.
 
 ## Dynamic SDK Integration
 

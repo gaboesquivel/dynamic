@@ -20,6 +20,16 @@ describe('WalletController Transactions (e2e)', () => {
     authToken = await getTestAuthToken()
   })
 
+  // CRITICAL: Throttle between tests to prevent Dynamic SDK rate limits
+  // Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet operations)
+  // This ensures minimum 3 seconds between wallet creation calls across all tests
+  beforeEach(async () => {
+    // Wait 3 seconds before each test to prevent rate limits
+    // This works in conjunction with throttling in getOrCreateTestWallet helper
+    const { delay } = await import('@vencura/lib')
+    await delay(3000)
+  })
+
   describe('EVM Transaction Sending', () => {
     it('should send real transaction on Arbitrum Sepolia', async () => {
       const wallet = await getOrCreateTestWallet({

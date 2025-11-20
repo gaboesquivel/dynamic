@@ -125,8 +125,13 @@ export class SolanaWalletClient extends BaseWalletClient {
       const errorMessage = error instanceof Error ? error.message : String(error)
       const lowerMessage = errorMessage.toLowerCase()
 
+      // Check for status code in error object (AxiosError has response.status, others might have status directly)
+      const errorObj = error as { status?: number; response?: { status?: number } }
+      const errorStatus = errorObj?.response?.status ?? errorObj?.status
+
       // Authentication errors (401)
       if (
+        errorStatus === 401 ||
         lowerMessage.includes('authentication') ||
         lowerMessage.includes('token') ||
         lowerMessage.includes('unauthorized') ||
@@ -136,8 +141,10 @@ export class SolanaWalletClient extends BaseWalletClient {
       ) {
         throw new UnauthorizedException(`Dynamic SDK authentication failed: ${errorMessage}`)
       }
-      // Rate limit errors (429)
+      // Rate limit errors (429) - Check status code FIRST, then message strings
       if (
+        errorStatus === 429 ||
+        lowerMessage.includes('status code 429') ||
         lowerMessage.includes('rate limit') ||
         lowerMessage.includes('throttle') ||
         lowerMessage.includes('too many') ||
@@ -276,9 +283,14 @@ export class SolanaWalletClient extends BaseWalletClient {
       }
 
       // Use shared error handling utility
+      // Try to extract existing wallet address from error
+      const { extractExistingWalletAddress } = await import('./base-wallet-client')
+      const existingAddress =
+        extractExistingWalletAddress(error) || params.existingWalletAddress || undefined
+
       // Include error details for multiple wallets error
       handleDynamicSDKError(error, 'create wallet', {
-        existingWalletAddress: params.existingWalletAddress || undefined,
+        existingWalletAddress: existingAddress,
         chainId: params.chainId,
         dynamicNetworkId: this.chainMetadata.dynamicNetworkId,
       })

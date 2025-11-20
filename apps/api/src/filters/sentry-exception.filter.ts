@@ -5,11 +5,13 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  Injectable,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import * as Sentry from '@sentry/node'
 import { sanitizeErrorMessage, getErrorMessage } from '@vencura/lib'
 import isPlainObject from 'lodash/isPlainObject'
+import isEmpty from 'lodash/isEmpty'
 import { LoggerService } from '../common/logger/logger.service'
 
 interface AuthenticatedRequest extends Request {
@@ -60,8 +62,9 @@ function normalizeExceptionMessage(exception: unknown, isProduction: boolean): s
  * Security: Only sends safe fields (method, url, userId) - excludes body and query to prevent PII leakage.
  */
 @Catch()
+@Injectable()
 export class SentryExceptionFilter implements ExceptionFilter {
-  constructor(@Inject(LoggerService) private readonly logger: LoggerService) {}
+  constructor(@Inject(LoggerService) private readonly logger?: LoggerService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp()
@@ -87,7 +90,10 @@ export class SentryExceptionFilter implements ExceptionFilter {
       ...(errorStack && { stack: errorStack }),
     }
 
-    this.logger.error('Exception caught by global filter', logMetadata)
+    // Use optional chaining with isEmpty check for logger
+    if (!isEmpty(this.logger)) {
+      this.logger.error('Exception caught by global filter', logMetadata)
+    }
 
     // Report to Sentry if initialized - only send safe fields to prevent PII exposure
     if (Sentry.getCurrentHub().getClient()) {

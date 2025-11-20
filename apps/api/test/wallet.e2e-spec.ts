@@ -2,6 +2,7 @@ import request from 'supertest'
 import { getTestAuthToken } from './auth'
 import { TEST_CHAINS, TEST_ADDRESSES, TEST_MESSAGES } from './fixtures'
 import { createTestWallet, getOrCreateTestWallet } from './helpers'
+import { walletAPIContract } from '@vencura/types/api-contracts'
 
 const TEST_SERVER_URL = process.env.TEST_SERVER_URL || 'http://localhost:3077'
 
@@ -23,6 +24,16 @@ describe('WalletController (e2e)', () => {
   beforeAll(async () => {
     // Get real Dynamic auth token (uses real Dynamic API)
     authToken = await getTestAuthToken()
+  })
+
+  // CRITICAL: Throttle between tests to prevent Dynamic SDK rate limits
+  // Dynamic SDK has rate limits (typically 10-20 requests per minute for wallet operations)
+  // This ensures minimum 3 seconds between wallet creation calls across all tests
+  beforeEach(async () => {
+    // Wait 3 seconds before each test to prevent rate limits
+    // This works in conjunction with throttling in createTestWallet helper
+    const { delay } = await import('@vencura/lib')
+    await delay(3000)
   })
 
   describe('GET /wallets', () => {
@@ -59,44 +70,69 @@ describe('WalletController (e2e)', () => {
   })
 
   describe('POST /wallets', () => {
-    it('should create a wallet on Arbitrum Sepolia using Dynamic SDK', async () => {
-      const response = await request(TEST_SERVER_URL)
+    it('should create a wallet on Arbitrum Sepolia using Dynamic SDK (idempotent - accepts existing)', async () => {
+      // First call - should create wallet (201) or return existing (200)
+      const firstResponse = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
 
-      // Accept both 201 (created) and 400 (already exists) as valid responses
-      expect([201, 400]).toContain(response.status)
-      if (response.status === 201) {
-        expect(response.body).toHaveProperty('id')
-        expect(response.body).toHaveProperty('address')
-        expect(response.body).toHaveProperty('network', '421614')
-        expect(response.body).toHaveProperty('chainType', 'evm')
-        // Verify address format matches EVM address (created via Dynamic SDK)
-        expect(response.body.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
-        // Verify wallet was created through Dynamic SDK by checking address is valid
-        // Dynamic SDK creates wallets with proper address format
-      } else {
-        expect(response.body.message).toContain('Wallet already exists')
-      }
+      // CRITICAL: Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+      expect([200, 201]).toContain(firstResponse.status)
+
+      // Validate first response using TS-REST contract schema
+      const WalletSchema = walletAPIContract.create.responses[201]
+      const firstWallet = WalletSchema.parse(firstResponse.body)
+
+      // Assert wallet structure is valid
+      expect(firstWallet).toHaveProperty('id')
+      expect(firstWallet).toHaveProperty('address')
+      expect(firstWallet).toHaveProperty('network', '421614')
+      expect(firstWallet).toHaveProperty('chainType', 'evm')
+      expect(firstWallet.address).toMatch(/^0x[a-fA-F0-9]{40}$/)
+
+      // Small delay to ensure DB write completes before second call
+      const { delay } = await import('@vencura/lib')
+      await delay(500)
+
+      // Second call - should return existing wallet (200) due to idempotency
+      const secondResponse = await request(TEST_SERVER_URL)
+        .post('/wallets')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
+
+      // Second call should return 200 (existing wallet, idempotent)
+      expect(secondResponse.status).toBe(200)
+
+      // Validate second response using TS-REST contract schema (200 response for existing wallet)
+      const SecondWalletSchema =
+        walletAPIContract.create.responses[200] || walletAPIContract.create.responses[201]
+      const secondWallet = SecondWalletSchema.parse(secondResponse.body)
+
+      // Should return the same wallet
+      expect(secondWallet.id).toBe(firstWallet.id)
+      expect(secondWallet.address).toBe(firstWallet.address)
+      expect(secondWallet.network).toBe(firstWallet.network)
+      expect(secondWallet.chainType).toBe(firstWallet.chainType)
     })
 
-    it('should create a wallet on Base Sepolia', async () => {
+    it('should create a wallet on Base Sepolia (idempotent - accepts existing)', async () => {
       const response = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.BASE_SEPOLIA })
 
-      // Accept both 201 (created) and 400 (already exists) as valid responses
-      expect([201, 400]).toContain(response.status)
-      if (response.status === 201) {
-        expect(response.body).toHaveProperty('id')
-        expect(response.body).toHaveProperty('address')
-        expect(response.body).toHaveProperty('network', '84532')
-        expect(response.body).toHaveProperty('chainType', 'evm')
-      } else {
-        expect(response.body.message).toContain('Wallet already exists')
-      }
+      // CRITICAL: Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+      expect([200, 201]).toContain(response.status)
+
+      // Validate response using TS-REST contract schema
+      const WalletSchema = walletAPIContract.create.responses[201]
+      const validatedWallet = WalletSchema.parse(response.body)
+
+      expect(validatedWallet).toHaveProperty('id')
+      expect(validatedWallet).toHaveProperty('address')
+      expect(validatedWallet).toHaveProperty('network', '84532')
+      expect(validatedWallet).toHaveProperty('chainType', 'evm')
     })
 
     it('should return 400 for unsupported chain ID', async () =>
@@ -134,14 +170,19 @@ describe('WalletController (e2e)', () => {
         })
     })
 
-    it('should include X-Request-ID header in wallet creation response', async () => {
+    it('should include X-Request-ID header in wallet creation response (idempotent - accepts existing)', async () => {
       const response = await request(TEST_SERVER_URL)
         .post('/wallets')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA })
 
-      // Accept both 201 (created) and 400 (already exists) as valid responses
-      expect([201, 400]).toContain(response.status)
+      // CRITICAL: Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+      expect([200, 201]).toContain(response.status)
+
+      // Validate response using TS-REST contract schema
+      const WalletSchema = walletAPIContract.create.responses[201]
+      WalletSchema.parse(response.body)
+
       expect(response.headers['x-request-id']).toBeDefined()
       expect(typeof response.headers['x-request-id']).toBe('string')
     })
@@ -152,21 +193,17 @@ describe('WalletController (e2e)', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({ chainId: TEST_CHAINS.SOLANA.DEVNET })
 
-      // Accept both 201 (created) and 400 (already exists) as valid responses
-      expect([201, 400]).toContain(response.status)
-      if (response.status === 201) {
-        expect(response.body).toHaveProperty('id')
-        expect(response.body).toHaveProperty('address')
-        expect(response.body).toHaveProperty('network', 'solana-devnet')
-        expect(response.body).toHaveProperty('chainType', 'solana')
-        // Verify Solana address format (created via Dynamic SDK)
-        // Solana addresses are base58 encoded, typically 32-44 characters
-        expect(response.body.address).toBeTruthy()
-        expect(typeof response.body.address).toBe('string')
-        expect(response.body.address.length).toBeGreaterThan(0)
-      } else {
-        expect(response.body.message).toContain('Wallet already exists')
-      }
+      // Accept both 200 (existing) and 201 (created) as valid responses (idempotent creation)
+      expect([200, 201]).toContain(response.status)
+      expect(response.body).toHaveProperty('id')
+      expect(response.body).toHaveProperty('address')
+      expect(response.body).toHaveProperty('network', 'solana-devnet')
+      expect(response.body).toHaveProperty('chainType', 'solana')
+      // Verify Solana address format (created via Dynamic SDK)
+      // Solana addresses are base58 encoded, typically 32-44 characters
+      expect(response.body.address).toBeTruthy()
+      expect(typeof response.body.address).toBe('string')
+      expect(response.body.address.length).toBeGreaterThan(0)
     })
 
     it('should return 400 for invalid chain ID', async () =>
@@ -192,17 +229,29 @@ describe('WalletController (e2e)', () => {
         chainId: TEST_CHAINS.EVM.ARBITRUM_SEPOLIA,
       })
 
-      // Then get balance (queries blockchain using wallet address from Dynamic SDK)
-      return request(TEST_SERVER_URL)
+      // Get initial balance and validate with TS-REST schema
+      const balanceBeforeResponse = await request(TEST_SERVER_URL)
         .get(`/wallets/${wallet.id}/balance`)
         .set('Authorization', `Bearer ${authToken}`)
         .expect(200)
-        .expect(res => {
-          expect(res.body).toHaveProperty('balance')
-          expect(typeof res.body.balance).toBe('number')
-          expect(res.body.balance).toBeGreaterThanOrEqual(0)
-          // Balance is queried from blockchain using address created by Dynamic SDK
-        })
+
+      // Validate response using TS-REST contract schema
+      const BalanceSchema = walletAPIContract.getBalance.responses[200]
+      const balanceBefore = BalanceSchema.parse(balanceBeforeResponse.body)
+
+      // Get balance again (no operation performed, so should be same)
+      const balanceAfterResponse = await request(TEST_SERVER_URL)
+        .get(`/wallets/${wallet.id}/balance`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200)
+
+      const balanceAfter = BalanceSchema.parse(balanceAfterResponse.body)
+
+      // Assert balance is a number and hasn't changed unexpectedly (delta-based assertion)
+      expect(balanceAfter.balance).toBeGreaterThanOrEqual(0)
+      // If no operation was performed, balance should be same
+      expect(balanceAfter.balance).toBe(balanceBefore.balance)
+      // Balance is queried from blockchain using address created by Dynamic SDK
     })
 
     it('should return 404 for non-existent wallet', async () => {

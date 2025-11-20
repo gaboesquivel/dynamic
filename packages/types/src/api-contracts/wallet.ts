@@ -53,18 +53,19 @@ export const walletAPIContract = c.router({
     summary: 'Get all wallets for the authenticated user',
   },
   /**
-   * Create a new custodial wallet.
+   * Create a new custodial wallet (idempotent).
    */
   create: {
     method: 'POST',
     path: '/wallets',
     body: CreateWalletInput,
     responses: {
-      201: Wallet,
+      200: Wallet, // Idempotent creation - wallet already exists
+      201: Wallet, // New wallet created
       400: ErrorResponseSchema,
       401: z.object({ message: z.string() }),
     },
-    summary: 'Create a new custodial wallet',
+    summary: 'Create a new custodial wallet (idempotent)',
   },
   /**
    * Get wallet balance.
