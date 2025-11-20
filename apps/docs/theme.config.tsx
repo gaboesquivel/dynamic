@@ -1,5 +1,3 @@
-/* eslint-disable import/no-default-export */
-
 const config = {
   logo: <span>Vencura Docs</span>,
   project: {

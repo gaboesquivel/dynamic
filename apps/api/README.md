@@ -841,7 +841,7 @@ vercel --prod
 The Vencura API is designed to be **portable by default** and can run on any platform:
 
 - **Vercel**: Current deployment platform (convenience, not requirement)
-- **Google Cloud Run**: Enhanced security and control (see [Google Cloud Deployment Option](../../docs/google-cloud-deployment.md))
+- **Google Cloud Run**: Enhanced security and control (see [Google Cloud Deployment Option](/docs/google-cloud))
 - **AWS Lambda/ECS**: Standard serverless or container deployment
 - **Railway/Render/Fly.io**: Simple platform deployments
 - **Self-hosted Docker**: Run anywhere with Docker
@@ -856,12 +856,11 @@ The Vencura API is designed to be **portable by default** and can run on any pla
 
 For detailed portability documentation, see:
 
-- [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) - Comprehensive portability guide
-- [Vercel Optimizations](../../docs/vercel-optimizations.md) - Vercel-specific features and alternatives
+- [Vercel Portability Strategy](/docs/vercel-portability) - Comprehensive portability guide
 
 ### Alternative: Google Cloud Deployment
 
-For production workloads requiring more control, security, and extensibility, we're working on a Google Cloud deployment option using Pulumi and GitHub Actions. See [Google Cloud Deployment Option](../../docs/google-cloud-deployment.md) for details.
+For production workloads requiring more control, security, and extensibility, we're working on a Google Cloud deployment option using Pulumi and GitHub Actions. See [Google Cloud Deployment Option](/docs/google-cloud) for details.
 
 ## Project Structure
 

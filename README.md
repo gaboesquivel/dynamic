@@ -16,7 +16,7 @@ This monorepo follows a modular architecture with clear separation between appli
 - **Vercel as convenience**: Vercel is chosen for rapid deployment and excellent developer experience, not as a requirement
 - **All core components** can be migrated to any platform without code changes
 
-**Current Deployment**: All applications (UI + API) are currently deployed on **Vercel**. We are NOT splitting the architecture now - everything stays on Vercel to leverage its unparalleled shipping and distribution capabilities. See [Vercel Portability Strategy](./docs/vercel-portability-strategy.md) for details.
+**Current Deployment**: All applications (UI + API) are currently deployed on **Vercel**. We are NOT splitting the architecture now - everything stays on Vercel to leverage its unparalleled shipping and distribution capabilities. See [Vercel Portability Strategy](/docs/vercel-portability) for details.
 
 **For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it a potential option for future production workloads requiring strict data governance. This is documented as a future option ONLY if production security requirements demand it. See [ADR 007](./.adrs/007-vencura-api-infrastructure.md) and [ADR 010](./.adrs/010-vencura-infra-orchestration.md) for detailed infrastructure decisions.
 
@@ -241,7 +241,7 @@ This monorepo uses **GitHub Flow** with `develop` as the primary development bra
 - **Google Cloud**: Available as alternative via Pulumi for enhanced security
 - **Hybrid**: Documented as future option for production security requirements
 
-See [Deployment and Branching Strategy](./docs/deployment-and-branching-strategy.md) for comprehensive documentation on:
+See [Deployment and Branching Strategy](/docs/deployment) for comprehensive documentation on:
 
 - Branching strategy and workflows
 - Deployment targets (Vercel, Google Cloud)

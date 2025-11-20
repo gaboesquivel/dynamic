@@ -32,7 +32,7 @@ Vencura implements multiple layers of security:
 6. **Infrastructure Layer**: Vercel's security model with team access controls
 7. **Secrets Layer**: Vercel environment variables (portable to any secrets manager)
 
-**Current Deployment**: All systems are deployed on Vercel. The architecture is designed to be **portable by default** - all security measures work on any platform. See [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) for details.
+**Current Deployment**: All systems are deployed on Vercel. The architecture is designed to be **portable by default** - all security measures work on any platform. See [Vercel Portability Strategy](/docs/vercel-portability) for details.
 
 ### Current Security Measures
 
@@ -451,7 +451,7 @@ All infrastructure security measures are **portable by default**:
 - **Standard Application Code**: No vendor-specific code
 - **Migration Path**: Can migrate to any platform without code changes
 
-See [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) for detailed portability documentation.
+See [Vercel Portability Strategy](/docs/vercel-portability) for detailed portability documentation.
 
 ## Deployment Security
 
@@ -667,14 +667,14 @@ For production workloads requiring enhanced security and control, Google Cloud P
 
 **Status**: Documented but not currently implemented. All systems are currently deployed on Vercel.
 
-**Documentation**: See [Google Cloud Security Documentation](../../docs/google-cloud-security.md) for comprehensive Google Cloud security details.
+**Documentation**: See [Google Cloud Deployment](/docs/google-cloud) for comprehensive Google Cloud security details.
 
-**When to Consider**: Only if production security requirements demand enhanced control beyond Vercel's capabilities. See [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) for detailed comparison.
+**When to Consider**: Only if production security requirements demand enhanced control beyond Vercel's capabilities. See [Vercel Portability Strategy](/docs/vercel-portability) for detailed comparison.
 
 ## Additional Resources
 
-- [Vercel Portability Strategy](../../docs/vercel-portability-strategy.md) - Current deployment strategy
-- [Google Cloud Security Documentation](../../docs/google-cloud-security.md) - Alternative deployment security
+- [Vercel Portability Strategy](/docs/vercel-portability) - Current deployment strategy
+- [Google Cloud Deployment](/docs/google-cloud) - Alternative deployment security
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 - [Dynamic Labs Security Documentation](https://docs.dynamic.xyz/)

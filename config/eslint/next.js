@@ -68,4 +68,7 @@ export const nextJsConfig = [
       "import/no-default-export": "off",
     },
   },
+  {
+    ignores: ["next-env.d.ts"],
+  },
 ]

@@ -4,7 +4,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@vencura/ui/*": ["../../packages/ui/src/*"]
+      "@vencura/ui/*": ["../../packages/ui/src/*"],
+      "next-mdx-import-source-file": ["./app/mdx-components.tsx"]
     },
     "plugins": [
       {

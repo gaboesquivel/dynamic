@@ -29,6 +29,14 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       "prettier/prettier": ["error", { endOfLine: "auto" }],
+      // Disable unsafe rules - we use Zod-first validation strategy instead
+      // This aligns with ts-reset (JSON.parse/response.json return unknown) which requires runtime validation
+      // See config/eslint/README.md for details and .cursor/rules/base/typescript.mdc for ts-reset documentation
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
     },
   },
   {

@@ -1,10 +1,9 @@
-import { nextJsConfig } from '@workspace/eslint-config/next-js'
+import { config as baseConfig } from '@workspace/eslint-config/base'
 
-/** @type {import("eslint").Linter.Config} */
 export default [
-  ...nextJsConfig,
+  ...baseConfig,
   {
-    ignores: ['.next/**', 'node_modules/**', '.turbo/**'],
+    ignores: ['.next/**', 'next-env.d.ts'],
   },
 ]
 

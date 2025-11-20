@@ -4,6 +4,6 @@ import { nextJsConfig } from "@workspace/eslint-config/next-js"
 export default [
   ...nextJsConfig,
   {
-    ignores: [".next/**", "node_modules/**", ".turbo/**"],
+    ignores: [".next/**", "node_modules/**", ".turbo/**", "next-env.d.ts"],
   },
 ]
