@@ -1,0 +1,27 @@
+{
+  "name": "@vencura/api",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Vencura API built with Elysia",
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "start": "bun run dist/index.js",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "elysia": "^1.1.0",
+    "@vencura/types": "workspace:*",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.32.0",
+    "typescript": "^5.9.2"
+  }
+}
+

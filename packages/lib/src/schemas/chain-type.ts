@@ -1,7 +1,18 @@
-import { Wallet } from '@vencura/types/schemas'
+import { z } from 'zod'
 
 /**
  * Schema for validating chain type.
- * Extracted from Wallet schema for reuse across services.
+ * Chain types supported by Dynamic SDK.
  */
-export const chainTypeSchema = Wallet.shape.chainType
+export const chainTypeSchema = z.enum([
+  'evm',
+  'solana',
+  'cosmos',
+  'bitcoin',
+  'flow',
+  'starknet',
+  'algorand',
+  'sui',
+  'spark',
+  'tron',
+])

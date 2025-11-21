@@ -18,10 +18,10 @@
       "require": "./dist/cjs/schemas/index.cjs",
       "import": "./dist/esm/schemas/index.mjs"
     },
-    "./api-contracts": {
-      "types": "./dist/types/api-contracts/index.d.ts",
-      "require": "./dist/cjs/api-contracts/index.cjs",
-      "import": "./dist/esm/api-contracts/index.mjs"
+    "./contracts": {
+      "types": "./dist/types/contracts/index.d.ts",
+      "require": "./dist/cjs/contracts/index.cjs",
+      "import": "./dist/esm/contracts/index.mjs"
     }
   },
   "scripts": {
@@ -29,7 +29,6 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
-    "@ts-rest/core": "^3.40.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
