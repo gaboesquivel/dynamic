@@ -1,0 +1,17 @@
+{
+  "buildCommand": "cd ../.. && pnpm build --filter=vencura-docs",
+  "devCommand": "cd ../.. && pnpm dev --filter=vencura-docs",
+  "installCommand": "cd ../.. && pnpm install",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "develop": true
+    }
+  }
+}
+

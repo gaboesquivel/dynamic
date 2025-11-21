@@ -1,36 +1,165 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vencura Docs
+
+A documentation site built with Next.js.
+
+## Tech Stack
+
+- Next.js 16.0.0
+- React 19.1.1
+- TypeScript
+- Dynamic SDK
+- Tailwind CSS
+- Shadcn/ui components (via `@vencura/ui`)
+
+## Design System & Dependencies
+
+This app uses `@vencura/ui` as the centralized design system:
+
+- **UI Components**: Import from `@vencura/ui/components/*`
+- **Radix Primitives**: Import from `@vencura/ui/radix`
+- **Utilities**: Import from `@vencura/ui/lib/utils`
+- **Icons**: Import from `lucide-react` via `@vencura/ui`
+
+**Do NOT install** these design system dependencies directly in this app - they are managed centrally in `@vencura/ui`:
+
+- Any `@radix-ui/react-*` packages
+- `class-variance-authority`, `clsx`, `tailwind-merge`
+
+**Do install** these app-level dependencies:
+
+- `next-themes` - Theme provider (configured per app)
+- `lucide-react` - If you need icons directly (UI components already include it)
+
+## Mobile-First Design
+
+This app follows **mobile-first responsive design**:
+
+- Base styles target mobile devices (default)
+- Enhancements added for larger screens using Tailwind breakpoints (`sm:`, `md:`, `lg:`, `xl:`, `2xl:`)
+- All components are designed mobile-first, then enhanced for desktop
+
+See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for detailed guidelines.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js >= 20.0.0
+- pnpm (package manager)
+- Dynamic SDK environment ID (see Environment Variables below)
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# From monorepo root
+pnpm install
+
+# Or from this directory
+cd apps/docs
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Running the Application
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# From monorepo root
+pnpm dev
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Or from this directory
+cd apps/docs
+pnpm dev
+```
 
-## Learn More
+The application will be available at `http://localhost:3002` (or the next available port).
 
-To learn more about Next.js, take a look at the following resources:
+### Environment Variables
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This Next.js app uses environment-specific configuration files. Next.js automatically loads environment files in priority order:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. `.env` (highest priority, sensitive data, never committed, overrides everything)
+2. `.env.development` / `.env.staging` / `.env.production` (based on NODE_ENV, committed configs)
 
-## Deploy on Vercel
+**File Structure:**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `.env` - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
+- `.env.development` - Development configuration (committed, non-sensitive)
+- `.env.staging` - Staging configuration (committed, non-sensitive)
+- `.env.production` - Production configuration (committed, non-sensitive)
+- `.env-example` - Template for `.env` file (shows required sensitive variables)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Setup for Local Development:**
+
+```bash
+# Copy the example file for sensitive data
+cp .env-example .env
+
+# Fill in your actual sensitive values in .env
+# NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id
+
+# .env.development is already committed with non-sensitive configs
+```
+
+**Required Environment Variables:**
+
+- `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`: Your Dynamic environment ID from the [Dynamic Dashboard](https://app.dynamic.xyz/). Required for authentication to work properly.
+
+**Optional Environment Variables:**
+
+- `NEXT_PUBLIC_SENTRY_DSN`: Sentry DSN URL for error tracking (optional, defaults to disabled)
+- `NEXT_PUBLIC_SENTRY_ENVIRONMENT`: Environment name for Sentry (optional, defaults to `NODE_ENV`)
+
+**Environment-Specific Configuration:**
+
+- **Development** (`.env.development` + `.env`): Local development
+- **Staging** (`.env.staging` + `.env`): Staging environment
+- **Production** (`.env.production` + `.env`): Production environment
+
+**Note**: `.env.development`, `.env.staging`, and `.env.production` are committed files with non-sensitive configuration. Sensitive data (like `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`) should be in `.env` file (never committed).
+
+**Getting Your Dynamic Environment ID:**
+
+1. Go to [app.dynamic.xyz](https://app.dynamic.xyz/)
+2. Sign up for a free account (if you don't have one)
+3. Create a new project or select an existing one
+4. Copy the Environment ID from your project settings
+5. Add it to your `.env.local` file as `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`
+
+**Note**: If `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is not set, the app will use a placeholder ID and show warnings in development mode. Authentication will not work properly without a valid environment ID.
+
+See [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
+
+## Development
+
+```bash
+# Development mode
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Start production server
+pnpm start
+
+# Lint
+pnpm lint
+
+# Type check
+pnpm typecheck
+```
+
+## Project Structure
+
+```
+docs/
+├── app/                    # Next.js app directory
+│   ├── page.tsx           # Main page component
+│   └── layout.tsx         # Root layout
+├── components/             # React components
+├── lib/                    # Utilities
+├── hooks/                  # React hooks
+└── types/                  # TypeScript type definitions
+```
+
+## License
+
+PROPRIETARY

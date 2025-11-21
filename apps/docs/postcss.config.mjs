@@ -1,7 +1,3 @@
-const config = {
-  plugins: {
-    "@tailwindcss/postcss": {},
-  },
-};
+import postcssConfig from '@vencura/ui/postcss.config'
 
-export default config;
+export default postcssConfig
