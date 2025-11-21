@@ -12,16 +12,21 @@
     }
   },
   "scripts": {
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage"
   },
   "dependencies": {
     "@vencura/types": "workspace:*",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.13",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "^9.32.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.13"
   }
 }

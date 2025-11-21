@@ -1,5 +1,5 @@
-// Mock lucide-react icons for Jest tests
-// This avoids ESM import issues in Jest
+// Mock lucide-react icons for Vitest tests
+// This avoids ESM import issues in tests
 
 export const Mic = () => null
 export const MicOff = () => null

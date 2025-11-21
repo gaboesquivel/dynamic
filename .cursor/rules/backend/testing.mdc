@@ -1,5 +1,5 @@
 ---
-description: Backend testing standards and patterns for NestJS
+description: Backend testing standards and patterns for Elysia
 globs: *.spec.ts,**/*.e2e-spec.ts,**/*test.ts
 alwaysApply: false
 ---
@@ -15,9 +15,10 @@ alwaysApply: false
 
 ## Test Structure
 ### E2E Tests (Blackbox API Testing)
-- **Location**: `test/*.e2e-spec.ts`
+- **Location**: `test/*.e2e-spec.ts` or `src/**/*.spec.ts`
 - **Pattern**: Tests only interact with HTTP endpoints, not internal implementation
 - **Real APIs**: All tests use real Dynamic SDK endpoints (no mocks)
+- **Elysia Testing**: Use `app.handle()` to simulate HTTP requests for blackbox testing
 
 ## Test Coverage Requirements
 **For endpoints only, never unit test in API:**
@@ -29,8 +30,48 @@ alwaysApply: false
 - User Isolation (users can only access their own wallets)
 - Multichain Support (all supported chains)
 
-## Jest Configuration
-**All NestJS tests run in CommonJS mode** - Jest must be configured for CJS to test against built output:
-- Tests run against built `dist/` output (CJS), not TypeScript source
-- Test setup files import from `dist/` (e.g., `import { validateEnv } from '../dist/config/env.schema'`)
-- Test setup files must use ESM patterns (replace `__dirname` with ESM equivalent)
+## Vitest Configuration
+**All Elysia tests run in ESM mode** - Vitest is ESM-native and tests TypeScript source directly:
+- Tests run against TypeScript source files (ESM), not built output
+- Vitest config uses `vitest.config.ts` with ESM syntax
+- Path aliases configured in Vitest config for `@vencura/*` imports
+- Test utilities available in `src/test/utils/elysia.ts` for route testing
+
+## Elysia Route Testing Pattern
+
+Use `app.handle()` for blackbox testing of routes:
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { Elysia } from 'elysia'
+import { helloRoute } from '../routes/hello'
+import { testRoute } from '../test/utils/elysia'
+
+describe('helloRoute', () => {
+  it('should return hello message via HTTP endpoint', async () => {
+    // Blackbox test: hit HTTP endpoint, not internal handler
+    const response = await testRoute(helloRoute, {
+      method: 'GET',
+      path: '/hello',
+    })
+    const data = await response.json()
+    
+    // Validate response matches contract
+    expect(response.status).toBe(200)
+    expect(data).toEqual({ message: 'Hello, World!' })
+  })
+})
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+bun run test
+
+# Run tests in watch mode
+bun run test:watch
+
+# Run tests with coverage
+bun run test:cov
+```

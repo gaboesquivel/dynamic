@@ -210,20 +210,32 @@ Create test utilities for common patterns:
 
 ```bash
 # Component tests
-pnpm run test
+bun run test
 
 # Component tests in watch mode
-pnpm run test:watch
+bun run test:watch
+
+# Component tests with UI
+bun run test:ui
 
 # Integration tests
-pnpm run test:integration
+bun run test:integration
 
 # E2E tests
-pnpm run test:e2e
+bun run test:e2e
 
 # Test coverage
-pnpm run test:cov
+bun run test:cov
 ```
+
+## Vitest Configuration
+
+Vitest is the test runner for all frontend tests:
+- **Config**: `vitest.config.ts` with jsdom environment
+- **Setup**: `vitest.setup.ts` imports `@testing-library/jest-dom`
+- **ESM-Native**: All configs use ESM syntax (`import`/`export`)
+- **Path Aliases**: Configured in Vitest config for `@vencura/*` imports
+- **Globals**: `globals: true` enables global test APIs (describe, it, expect)
 
 ## Best Practices
 

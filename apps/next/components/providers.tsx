@@ -44,7 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           disableTransitionOnChange
           enableColorScheme
         >
-          {children as any}
+          {children}
         </NextThemesProvider>
       </NuqsAdapter>
     </VencuraProvider>

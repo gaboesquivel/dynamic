@@ -16,7 +16,18 @@ export default function Home() {
     try {
       // Access token through Dynamic SDK context
       // Using type assertion as the exact method may vary by SDK version
-      const context = dynamicContext as any
+      const context = dynamicContext as {
+        getAccessToken?: () => string | null
+        getAuthToken?: () => string | null
+        primaryWallet?: {
+          connector?: {
+            getAccessToken?: () => string | null
+          }
+        }
+        user?: {
+          accessToken?: string
+        }
+      }
       const token =
         context.getAccessToken?.() ||
         context.getAuthToken?.() ||
@@ -44,13 +55,13 @@ export default function Home() {
       <div className="max-w-2xl w-full space-y-8">
         <div className="space-y-4">
           <h1 className="text-3xl font-bold">Hello World Response</h1>
-          {isLoading && <p>Loading...</p>}
-          {error && <p className="text-destructive">Error: {error.message}</p>}
-          {data && (
+          {isLoading ? <p>Loading...</p> : null}
+          {error ? <p className="text-destructive">Error: {error.message}</p> : null}
+          {data ? (
             <div className="p-4 border rounded-lg">
               <pre className="whitespace-pre-wrap">{JSON.stringify(data, null, 2)}</pre>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="space-y-4">
