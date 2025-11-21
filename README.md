@@ -18,7 +18,7 @@ This monorepo follows a modular architecture with clear separation between appli
 
 **Current Deployment**: All applications (UI + API) are currently deployed on **Vercel**. We are NOT splitting the architecture now - everything stays on Vercel to leverage its unparalleled shipping and distribution capabilities. See [Vercel Portability Strategy](/docs/vercel-portability) for details.
 
-**For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it a potential option for future production workloads requiring strict data governance. This is documented as a future option ONLY if production security requirements demand it. See [ADR 007](./.adrs/007-vencura-api-infrastructure.md) and [ADR 010](./.adrs/010-vencura-infra-orchestration.md) for detailed infrastructure decisions.
+**For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it a potential option for future production workloads requiring strict data governance. This is documented as a future option ONLY if production security requirements demand it. See [ADR 007](/docs/adrs/007-vencura-api-infrastructure) and [ADR 010](/docs/adrs/010-vencura-infra-orchestration) for detailed infrastructure decisions.
 
 ### Architecture Structure
 
@@ -81,23 +81,24 @@ See [`.cursor/README.md`](.cursor/README.md) for more information on rules and M
 
 ### Architecture Decisions
 
-Architectural decisions are documented in [Architecture Decision Records (ADRs)](./.adrs/):
+Architectural decisions are documented in [Architecture Decision Records (ADRs)](/docs/adrs):
 
-- [001: Monorepo vs Standalone](./.adrs/001-monorepo-vs-standalone.md)
-- [002: Vencura API Framework](./.adrs/002-vencura-api-framework.md)
-- [003: Frontend Apps Framework](./.adrs/003-frontend-apps-framework.md)
-- [004: Design System](./.adrs/004-design-system.md)
-- [005: Package Manager](./.adrs/005-package-manager.md)
-- [006: Linters](./.adrs/006-linters.md)
-- [007: Vencura API Infrastructure](./.adrs/007-vencura-api-infrastructure.md)
-- [008: Frontend Infrastructure](./.adrs/008-frontend-infrastructure.md)
-- [009: Viem vs Ethers](./.adrs/009-viem-vs-ethers.md)
-- [010: Vencura Infrastructure Orchestration](./.adrs/010-vencura-infra-orchestration.md)
-- [011: Vencura API ORM Selection](./.adrs/011-vencura-api-orm.md)
-- [012: Vencura AI Architecture](./.adrs/012-vencura-ai-architecture.md)
-- [013: Vencura API Test Gas Faucet](./.adrs/013-vencura-api-test-gas-faucet.md)
-- [014: Environment Strategy](./.adrs/014-environment-strategy.md)
-- [015: Database Storage vs Dynamic SDK Metadata](./.adrs/015-database-vs-dynamic-metadata.md)
+- [001: Monorepo vs Standalone](/docs/adrs/001-monorepo-vs-standalone)
+- [002: Vencura API Framework](/docs/adrs/002-vencura-api-framework)
+- [003: Frontend Apps Framework](/docs/adrs/003-frontend-apps-framework)
+- [004: Design System](/docs/adrs/004-design-system)
+- [005: Package Manager](/docs/adrs/005-package-manager)
+- [006: Linters](/docs/adrs/006-linters)
+- [007: Vencura API Infrastructure](/docs/adrs/007-vencura-api-infrastructure)
+- [008: Frontend Infrastructure](/docs/adrs/008-frontend-infrastructure)
+- [009: Viem vs Ethers](/docs/adrs/009-viem-vs-ethers)
+- [010: Vencura Infrastructure Orchestration](/docs/adrs/010-vencura-infra-orchestration)
+- [011: Vencura API ORM Selection](/docs/adrs/011-vencura-api-orm)
+- [012: Vencura AI Architecture](/docs/adrs/012-vencura-ai-architecture)
+- [013: Vencura API Test Gas Faucet](/docs/adrs/013-vencura-api-test-gas-faucet)
+- [014: Environment Strategy](/docs/adrs/014-environment-strategy)
+- [015: Database Storage vs Dynamic SDK Metadata](/docs/adrs/015-database-vs-dynamic-metadata)
+- [016: Documentation Framework Migration to Fumadocs](/docs/adrs/016-documentation-framework)
 
 ## AI-Assisted Development
 
@@ -197,7 +198,7 @@ See [API Test Documentation](./apps/api/test/README.md) for complete testing str
 
 ### Environment Setup
 
-This monorepo uses environment-specific configuration files following a unified strategy. See [ADR 014: Environment Strategy](.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](.cursor/rules/base/environment.mdc) for implementation patterns.
+This monorepo uses environment-specific configuration files following a unified strategy. See [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy) for the complete architecture decision and [Environment Rules](.cursor/rules/base/environment.mdc) for implementation patterns.
 
 **Quick Start:**
 

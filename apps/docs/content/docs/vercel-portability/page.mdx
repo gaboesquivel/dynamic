@@ -1,0 +1,180 @@
+---
+title: "Vercel Portability Strategy"
+description: "This document outlines the portability strategy for the Vencura API, ensuring that the application can be deployed to any platform without vendor lock-in while still allowing pragmatic use of Vercel-specific features when justified."
+---
+
+This document outlines the portability strategy for the Vencura API, ensuring that the application can be deployed to any platform without vendor lock-in while still allowing pragmatic use of Vercel-specific features when justified.
+
+## Core Principle: Portable by Default
+
+**Critical architectural principle**: Our stack is designed for portability and runs on any Linux distribution:
+
+- **Default approach**: Avoid vendor-specific features to maintain portability
+- **Pragmatic exceptions**: Can leverage vendor features when scaling/performance needs justify it
+- **Platform-agnostic**: Can be deployed to any containerized platform (Docker, Kubernetes, etc.)
+- **Vercel as convenience**: Vercel is chosen for rapid deployment and excellent developer experience, not as a requirement
+- **All core components** can be migrated to any platform without code changes
+
+## Current Strategy: All on Vercel
+
+**Important**: We are currently deploying everything on Vercel. We are NOT splitting the architecture now. This unified approach leverages Vercel's unparalleled shipping and distribution capabilities.
+
+### Why Vercel
+
+**Framework Defined Infrastructure (FDI)** - Build with open frameworks (Next.js, NestJS) without proprietary APIs. Code remains portable while Vercel automatically provisions infrastructure.
+
+**Deployment & Shipping**:
+
+- Zero-configuration CI/CD (Git push = automatic deployment)
+- Preview deployments for every PR
+- Zero-downtime deployments with instant rollback
+- Monorepo support with automatic project detection
+- Automatic SSL/TLS certificates
+
+**Global Distribution**:
+
+- 100+ edge locations worldwide
+- Automatic CDN and edge caching
+- Automatic scaling based on traffic
+- Edge computing for optimal performance
+
+**Developer Experience**:
+
+- MCP integration for AI-assisted workflows
+- GitHub integration for automatic deployments
+- Comprehensive monitoring and analytics
+- 2024 Backend Improvements: Zero-config NestJS support, Fluid Compute, reduced cold starts
+
+**Security & Compliance**: SOC 2 Type II, ISO 27001, WAF/Firewall, secure secrets management
+
+**Rationale**: The combination of zero-configuration deployment, instant previews, global distribution, and seamless GitHub integration creates an unparalleled shipping experience that accelerates development cycles while maintaining portability.
+
+## Future Production Security Option (Documented, Not Implemented)
+
+**Important**: We are NOT splitting now. Everything stays on Vercel for the demo/development phase. This split architecture is documented as a potential future option ONLY if production security requirements demand it.
+
+See [Google Cloud Deployment](/docs/google-cloud) for details on the potential split architecture with UI/API on Vercel and key-custody on Google Cloud.
+
+## Portable Features
+
+All of these features work identically on any platform:
+
+### Application Code
+
+- **NestJS Application**: Standard NestJS with no Vercel-specific code
+- **API Endpoints**: Standard Express/NestJS patterns
+- **Authentication**: Dynamic Labs JWT (works everywhere)
+- **Database**: DrizzleORM with PGLite (dev) or Postgres (prod) - platform agnostic
+- **Encryption**: AES-256-GCM using Node.js crypto (standard)
+- **Error Handling**: Standard NestJS exception filters
+- **Validation**: class-validator for DTOs, zod for env vars
+
+### Infrastructure Components
+
+- **Docker Support**: Application can be containerized and run anywhere
+- **Environment Variables**: Standard process.env (works on all platforms)
+- **Secrets Management**: Can use any secrets manager
+- **Database Connections**: Standard Postgres connection strings
+- **Logging**: Standard console.log (can be replaced with any logger)
+
+### Security Features
+
+- **Security Headers**: Helmet.js (works on any Express app)
+- **Request Size Limits**: Express body parser limits (standard)
+- **CORS**: NestJS CORS configuration (standard)
+- **Rate Limiting**: @nestjs/throttler (works on any NestJS app)
+
+## Vercel-Specific Features (Optional)
+
+These features are Vercel-specific but are **optional** and can be replaced with portable alternatives:
+
+- **Vercel Edge Functions**: Not used - alternative: Standard Node.js serverless functions
+- **Vercel Analytics**: Not used - alternative: Any analytics solution
+- **Vercel Speed Insights**: Not used - alternative: Any performance monitoring
+- **Vercel KV/Postgres**: Not used - we use standard Postgres
+- **Vercel Environment Variables**: Used for configuration - alternative: Any env var management (migration: standard process.env works everywhere)
+
+## Migration Paths
+
+### To Google Cloud Run
+
+See [Google Cloud Deployment Option](/docs/google-cloud):
+
+1. Use existing Dockerfile
+2. Deploy to Cloud Run using Pulumi
+3. Use Cloud SQL for Postgres
+4. Use Secret Manager for secrets
+5. No code changes required
+
+### To AWS Lambda/ECS
+
+1. **Lambda**: Wrap NestJS app in Lambda handler
+2. **ECS**: Use existing Dockerfile, deploy to ECS Fargate
+3. **Database**: Use RDS Postgres
+4. **Secrets**: Use AWS Secrets Manager
+5. **Code Changes**: Minimal - mainly deployment configuration
+
+### To Railway/Render/Fly.io
+
+1. Use existing Dockerfile
+2. Configure environment variables in platform dashboard
+3. Connect to Postgres database
+4. Deploy via Git push or Docker image
+5. **Code Changes**: None required
+
+### To Self-Hosted Docker
+
+1. Use existing Dockerfile
+2. Run with `docker run` or docker-compose
+3. Configure environment variables
+4. Connect to Postgres database
+5. **Code Changes**: None required
+
+## Code Portability Checklist
+
+When adding new features, ensure they are portable:
+
+- ✅ Use standard Node.js APIs
+- ✅ Use standard npm packages (not Vercel-specific)
+- ✅ Avoid Vercel-specific imports or APIs
+- ✅ Use environment variables for configuration
+- ✅ Use standard Express/NestJS patterns
+- ✅ Test with Docker locally
+- ❌ Avoid Vercel Edge Runtime APIs
+- ❌ Avoid Vercel-specific environment variables (unless optional)
+- ❌ Avoid Vercel KV or other Vercel-only services
+
+## When to Use Vercel-Specific Features
+
+Use Vercel-specific features when:
+
+1. **Performance Justification**: Feature provides significant performance improvement
+2. **Business Justification**: Feature enables important business functionality
+3. **Cost Justification**: Feature reduces costs significantly
+4. **Documented Decision**: Decision is documented in ADR with migration path
+
+## Testing Portability
+
+To verify portability:
+
+1. **Docker Test**: Build and run Docker image locally
+2. **Environment Variables**: Test with standard env vars (not Vercel-specific)
+3. **Database**: Test with standard Postgres connection string
+4. **No Vercel Imports**: Ensure no Vercel-specific imports in code
+
+## Summary
+
+The Vencura API is designed to be **portable by default**:
+
+- ✅ All core features work on any platform
+- ✅ No Vercel-specific code in application
+- ✅ Standard Dockerfile for containerization
+- ✅ Standard environment variables and database connections
+- ✅ Migration paths documented for major platforms
+
+**Current Deployment**: Everything is deployed on Vercel, leveraging its shipping and distribution capabilities for rapid development and iteration.
+
+**Future Option**: If production security requirements demand it, we may consider a split architecture with UI/API on Vercel and key-custody on Google Cloud. This is documented but not planned for implementation.
+
+Vercel is used for **convenience and developer experience**, not as a requirement. The application can be migrated to any platform with minimal code changes.
+

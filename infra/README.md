@@ -8,8 +8,8 @@ This directory contains Pulumi TypeScript infrastructure code for deploying the 
 
 ## Architecture Decisions
 
-- **[ADR 007: Vencura API Infrastructure](../.adrs/007-vencura-api-infrastructure.md)** - Decision to use Google Cloud Run
-- **[ADR 010: Vencura Infrastructure Orchestration](../.adrs/010-vencura-infra-orchestration.md)** - Decision to use Pulumi for infrastructure orchestration
+- **[ADR 007: Vencura API Infrastructure](/docs/adrs/007-vencura-api-infrastructure)** - Decision to use Google Cloud Run
+- **[ADR 010: Vencura Infrastructure Orchestration](/docs/adrs/010-vencura-infra-orchestration)** - Decision to use Pulumi for infrastructure orchestration
 
 ## Structure
 

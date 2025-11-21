@@ -1,29 +1,10 @@
-import nextra from 'nextra'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import { createMDX } from 'fumadocs-mdx/next';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const config = {
   reactStrictMode: true,
-  experimental: {
-    mdxRs: false,
-  },
-  webpack: (config) => {
-    // Add alias for MDX import source
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'next-mdx-import-source-file': path.resolve(__dirname, './app/mdx-components.tsx'),
-    }
-    return config
-  },
-}
+};
 
-export default nextra({
-  search: {
-    codeblocks: false,
-  },
-})(nextConfig)
-
+export default withMDX(config);

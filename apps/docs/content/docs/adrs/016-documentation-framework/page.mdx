@@ -1,0 +1,149 @@
+---
+title: "ADR 016: Documentation Framework Migration to Fumadocs"
+description: "We need a Next.js-native documentation framework that works seamlessly with our Next.js App Router architecture, supports MDX, and provides good developer experience out of the box."
+---
+
+# ADR 016: Documentation Framework Migration to Fumadocs
+
+## Status
+
+Accepted
+
+## Context
+
+We need a Next.js-native documentation framework that:
+
+- Works seamlessly with our Next.js App Router architecture
+- Supports MDX for content authoring
+- Provides good developer experience out of the box
+- Is open source and self-hostable
+- Supports AI-assisted documentation workflows (we use AI tools extensively)
+
+We initially had documentation content in `__dev/pages/` directory and needed to migrate to a proper documentation framework integrated with our docs app.
+
+## Decision
+
+We migrated all documentation content from `__dev/pages/` to `apps/docs/content/docs/` using **Fumadocs** as our documentation framework.
+
+### Migration Details
+
+- Converted all MDX files from `__dev/pages/` to fumadocs format with proper frontmatter
+- Created nested `meta.json` files for navigation structure
+- Preserved directory structure (apps, packages, guides)
+- All files now include `title` and `description` frontmatter
+
+## Rationale
+
+### Why Fumadocs
+
+- **Next.js App Router native**: Built specifically for Next.js App Router, fits our architecture perfectly
+- **Composable architecture**: Set of libraries that compose into any React/Next app, not an opinionated site generator
+- **MDX support**: Full MDX support with frontmatter and custom components
+- **Modern UX**: Used by projects like shadcn/ui and Million.js, with strong search and extensibility
+- **AI-friendly**: Better structured for AI-assisted documentation workflows
+- **Open source**: MIT-licensed, self-hostable, fully customizable
+
+### Migration Benefits
+
+- **Structured content**: Proper frontmatter and meta.json files enable better navigation
+- **Type safety**: Fumadocs provides type-safe content access
+- **Better DX**: Cleaner file structure, easier to maintain and extend
+- **Consistent format**: All documentation follows the same structure and conventions
+
+## Consequences
+
+### Positive
+
+- ✅ Unified documentation structure across all content
+- ✅ Better navigation with meta.json files
+- ✅ Type-safe content access via fumadocs source API
+- ✅ Easier to extend with custom components and features
+- ✅ Better integration with Next.js App Router
+
+### Negative
+
+- ❌ Migration effort required (one-time cost)
+- ❌ Need to maintain frontmatter consistency across files
+
+### Neutral
+
+- Content structure preserved, only format changed
+- `__dev/pages/` directory kept for reference
+
+## Implementation
+
+### File Structure
+
+```
+apps/docs/content/docs/
+├── index.mdx
+├── meta.json
+├── getting-started/page.mdx
+├── architecture/page.mdx
+├── environment/page.mdx
+├── deployment/page.mdx
+├── tooling/page.mdx
+├── mcp-servers/page.mdx
+├── vercel-portability/page.mdx
+├── google-cloud/page.mdx
+├── dynamic-integration/page.mdx
+├── apps/
+│   ├── meta.json
+│   ├── api/page.mdx
+│   └── web/page.mdx
+└── packages/
+    ├── meta.json
+    ├── core/page.mdx
+    ├── react/page.mdx
+    └── ui/page.mdx
+```
+
+### Frontmatter Format
+
+All MDX files include:
+
+```mdx
+---
+title: "Page Title"
+description: "Page description"
+---
+```
+
+### Navigation Structure
+
+- Root `meta.json` for top-level navigation
+- Nested `meta.json` files in `apps/` and `packages/` directories
+- Supports hierarchical navigation structure
+
+## Alternatives Considered
+
+### Alternative 1: Keep content in `__dev/pages/`
+
+**Rejected because:**
+- No integration with documentation framework
+- No structured navigation
+- Harder to maintain and extend
+
+### Alternative 2: Use Nextra
+
+**Rejected because:**
+- More opinionated, less composable
+- Required more configuration and debugging
+- Less modern UX direction
+
+### Alternative 3: Use Mintlify / GitBook
+
+**Rejected because:**
+- Hosted, proprietary solutions
+- We need open source, self-hostable, fully customizable
+
+## Related ADRs
+
+- [ADR 003: Frontend Apps Framework](/docs/adrs/003-frontend-apps-framework) - Next.js framework decision
+
+## References
+
+- [Fumadocs Documentation](https://fumadocs.dev)
+- [Fumadocs MDX Guide](https://fumadocs.dev/docs/mdx)
+- [Migration Plan](../migrate-dev-pages-to-fumadocs-format.plan.md)
+

@@ -80,7 +80,7 @@ pnpm install
 
 ### Environment Variables
 
-This Next.js app uses environment-specific configuration files following [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md). Next.js automatically loads environment files in priority order:
+This Next.js app uses environment-specific configuration files following [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy). Next.js automatically loads environment files in priority order:
 
 1. `.env` (highest priority, sensitive data, never committed, overrides everything)
 2. `.env.development` / `.env.staging` / `.env.production` (based on NODE_ENV, committed configs)
@@ -127,7 +127,7 @@ cp .env-example .env
 
 **Note**: If `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID` is not set, the app will use a placeholder ID and show warnings in development mode. Authentication will not work properly without a valid environment ID.
 
-See [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
+See [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
 
 ### Running the Application
 
@@ -316,7 +316,7 @@ The UI supports multiple blockchain networks through:
 
 ## Deployment
 
-The Vencura UI is deployed to **Vercel**. See [ADR 008: Frontend Infrastructure](../../.adrs/008-frontend-infrastructure.md) for deployment details and architecture decisions.
+The Vencura UI is deployed to **Vercel**. See [ADR 008: Frontend Infrastructure](/docs/adrs/008-frontend-infrastructure) for deployment details and architecture decisions.
 
 ## License
 

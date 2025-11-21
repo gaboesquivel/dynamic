@@ -105,7 +105,7 @@ Code standards are defined in [`.cursor/rules/`](.cursor/rules/) organized by do
 
 - [ESLint Configuration](config/eslint/README.md) - Details on our ESLint setup and type safety model
 - [TypeScript Rules](.cursor/rules/base/typescript.mdc) - Comprehensive TypeScript coding standards
-- [Architecture Decision Records](.adrs/) - Architectural decisions and rationale
+- [Architecture Decision Records](/docs/adrs) - Architectural decisions and rationale
 
 ## Questions?
 

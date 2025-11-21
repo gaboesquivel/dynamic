@@ -45,18 +45,18 @@ Vencura is a backend API that enables users to create and manage custodial walle
 
 ## Tech Stack
 
-- **Framework**: NestJS (see [ADR 002](../../.adrs/002-vencura-api-framework.md))
+- **Framework**: NestJS (see [ADR 002](/docs/adrs/002-vencura-api-framework))
 - **Authentication**: Dynamic Labs SDK Client
 - **Validation**: Zod for environment variables and runtime validation (see [@vencura/lib](../../packages/lib/README.md))
 - **Utilities**: `@vencura/lib` for error handling, async utilities, and zod utilities
 - **Type Checking**: Lodash utilities (`isEmpty`, `isPlainObject`, `isString`) for consistent type checking
 - **Blockchain**:
-  - Viem for EVM chains (see [ADR 009](../../.adrs/009-viem-vs-ethers.md))
+  - Viem for EVM chains (see [ADR 009](/docs/adrs/009-viem-vs-ethers))
   - @solana/web3.js for Solana
   - Dynamic SDK for wallet operations
-- **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production) (see [ADR 011](../../.adrs/011-vencura-api-orm.md))
+- **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production) (see [ADR 011](/docs/adrs/011-vencura-api-orm))
 - **API Documentation**: Swagger/OpenAPI (generates `@vencura/core` TypeScript SDK)
-- **Infrastructure**: Vercel (see [ADR 007](../../.adrs/007-vencura-api-infrastructure.md)) with Google Cloud option (see [ADR 010](../../.adrs/010-vencura-infra-orchestration.md))
+- **Infrastructure**: Vercel (see [ADR 007](/docs/adrs/007-vencura-api-infrastructure)) with Google Cloud option (see [ADR 010](/docs/adrs/010-vencura-infra-orchestration))
 
 ## Getting Started
 
@@ -73,7 +73,7 @@ pnpm install
 
 ### Environment Variables
 
-This API uses environment-specific configuration files following [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md). Environment files are loaded in priority order:
+This API uses environment-specific configuration files following [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy). Environment files are loaded in priority order:
 
 1. `.env` (highest priority, sensitive data, never committed, overrides everything)
 2. `.env.development` / `.env.staging` / `.env.production` / `.env.test` (based on NODE_ENV, committed configs)
@@ -123,7 +123,7 @@ cp .env-example .env
 - `SOLANA_RPC_URL`: Custom Solana RPC URL (applies to all Solana networks)
 - `ARBITRUM_SEPOLIA_RPC_URL`: Backward compatibility for Arbitrum Sepolia (maps to `RPC_URL_421614`)
 
-See [ADR 014: Environment Strategy](../../.adrs/014-environment-strategy.md) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
+See [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy) for the complete architecture decision and [Environment Rules](../../.cursor/rules/base/environment.mdc) for implementation patterns.
 
 **Optional Error Tracking:**
 
@@ -272,7 +272,7 @@ Rate limit errors (429) are automatically retried. If all retries are exhausted,
 }
 ```
 
-See [ADR 016](../.adrs/016-dynamic-sdk-rate-limits.md) for detailed implementation information.
+See [ADR 016](/docs/adrs/016-documentation-framework) for detailed implementation information.
 
 **Error Response (Multiple Wallets):**
 
@@ -497,7 +497,7 @@ Both EVM and Solana wallet clients authenticate with Dynamic using `DYNAMIC_ENVI
 
 ### Data Storage Strategy
 
-We store all wallet and user data in our own database rather than relying on Dynamic SDK metadata. See [ADR 015: Database Storage vs Dynamic SDK Metadata](../../.adrs/015-database-vs-dynamic-metadata.md) for the complete architecture decision.
+We store all wallet and user data in our own database rather than relying on Dynamic SDK metadata. See [ADR 015: Database Storage vs Dynamic SDK Metadata](/docs/adrs/015-database-vs-dynamic-metadata) for the complete architecture decision.
 
 **What We Store in Database:**
 

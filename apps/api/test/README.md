@@ -58,7 +58,7 @@ See [EVM Contracts README](../../../contracts/evm/README.md) for token contract 
 
 All Dynamic test accounts for EVM flows are created via the Vencura API, which calls the Dynamic SDK. This ensures a single integration point and consistent test behavior.
 
-See [ADR 013: Vencura API Test Gas Faucet](../../.adrs/013-vencura-api-test-gas-faucet.md) for the complete architecture decision on automated gas faucet infrastructure.
+See [ADR 013: Vencura API Test Gas Faucet](/docs/adrs/013-vencura-api-test-gas-faucet) for the complete architecture decision on automated gas faucet infrastructure.
 
 ## Test Architecture
 
@@ -273,7 +273,7 @@ Dynamic SDK SDK endpoints have rate limits: **100 requests per minute per IP**, 
 - Tests should use `getOrCreateTestWallet()` helper which handles rate limits properly
 - Solana tests remain disabled (`.skip`) and are not executed
 
-See [ADR 016](../../src/.adrs/016-dynamic-sdk-rate-limits.md) for detailed rate limit implementation information.
+See [ADR 016](/docs/adrs/016-documentation-framework) for detailed rate limit implementation information.
 
 ## Best Practices
 

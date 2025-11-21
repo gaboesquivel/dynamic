@@ -1,0 +1,294 @@
+---
+title: "@vencura/react"
+description: "React hooks for Vencura API using TanStack Query. Provides type-safe hooks for interacting with the Vencura custodial wallet API. Built on top of @vencura/core using a contract-first approach with ts-rest for end-to-end type safety."
+---
+
+React hooks for Vencura API using TanStack Query. Provides type-safe hooks for interacting with the Vencura custodial wallet API. Built on top of `@vencura/core` using a contract-first approach with ts-rest for end-to-end type safety.
+
+## Installation
+
+```bash
+pnpm add @vencura/react @tanstack/react-query
+```
+
+## Quick Start
+
+### 1. Setup Provider
+
+Wrap your app with `VencuraProvider` to configure the API client:
+
+```tsx
+import { VencuraProvider } from '@vencura/react'
+
+function App() {
+  return (
+    <VencuraProvider
+      baseUrl="https://api.vencura.com"
+      headers={{ Authorization: 'Bearer YOUR_TOKEN' }}
+    >
+      <YourApp />
+    </VencuraProvider>
+  )
+}
+```
+
+### 2. Use Hooks
+
+```tsx
+import { useWallets, useCreateWallet } from '@vencura/react'
+
+function WalletsList() {
+  const { data: wallets, isLoading } = useWallets()
+  const createWallet = useCreateWallet()
+
+  if (isLoading) return <div>Loading...</div>
+
+  return (
+    <div>
+      <button onClick={() => createWallet.mutate({ chainId: 421614 })}>Create Wallet</button>
+      <ul>
+        {wallets?.map(wallet => (
+          <li key={wallet.id}>{wallet.address}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+```
+
+## Validation
+
+All API responses are automatically validated using Zod schemas from `@vencura/types`. This ensures:
+
+- **Runtime type safety**: Responses are validated at runtime, catching API contract violations early
+- **Better error messages**: Validation errors provide clear feedback about what went wrong
+- **Type inference**: Types are automatically inferred from Zod schemas
+
+If a response doesn't match the expected schema, the hook will throw an error with detailed validation information.
+
+## Hooks
+
+### useWallets
+
+Fetch all wallets for the authenticated user.
+
+```tsx
+import { useWallets } from '@vencura/react'
+
+function WalletsList() {
+  const { data, isLoading, error } = useWallets({
+    staleTime: 5 * 60 * 1000, // Override default options
+    refetchOnWindowFocus: true,
+  })
+
+  // ...
+}
+```
+
+**Returns:** `UseQueryResult<Wallet[], Error>`
+
+### useCreateWallet
+
+Create a new custodial wallet.
+
+```tsx
+import { useCreateWallet } from '@vencura/react'
+
+function CreateWalletButton() {
+  const createWallet = useCreateWallet({
+    onSuccess: data => {
+      console.log('Wallet created:', data.address)
+    },
+    onError: error => {
+      console.error('Failed to create wallet:', error)
+    },
+  })
+
+  return (
+    <button
+      onClick={() => createWallet.mutate({ chainId: 421614 })}
+      disabled={createWallet.isPending}
+    >
+      {createWallet.isPending ? 'Creating...' : 'Create Wallet'}
+    </button>
+  )
+}
+```
+
+**Returns:** `UseMutationResult<Wallet, Error, CreateWalletInput>`
+
+### useWalletBalance
+
+Fetch balance for a specific wallet.
+
+```tsx
+import { useWalletBalance } from '@vencura/react'
+
+function WalletBalance({ walletId }: { walletId: string }) {
+  const { data, isLoading } = useWalletBalance(walletId, {
+    enabled: !!walletId, // Only fetch when walletId exists
+    refetchInterval: 30000, // Refetch every 30 seconds
+  })
+
+  if (isLoading) return <div>Loading balance...</div>
+
+  return <div>Balance: {data?.balance} ETH</div>
+}
+```
+
+**Parameters:**
+
+- `id: string` - Wallet ID
+- `options?: UseQueryOptions` - Optional React Query options
+
+**Returns:** `UseQueryResult<WalletBalance, Error>`
+
+### useSignMessage
+
+Sign a message with a wallet's private key.
+
+```tsx
+import { useSignMessage } from '@vencura/react'
+
+function SignButton({ walletId }: { walletId: string }) {
+  const signMessage = useSignMessage(walletId, {
+    onSuccess: data => {
+      console.log('Signed message:', data.signedMessage)
+    },
+  })
+
+  return (
+    <button
+      onClick={() => signMessage.mutate({ message: 'Hello, World!' })}
+      disabled={signMessage.isPending}
+    >
+      Sign Message
+    </button>
+  )
+}
+```
+
+### useSendTransaction
+
+Send a transaction from a wallet.
+
+```tsx
+import { useSendTransaction } from '@vencura/react'
+
+function SendButton({ walletId }: { walletId: string }) {
+  const sendTransaction = useSendTransaction(walletId, {
+    onSuccess: data => {
+      console.log('Transaction hash:', data.transactionHash)
+    },
+  })
+
+  return (
+    <button
+      onClick={() =>
+        sendTransaction.mutate({
+          to: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+          amount: 0.001,
+        })
+      }
+      disabled={sendTransaction.isPending}
+    >
+      Send Transaction
+    </button>
+  )
+}
+```
+
+## Token Operations
+
+Token operations use the generic transaction endpoint with encoded contract call data. This provides type safety at the client layer while keeping the API generic and multichain-compatible.
+
+### useMintToken
+
+Mint ERC20 tokens via contract call.
+
+```tsx
+import { useMintToken } from '@vencura/react'
+import { parseUnits } from 'viem'
+import { testnetTokenAbi } from '@vencura/evm/abis'
+
+function MintButton({ walletId, tokenAddress }: Props) {
+  const mintToken = useMintToken({
+    onSuccess: data => {
+      console.log('Mint transaction:', data.transactionHash)
+    },
+  })
+
+  return (
+    <button
+      onClick={() =>
+        mintToken.mutate({
+          walletId,
+          tokenAddress,
+          recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+          amount: parseUnits('1000', 18),
+          abi: testnetTokenAbi,
+        })
+      }
+      disabled={mintToken.isPending}
+    >
+      {mintToken.isPending ? 'Minting...' : 'Mint Tokens'}
+    </button>
+  )
+}
+```
+
+### useBurnToken
+
+Burn ERC20 tokens via contract call.
+
+```tsx
+import { useBurnToken } from '@vencura/react'
+import { parseUnits } from 'viem'
+import { testnetTokenAbi } from '@vencura/evm/abis'
+
+function BurnButton({ walletId, tokenAddress, accountAddress }: Props) {
+  const burnToken = useBurnToken({
+    onSuccess: data => {
+      console.log('Burn transaction:', data.transactionHash)
+    },
+  })
+
+  return (
+    <button
+      onClick={() =>
+        burnToken.mutate({
+          walletId,
+          tokenAddress,
+          account: accountAddress,
+          amount: parseUnits('100', 18),
+          abi: testnetTokenAbi,
+        })
+      }
+      disabled={burnToken.isPending}
+    >
+      {burnToken.isPending ? 'Burning...' : 'Burn Tokens'}
+    </button>
+  )
+}
+```
+
+## Architecture
+
+This package uses a contract-first approach:
+
+1. **Contracts** (`@vencura/types`) define API endpoints with Zod schemas
+2. **Core Client** (`@vencura/core`) provides type-safe client using ts-rest
+3. **React Hooks** (`@vencura/react`) wrap the client with TanStack Query
+
+This ensures:
+
+- **Full type inference** - No manual type definitions needed
+- **End-to-end type safety** - Types shared across backend, SDK, and frontend
+- **Clean API** - `client.wallet.list()` instead of `client.wallets.walletControllerGetWallets()`
+
+## Related Packages
+
+- [@vencura/core](/docs/packages/core) - TypeScript SDK for Vencura API
+- [@vencura/types](../../../packages/types/README.md) - Shared API contracts and types
+- [Vencura API](/docs/apps/api) - NestJS backend API
+

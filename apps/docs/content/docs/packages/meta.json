@@ -1,0 +1,6 @@
+{
+  "core": "@vencura/core",
+  "react": "@vencura/react",
+  "ui": "@vencura/ui"
+}
+
