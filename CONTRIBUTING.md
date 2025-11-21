@@ -95,10 +95,10 @@ Code standards are defined in [`.cursor/rules/`](.cursor/rules/) organized by do
 
 ## Development Workflow
 
-1. **Install dependencies**: `pnpm install`
-2. **Run quality checks**: `pnpm run qa` (installs, formats, lints, builds, tests)
-3. **Run linting**: `pnpm lint`
-4. **Run type checking**: `pnpm check-types`
+1. **Install dependencies**: `bun install`
+2. **Run quality checks**: `bun run qa` (installs, formats, lints, builds, tests)
+3. **Run linting**: `bun run lint`
+4. **Run type checking**: `bun run check-types`
 5. **Run tests**: See individual project READMEs for test commands
 
 ## Additional Resources

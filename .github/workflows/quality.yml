@@ -15,30 +15,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 10.4.1
+          bun-version: latest
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Format check
-        run: pnpm run format --check
+        run: bun run format --check
 
       - name: Lint
-        run: pnpm run lint
+        run: bun run lint
 
       - name: Type check
-        run: pnpm run check-types || echo "Type check skipped if not configured"
+        run: bun run check-types || echo "Type check skipped if not configured"
 
       - name: Build
-        run: pnpm run build
+        run: bun run build
         env:
           NODE_ENV: production

@@ -15,29 +15,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          version: 10.4.1
+          bun-version: latest
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Build
-        run: pnpm run build
+        run: bun run build
         env:
           NODE_ENV: production
 
       - name: Run API E2E tests
         run: |
           cd apps/api
-          pnpm run test:e2e:ci
+          bun run test:e2e:ci
         env:
           NODE_ENV: test
           DYNAMIC_ENVIRONMENT_ID: ${{ secrets.DYNAMIC_ENVIRONMENT_ID }}
@@ -46,7 +45,7 @@ jobs:
           ARB_TESTNET_GAS_FAUCET_KEY: ${{ secrets.ARB_TESTNET_GAS_FAUCET_KEY }}
 
       - name: Run unit tests
-        run: pnpm run test --continue || echo "Unit tests skipped if not configured"
+        run: bun run test --continue || echo "Unit tests skipped if not configured"
 
       - name: Upload coverage
         if: always()

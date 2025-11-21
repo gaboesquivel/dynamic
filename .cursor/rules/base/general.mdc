@@ -16,6 +16,6 @@ alwaysApply: true
 - Always run format, lint and test to verify changes work
 
 ## Tooling
-- Use **pnpm** for package management (not bun, npm, or yarn)
+- Use **bun** for package management (not pnpm, npm, or yarn)
 - Use **eslint + prettier** for linting and formatting
-- Run `pnpm format` to format code, `pnpm run lint` to lint code
+- Run `bun run format` to format code, `bun run lint` to lint code

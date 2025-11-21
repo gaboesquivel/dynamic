@@ -153,36 +153,36 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Run all apps in development mode (with local Anvil blockchain)
-pnpm dev:local
+bun run dev:local
 
 # Run all apps in staging mode (with testnets)
-pnpm dev:staging
+bun run dev:staging
 
 # Build all apps
-pnpm build
+bun run build
 
 # Lint all packages and infrastructure
-pnpm lint
+bun run lint
 
 # Type check all packages and infrastructure
-pnpm check-types
+bun run check-types
 
 # Run quality checks (install, format, lint, build, test)
-pnpm run qa
+bun run qa
 
 # Build contracts
-pnpm run contracts:evm:build      # Build EVM contracts
-pnpm run contracts:solana:build  # Build Solana programs
+bun run contracts:evm:build      # Build EVM contracts
+bun run contracts:solana:build  # Build Solana programs
 
 # Test contracts
-pnpm run contracts:evm:test       # Test EVM contracts
-pnpm run contracts:solana:test    # Test Solana programs
+bun run contracts:evm:test       # Test EVM contracts
+bun run contracts:solana:test    # Test Solana programs
 
 # Test API (requires Foundry for Anvil local blockchain)
-cd apps/api && pnpm run test:e2e  # E2E tests with automated gas faucet
+cd apps/api && bun run test:e2e  # E2E tests with automated gas faucet
 ```
 
 ### Testing Strategy
@@ -208,7 +208,7 @@ This monorepo uses environment-specific configuration files following a unified 
    cp apps/web/.env-example apps/web/.env
    ```
 2. Fill in your values (Dynamic environment ID, API token, etc.) in `.env` files
-3. Start local development: `pnpm dev:local`
+3. Start local development: `bun run dev:local`
 
 **Environment Files:**
 
