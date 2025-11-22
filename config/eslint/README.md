@@ -6,7 +6,7 @@ Shared ESLint configuration for the workspace. Provides consistent linting rules
 
 ### Base Configuration (`@workspace/eslint-config/base`)
 
-Base ESLint configuration for Node.js projects (e.g., NestJS backend, infrastructure code).
+Base ESLint configuration for Node.js projects (e.g., Elysia backend, infrastructure code).
 
 **Usage:**
 
@@ -121,6 +121,7 @@ Instead of relying on ESLint's unsafe rules, we enforce type safety through:
 ```typescript
 // ✅ Good: Validate at the boundary
 import { z } from 'zod'
+import { fetchWithTimeout } from '@vencura/lib'
 
 const apiResponseSchema = z.object({
   id: z.string(),
@@ -128,7 +129,10 @@ const apiResponseSchema = z.object({
 })
 
 async function fetchUser(id: string) {
-  const response = await fetch(`/api/users/${id}`)
+  const response = await fetchWithTimeout({
+    url: `/api/users/${id}`,
+    options: { method: 'GET' },
+  })
   const data = await response.json() // Returns unknown
   const validated = apiResponseSchema.parse(data) // Runtime validation
   return validated // Fully typed, safe to use
@@ -145,6 +149,7 @@ const user = await fetchUser('123') // Type: { id: string; name: string }
 - **Export typed interfaces** from internal modules for type safety
 - **Trust type inference** - let TypeScript infer types from validated data and function return types
 - **Validate, don't assert** - Use Zod's `.parse()` or `.safeParse()` instead of type assertions
+- **Use utility libraries**: Always leverage `@vencura/lib` (error handling, delays, fetch with timeout), `zod` (validation), and `lodash` (array/object operations, type checking) instead of custom implementations
 
 For more details, see:
 
@@ -163,7 +168,7 @@ For more details, see:
 
 ## Usage Examples
 
-### NestJS Backend
+### Elysia Backend
 
 ```js
 // apps/vencura/eslint.config.mjs

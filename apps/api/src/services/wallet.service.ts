@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import { eq } from 'drizzle-orm'
+import { getErrorMessage } from '@vencura/lib'
 import { getDatabase } from './database'
 import { keyShares } from '../db/schema'
 import { encryptKeyShare } from './encryption'
@@ -50,7 +51,7 @@ async function getWalletByChainType(
 type WalletError = Error | unknown
 
 function getErrorStrings(error: WalletError) {
-  const message = error instanceof Error ? error.message : String(error)
+  const message = getErrorMessage(error) ?? String(error)
   const stack = error instanceof Error ? (error.stack ?? '') : ''
   const lowerMessage = message.toLowerCase()
   const lowerStack = stack.toLowerCase()

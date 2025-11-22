@@ -54,7 +54,7 @@ Model Context Protocol (MCP) servers extend AI assistants with specialized capab
 5. Maintain portability when using Vercel features
 
 ## Package Manager
-All MCP servers use `pnpm dlx` for command execution, consistent with the project's package manager choice.
+All MCP servers use `bunx` for command execution, consistent with the project's package manager choice.
 
 ## References
 - See [MCP Servers Usage Guide](../../docs/mcp-servers.md) for detailed documentation

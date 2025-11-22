@@ -18,9 +18,8 @@ alwaysApply: false
 - Infer types and keep them inline unless you need to reuse them
 
 ## Framework Exceptions
-- **NestJS**: Classes required for decorators (@Injectable, @Controller, etc.)
-- **RORO Pattern**: Applies to utility functions, not NestJS method signatures
 - **Next.js**: Pages (`app/**/page.tsx`) and layouts (`app/**/layout.tsx`) require default exports
+- **Elysia**: Fully functional, no classes or decorators required
 
 ## Code Style
 - **Single-line if statements without brackets**: `if (!value) return null` ✅
@@ -31,7 +30,9 @@ alwaysApply: false
 - CRITICAL: Always follow eslint rules when generating code
 
 ## Modularization and Code Reuse
-- Always leverage `@vencura/lib`, zod and lodash
+- **@vencura/lib**: Use for shared utilities (error handling: `getErrorMessage`, `formatZodError`; async: `delay`, `fetchWithTimeout`; env: `getEnvHelper`, `validateEnvOrThrow`; zod: `parseJsonWithSchema`, `isZodError`)
+- **zod**: Always use for schema validation and type inference (`z.infer<typeof schema>`)
+- **lodash**: Use for array/object operations (`isEmpty`, `uniq`, `groupBy`, `merge`, `pick`), type checking (`isPlainObject`, `isString`, `isArray`), functional utilities (`debounce`, `throttle`)
 - Prefer importing types from `@vencura/core` over `@vencura/types` when types are re-exported
 - Schema imports should use `@vencura/types/schemas` (schemas not re-exported from `@vencura/core`)
 

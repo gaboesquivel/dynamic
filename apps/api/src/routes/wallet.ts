@@ -5,6 +5,7 @@ import {
   CreateWalletInputSchema,
   type ChainType,
 } from '@vencura/types'
+import { formatZodError, getErrorMessage, isZodError } from '@vencura/lib'
 import { createWalletService } from '../services/wallet.service'
 import { getUserId } from '../middleware/auth'
 
@@ -23,10 +24,13 @@ export const walletRoute = new Elysia()
         chainType = validatedBody.chainType
       } catch (err) {
         // Zod validation error - return 400
+        const message = isZodError(err)
+          ? formatZodError({ error: err })
+          : (getErrorMessage(err) ?? 'Invalid request body')
         return new Response(
           JSON.stringify({
             error: 'Validation error',
-            message: err instanceof Error ? err.message : 'Invalid request body',
+            message,
           }),
           {
             status: 400,
@@ -55,7 +59,7 @@ export const walletRoute = new Elysia()
         return wallet
       } catch (err) {
         // Handle errors - check for specific error types
-        const errorMessage = err instanceof Error ? err.message : String(err)
+        const errorMessage = getErrorMessage(err) ?? String(err)
         const lowerMessage = errorMessage.toLowerCase()
 
         // Check if this is a "wallet already exists" error (400 Bad Request)

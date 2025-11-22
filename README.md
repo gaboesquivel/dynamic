@@ -25,17 +25,19 @@ This monorepo follows a modular architecture with clear separation between appli
 ```
 dynamic/
 ├── apps/              # Applications
-│   ├── api/           # NestJS backend API (multichain custodial wallet platform)
-│   ├── web/           # Next.js frontend for Vencura API (multichain support)
-│   ├── docs/          # Documentation site
-│   └── mathler/       # Next.js Mathler game (Wordle with numbers)
+│   ├── api/           # Elysia backend API (multichain custodial wallet platform)
+│   ├── next/          # Next.js frontend for Vencura API (multichain support)
+│   ├── docs/          # Documentation site (Fumadocs)
+│   ├── mathler/       # Next.js Mathler game (Wordle with numbers)
+│   └── elysia/        # Elysia template/example app
 ├── packages/          # Shared packages
-│   ├── core/          # TypeScript SDK for Vencura API (auto-generated)
+│   ├── core/          # TypeScript SDK for Vencura API (contract-first)
 │   ├── react/         # React hooks for Vencura API using TanStack Query
-│   ├── ai/            # AI chatbot component and SDK
-│   ├── types/         # Shared API contracts and types
+│   ├── types/         # Shared API contracts and types (Zod schemas, ts-rest contracts)
 │   ├── ui/            # Shared Shadcn/ui component library
-│   └── lib/           # Shared utility library (@vencura/lib)
+│   ├── lib/           # Shared utility library (@vencura/lib)
+│   ├── evm/           # EVM token contract ABIs and utilities
+│   └── tools/         # Development tools enabled by feature flags
 ├── config/            # Shared configurations
 │   ├── eslint/        # Shared ESLint configuration
 │   └── typescript/    # Shared TypeScript configuration
@@ -51,11 +53,14 @@ dynamic/
 See individual project READMEs for detailed documentation:
 
 - **[Vencura API](./apps/api/README.md)** - Backend API documentation
-- **[Vencura Web](./apps/web/README.md)** - Frontend application documentation
+- **[Vencura Next](./apps/next/README.md)** - Frontend application documentation
+- **[Documentation Site](./apps/docs/README.md)** - Fumadocs-based documentation site
 - **[Mathler](./apps/mathler/README.md)** - Mathler game documentation
 - **[EVM Contracts](./contracts/evm/README.md)** - EVM smart contracts (Foundry)
 - **[Solana Contracts](./contracts/solana/README.md)** - Solana programs (Anchor)
 - **[Infrastructure](./infra/README.md)** - Infrastructure setup and deployment
+
+For high-level architecture, stack overview, and workflows, see the [Documentation Site](/docs) (built with Fumadocs).
 
 ## Standards & Conventions
 
@@ -67,6 +72,11 @@ This project follows strict coding standards enforced through Cursor rules and d
 - **RORO Pattern**: Functions with multiple parameters use Receive Object, Return Object pattern. Single-parameter functions use direct parameters. See [TypeScript Rules](.cursor/rules/base/typescript.mdc).
 - **Type Inference**: Always enforce type inference - define return types in functions when needed, never in consumers. See [TypeScript Rules](.cursor/rules/base/typescript.mdc).
 - **Functional Code**: Prefer functional and declarative programming patterns. See [TypeScript Rules](.cursor/rules/base/typescript.mdc).
+- **Utility Libraries**: Always leverage `@vencura/lib`, `zod`, and `lodash` instead of custom implementations:
+  - **@vencura/lib**: Use for shared utilities (error handling, delays, date formatting, env validation, fetch with timeout)
+  - **zod**: Use for schema validation and type inference (always prefer zod for validation)
+  - **lodash**: Use for complex array/object manipulations, functional utilities (debounce, throttle), and type checking
+  See [@vencura/lib README](./packages/lib/README.md) for complete utility documentation.
 
 ### Cursor Rules
 
@@ -74,7 +84,7 @@ Code standards are defined in [`.cursor/rules/`](.cursor/rules/) organized by do
 
 - **Base**: [TypeScript](.cursor/rules/base/typescript.mdc), [Environment](.cursor/rules/base/environment.mdc), [General](.cursor/rules/base/general.mdc)
 - **Frontend**: [React](.cursor/rules/frontend/react.mdc), [Next.js](.cursor/rules/frontend/nextjs.mdc), [React Hooks](.cursor/rules/frontend/react-hooks.mdc), [Mobile-First](.cursor/rules/frontend/mobile-first.mdc), [ShadcnUI](.cursor/rules/frontend/shadcnui.mdc), [Stack](.cursor/rules/frontend/stack.mdc)
-- **Backend**: [NestJS](.cursor/rules/backend/nestjs.mdc), [Testing](.cursor/rules/backend/testing.mdc)
+- **Backend**: [Elysia](.cursor/rules/backend/elysia.mdc), [Testing](.cursor/rules/backend/testing.mdc)
 - **Web3**: [Viem](.cursor/rules/web3/viem.mdc), [Wagmi](.cursor/rules/web3/wagmi.mdc), [Solana](.cursor/rules/web3/solana.mdc), [Multichain](.cursor/rules/web3/multichain.mdc), [Solidity](.cursor/rules/web3/solidity.mdc), [Ponder](.cursor/rules/web3/ponder.mdc), [Cosmos](.cursor/rules/web3/cosmos.mdc)
 
 See [`.cursor/README.md`](.cursor/README.md) for more information on rules and MCP configuration.
@@ -115,16 +125,16 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 
 ### Applications
 
-- **[Vencura API](./apps/api/README.md)** - NestJS backend for multichain custodial wallet management
-- **[Vencura Web](./apps/web/README.md)** - Next.js frontend for Vencura API
+- **[Vencura API](./apps/api/README.md)** - Elysia backend for multichain custodial wallet management
+- **[Vencura Next](./apps/next/README.md)** - Next.js frontend for Vencura API
+- **[Documentation Site](./apps/docs/README.md)** - Fumadocs-based documentation site
 - **[Mathler](./apps/mathler/README.md)** - Next.js Mathler game
 
 ### Packages
 
-- **[@vencura/core](./packages/core/README.md)** - TypeScript SDK for Vencura API (contract-first with ts-rest)
+- **[@vencura/core](./packages/core/README.md)** - TypeScript SDK for Vencura API (contract-first)
 - **[@vencura/react](./packages/react/README.md)** - React hooks with TanStack Query for Vencura API
 - **[@vencura/types](./packages/types/README.md)** - Shared API contracts and types (Zod schemas, ts-rest contracts)
-- **[@vencura/ai](./packages/ai/README.md)** - AI chatbot component and SDK for wallet operations
 - **[@vencura/evm](./packages/evm/README.md)** - EVM token contract ABIs and utilities
 - **[@vencura/lib](./packages/lib/README.md)** - Shared utility library (error handling, async utilities, env validation)
 - **[@vencura/tools](./packages/tools/README.md)** - Development tools enabled by feature flags
@@ -140,13 +150,14 @@ See [`.cursor/README.md`](.cursor/README.md) for MCP server configuration detail
 #### Production (main branch)
 
 - **[API Swagger Interface](https://vencura-api.vercel.app/api)**: Interactive OpenAPI documentation for the Vencura API.
-- **[Vencura Wallet UI](https://vencura-web.vercel.app)**: Web application for accessing and managing the Vencura multichain custodial wallet.
+- **[Vencura Wallet UI](https://vencura-next.vercel.app)**: Web application for accessing and managing the Vencura multichain custodial wallet.
+- **[Documentation Site](https://vencura-docs.vercel.app)**: High-level architecture, ADRs, and developer guides.
 - **[Mathler Game Example](https://vencura-mathler.vercel.app)**: Mathler game demo built with Next.js.
 
 #### Staging (develop branch)
 
 - **[API Swagger Interface (Staging)](https://vencura-api-dev.vercel.app/api)**: Interactive OpenAPI documentation for the Vencura API staging environment.
-- **[Vencura Wallet UI (Staging)](https://vencura-web-dev.vercel.app)**: Web application for accessing and managing the Vencura multichain custodial wallet staging environment.
+- **[Vencura Wallet UI (Staging)](https://vencura-next-dev.vercel.app)**: Web application for accessing and managing the Vencura multichain custodial wallet staging environment.
 - **[Mathler Game Example (Staging)](https://vencura-mathler-dev.vercel.app)**: Mathler game demo staging environment built with Next.js.
 
 ## Getting Started

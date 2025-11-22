@@ -2,6 +2,7 @@
 
 import { useHello } from '@vencura/react'
 import { DynamicWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { delay, getErrorMessage } from '@vencura/lib'
 import { useState } from 'react'
 
 export const dynamic = 'force-dynamic'
@@ -40,7 +41,8 @@ export default function Home() {
           typeof token === 'string' ? token : JSON.stringify(token),
         )
         setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        await delay(2000)
+        setCopied(false)
       } else {
         alert('JWT token not available. Please check Dynamic SDK documentation for your version.')
       }
@@ -56,7 +58,9 @@ export default function Home() {
         <div className="space-y-4">
           <h1 className="text-3xl font-bold">Hello World Response</h1>
           {isLoading ? <p>Loading...</p> : null}
-          {error ? <p className="text-destructive">Error: {error.message}</p> : null}
+          {error ? (
+            <p className="text-destructive">Error: {getErrorMessage(error) ?? 'Unknown error'}</p>
+          ) : null}
           {data ? (
             <div className="p-4 border rounded-lg">
               <pre className="whitespace-pre-wrap">{JSON.stringify(data, null, 2)}</pre>

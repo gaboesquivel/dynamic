@@ -47,6 +47,7 @@ All external or untrusted data must be validated using Zod before being used. Th
 ```typescript
 // ✅ Good: Validate at the boundary
 import { z } from 'zod'
+import { fetchWithTimeout } from '@vencura/lib'
 
 const apiResponseSchema = z.object({
   id: z.string(),
@@ -54,7 +55,10 @@ const apiResponseSchema = z.object({
 })
 
 async function fetchUser(id: string): Promise<{ id: string; name: string }> {
-  const response = await fetch(`/api/users/${id}`)
+  const response = await fetchWithTimeout({
+    url: `/api/users/${id}`,
+    options: { method: 'GET' },
+  })
   const data = await response.json() // Returns unknown
   const validated = apiResponseSchema.parse(data) // Runtime validation
   return validated // Fully typed, safe to use
@@ -83,6 +87,42 @@ This project follows strict coding standards enforced through Cursor rules. See 
 - **RORO Pattern**: Functions with multiple parameters use Receive Object, Return Object pattern
 - **Type Inference**: Always enforce type inference - define return types in functions when needed, never in consumers
 - **Functional Code**: Prefer functional and declarative programming patterns
+- **Utility Libraries**: Always leverage `@vencura/lib`, `zod`, and `lodash` instead of custom implementations
+
+### Utility Library Usage
+
+#### @vencura/lib
+
+Always use `@vencura/lib` utilities instead of custom implementations:
+
+- **Async utilities**: Use `delay()` instead of `setTimeout`, `fetchWithTimeout()` instead of `fetch()` for external APIs
+- **Error handling**: Use `getErrorMessage()` for consistent error message extraction, `formatZodError()` / `formatZodErrors()` for zod error formatting
+- **Environment validation**: Use `getEnvHelper()` (Next.js) or `validateEnvOrThrow()` (server apps) for environment variable validation
+- **Date utilities**: Use `getDateKey()` for consistent date formatting
+- **Zod utilities**: Use `parseJsonWithSchema()` for JSON parsing with validation, `isZodError()` for type guards
+
+See [@vencura/lib README](packages/lib/README.md) for complete utility documentation.
+
+#### Lodash
+
+Prefer lodash utilities over custom implementations for common operations:
+
+- **Array operations**: `isEmpty`, `uniq`, `groupBy`, `chunk`
+- **Object operations**: `merge`, `pick`, `omit`, `isPlainObject`
+- **Type checking**: `isString`, `isNumber`, `isEmpty`, `isPlainObject`, `isArray`
+- **String transformations**: `camelCase`, `kebabCase`, `startCase`
+- **Functional utilities**: `debounce`, `throttle`, `memoize`
+
+Always use specific imports: `import { isEmpty, uniq } from 'lodash'` (not `import _ from 'lodash'`)
+
+#### Zod
+
+Always use zod for schema validation and type inference:
+
+- Define schemas with `z.object()` using Zod validators
+- Use `z.infer<typeof schema>` for type inference (no manual types)
+- Use `.parse()` for validation that throws, `.safeParse()` for validation that returns result objects
+- Validate all external data at data boundaries (API responses, database reads, user input, environment variables)
 
 ### Cursor Rules
 
@@ -90,7 +130,7 @@ Code standards are defined in [`.cursor/rules/`](.cursor/rules/) organized by do
 
 - **Base**: [TypeScript](.cursor/rules/base/typescript.mdc), [Environment](.cursor/rules/base/environment.mdc)
 - **Frontend**: [React](.cursor/rules/frontend/react.mdc), [Next.js](.cursor/rules/frontend/nextjs.mdc), [React Hooks](.cursor/rules/frontend/react-hooks.mdc), [Mobile-First](.cursor/rules/frontend/mobile-first.mdc)
-- **Backend**: [NestJS](.cursor/rules/backend/nestjs.mdc), [Testing](.cursor/rules/backend/testing.mdc)
+- **Backend**: [Elysia](.cursor/rules/backend/elysia.mdc), [Testing](.cursor/rules/backend/testing.mdc)
 - **Web3**: [Viem](.cursor/rules/web3/viem.mdc), [Wagmi](.cursor/rules/web3/wagmi.mdc), [Solana](.cursor/rules/web3/solana.mdc), [Multichain](.cursor/rules/web3/multichain.mdc)
 
 ## Development Workflow

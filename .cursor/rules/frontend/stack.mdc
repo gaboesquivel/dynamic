@@ -22,8 +22,8 @@ alwaysApply: false
 
 ### Validation & Type Safety
 - **zod**: Primary schema validation tool (CRITICAL)
-  - Exception: NestJS DTOs use `class-validator`
-- **zod-validation-error**: Use `fromZodError` for user-friendly error messages
+  - Use `z.infer<typeof schema>` for type inference
+  - Use `@vencura/lib` utilities: `parseJsonWithSchema`, `formatZodError`, `formatZodErrors`, `isZodError`
 
 ### Authentication & Actions
 - **@dynamic-labs/sdk-react-core**: Multi-chain wallet authentication with JWT
@@ -36,10 +36,11 @@ alwaysApply: false
 
 ### Utility Libraries
 - **@vencura/lib**: Prefer over custom implementations
-  - Async: `delay`, `fetchWithTimeout`
-  - Error: `getErrorMessage`, `formatZodError`, `sanitizeErrorMessage`, `isZodError`
+  - Async: `delay` (replace `setTimeout`), `fetchWithTimeout` (replace `fetch` for external APIs)
+  - Error: `getErrorMessage`, `formatZodError`, `formatZodErrors`, `sanitizeErrorMessage`, `isZodError`
+  - Zod: `parseJsonWithSchema` (JSON parsing with validation)
   - Date: `getDateKey`
-  - Env: `validateEnv` (see [Environment Rules](../base/environment.mdc))
+  - Env: `getEnvHelper` (Next.js), `validateEnvOrThrow` (server apps) - see [Environment Rules](../base/environment.mdc)
 - **react-use**: Use `useAsyncFn` for one-off async operations (not data fetching)
 - **nanoid**: Unique ID generation
 - **lodash**: Prefer over custom implementations for common operations

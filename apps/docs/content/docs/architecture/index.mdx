@@ -22,17 +22,19 @@ This monorepo follows a modular architecture with clear separation between appli
 ```
 dynamic/
 ├── apps/              # Applications
-│   ├── api/           # NestJS backend API (multichain custodial wallet platform)
-│   ├── web/           # Next.js frontend for Vencura API (multichain support)
-│   ├── docs/          # Documentation site
-│   └── mathler/       # Next.js Mathler game (Wordle with numbers)
+│   ├── api/           # Elysia backend API (multichain custodial wallet platform)
+│   ├── next/          # Next.js frontend for Vencura API (multichain support)
+│   ├── docs/          # Documentation site (Fumadocs)
+│   ├── mathler/       # Next.js Mathler game (Wordle with numbers)
+│   └── elysia/        # Elysia template/example app
 ├── packages/          # Shared packages
-│   ├── core/          # TypeScript SDK for Vencura API (auto-generated)
+│   ├── core/          # TypeScript SDK for Vencura API (contract-first)
 │   ├── react/         # React hooks for Vencura API using TanStack Query
-│   ├── ai/            # AI chatbot component and SDK
-│   ├── types/         # Shared API contracts and types
+│   ├── types/         # Shared API contracts and types (Zod schemas, ts-rest contracts)
 │   ├── ui/            # Shared Shadcn/ui component library
-│   └── lib/           # Shared utility library (@vencura/lib)
+│   ├── lib/           # Shared utility library (@vencura/lib)
+│   ├── evm/           # EVM token contract ABIs and utilities
+│   └── tools/         # Development tools enabled by feature flags
 ├── config/            # Shared configurations
 │   ├── eslint/        # Shared ESLint configuration
 │   └── typescript/    # Shared TypeScript configuration
@@ -60,29 +62,33 @@ This project follows strict coding standards enforced through Cursor rules and d
 
 Code standards are defined in `.cursor/rules/` organized by domain:
 
-- **Base**: TypeScript, Environment, General
-- **Frontend**: React, Next.js, React Hooks, Mobile-First, ShadcnUI, Stack
-- **Backend**: NestJS, Testing
+- **Base**: TypeScript, Environment, General, MCP
+- **Frontend**: React, Next.js, React Hooks, Mobile-First, ShadcnUI, Stack, Testing
+- **Backend**: Elysia, Testing
 - **Web3**: Viem, Wagmi, Solana, Multichain, Solidity, Ponder, Cosmos
+
+See [Cursor Rules](/.cursor/rules/) for detailed patterns and guidelines.
 
 ## Projects
 
 ### Applications
 
-- **Vencura API** - NestJS backend for multichain custodial wallet management
-- **Vencura Web** - Next.js frontend for Vencura API
-- **Mathler** - Next.js Mathler game
+- **Vencura API** (`apps/api`) - Elysia backend for multichain custodial wallet management
+- **Vencura Next** (`apps/next`) - Next.js frontend for Vencura API
+- **Documentation Site** (`apps/docs`) - Fumadocs-based documentation site
+- **Mathler** (`apps/mathler`) - Next.js Mathler game
 
 ### Packages
 
-- **@vencura/core** - TypeScript SDK for Vencura API (contract-first with ts-rest)
+- **@vencura/core** - TypeScript SDK for Vencura API (contract-first)
 - **@vencura/react** - React hooks with TanStack Query for Vencura API
 - **@vencura/types** - Shared API contracts and types (Zod schemas, ts-rest contracts)
-- **@vencura/ai** - AI chatbot component and SDK for wallet operations
 - **@vencura/evm** - EVM token contract ABIs and utilities
 - **@vencura/lib** - Shared utility library (error handling, async utilities, env validation)
 - **@vencura/tools** - Development tools enabled by feature flags
 - **@vencura/ui** - Shared Shadcn/ui component library
+
+See individual READMEs for detailed documentation on each app and package.
 
 ### Contracts
 
