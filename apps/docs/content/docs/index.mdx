@@ -5,30 +5,62 @@ description: "Welcome to the Vencura documentation."
 
 Welcome to the Vencura documentation.
 
-## Getting Started
+## Overview
 
-- [Getting Started](/docs/getting-started) - Quick start guide
-- [Architecture](/docs/architecture) - Monorepo architecture overview
+- [Getting Started](/docs/getting-started) - Quick start guide for setting up and running the monorepo
 
-## Guides
+<Diagram caption="Vencura Monorepo Structure - Applications, Packages, and Infrastructure">
+  <div className="flex flex-col gap-4 p-4 text-left">
+    <div className="rounded-lg border border-border bg-background p-4">
+      <h3 className="mb-2 font-semibold">Applications</h3>
+      <ul className="list-inside list-disc space-y-1 text-sm">
+        <li>API - Elysia backend</li>
+        <li>Web - Next.js frontend</li>
+        <li>Docs - Documentation site</li>
+        <li>Mathler - Game app</li>
+      </ul>
+    </div>
+    <div className="rounded-lg border border-border bg-background p-4">
+      <h3 className="mb-2 font-semibold">Packages</h3>
+      <ul className="list-inside list-disc space-y-1 text-sm">
+        <li>Core, React, UI, Types</li>
+        <li>Lib, EVM, Tools</li>
+      </ul>
+    </div>
+    <div className="rounded-lg border border-border bg-background p-4">
+      <h3 className="mb-2 font-semibold">Infrastructure</h3>
+      <ul className="list-inside list-disc space-y-1 text-sm">
+        <li>Contracts (EVM, Solana)</li>
+        <li>Pulumi IaC</li>
+      </ul>
+    </div>
+  </div>
+</Diagram>
 
-- [Environment Strategy](/docs/environment) - Environment variable configuration
+## Architecture
+
+- [Architecture](/docs/architecture) - Monorepo architecture overview and design principles
+- [Dynamic Integration](/docs/dynamic-integration) - Dynamic SDK integration architecture
+
+## Development Workflow
+
+- [Environment Strategy](/docs/environment) - Environment variable configuration and validation patterns
+- [Tooling](/docs/tooling) - Development tools, stack, and **[testing patterns](/docs/tooling/testing-patterns)** (blackbox Vitest strategy)
+- [MCP Servers](/docs/mcp-servers) - Model Context Protocol servers for **AI-assisted development** workflows
+
+## Deployment & Portability
+
 - [Deployment](/docs/deployment) - Deployment and branching strategy
-- [Tooling](/docs/tooling) - Development tools and stack
-- [MCP Servers](/docs/mcp-servers) - Model Context Protocol servers guide
-- [Vercel Portability](/docs/vercel-portability) - Vercel portability strategy
-- [Google Cloud](/docs/google-cloud) - Google Cloud deployment option
-- [Dynamic Integration](/docs/dynamic-integration) - Dynamic SDK integration
+- [Vercel Portability](/docs/vercel-portability) - Vercel portability strategy and migration paths
+- [Google Cloud](/docs/google-cloud) - Google Cloud deployment option (documented, not implemented)
 
-## Packages
+## Apps & Packages
 
-- [@vencura/ui](/docs/packages/ui) - Shadcn/ui component library
-- [@vencura/core](/docs/packages/core) - TypeScript SDK
-- [@vencura/react](/docs/packages/react) - React hooks
+- [Applications](/docs/apps) - Application documentation (API, Web, Mathler, Docs)
+- [Packages](/docs/packages) - Shared package documentation (Core, React, UI, Types, Lib, EVM, Tools)
 
-## Applications
+## Architecture Decisions
 
-- [Vencura API](/docs/apps/api) - Backend API documentation
-- [Vencura Next](/docs/apps/next) - Frontend application
+- [ADRs](/docs/adrs) - Architecture Decision Records documenting key technical decisions
 
-For app-specific setup and development, see individual app READMEs in the monorepo.
+For detailed app-specific setup and development, see individual app READMEs in the monorepo.

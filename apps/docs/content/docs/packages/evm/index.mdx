@@ -1,0 +1,54 @@
+---
+title: "@vencura/evm"
+description: "EVM token contract ABIs and Node.js utilities for backend contract interactions."
+---
+
+`@vencura/evm` provides type-safe contract ABIs and Node.js utilities for EVM blockchain interactions.
+
+## Overview
+
+This package provides:
+
+- Type-safe contract ABIs from Foundry build output
+- Node.js utilities for backend contract interactions
+- Support for multiple networks including Arbitrum Sepolia
+
+**Note**: React hooks have been removed. Use [@vencura/react](/docs/packages/react) hooks instead, which call the Vencura API (single integration point to Dynamic SDK).
+
+## Usage
+
+```typescript
+import { testnetTokenAbi } from '@vencura/evm/abis'
+import { encodeFunctionData } from 'viem'
+
+// Encode mint function call
+const mintData = encodeFunctionData({
+  abi: testnetTokenAbi,
+  functionName: 'mint',
+  args: [recipientAddress, amount],
+})
+
+// Use with Vencura API transaction endpoint
+await sendTransaction({
+  to: tokenAddress,
+  amount: 0,
+  data: mintData,
+})
+```
+
+## Supported Contracts
+
+- **TestToken**: ERC20 token with open minting/burning for testing and faucet purposes
+  - Deployed on Arbitrum Sepolia
+  - See [contracts/evm/README.md](../../../../contracts/evm/README.md) for deployed addresses
+
+## Related Documentation
+
+See the [@vencura/evm README](../../../../packages/evm/README.md) for complete documentation.
+
+## Related Packages
+
+- [@vencura/react](/docs/packages/react) - React hooks for Vencura API (recommended for frontend)
+- [@vencura/core](/docs/packages/core) - TypeScript SDK for Vencura API
+- [contracts/evm](../../../../contracts/evm/README.md) - EVM smart contracts source code
+

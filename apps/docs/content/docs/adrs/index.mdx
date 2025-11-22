@@ -1,0 +1,45 @@
+---
+title: "Architecture Decision Records"
+description: "Architecture Decision Records (ADRs) documenting key technical decisions for the Vencura monorepo."
+---
+
+Architecture Decision Records (ADRs) document key technical decisions made during the development of the Vencura monorepo. Each ADR captures the context, considered options, decision rationale, and consequences.
+
+## Core Architecture
+
+Foundational decisions about monorepo structure, frameworks, and design systems:
+
+- **[ADR 001: Monorepo vs Standalone](/docs/adrs/001-monorepo-vs-standalone)** - Decision to use a monorepo structure
+- **[ADR 002: Vencura API Framework](/docs/adrs/002-vencura-api-framework)** - Decision to use Elysia for backend API
+- **[ADR 003: Frontend Apps Framework](/docs/adrs/003-frontend-apps-framework)** - Decision to use Next.js for frontend applications
+- **[ADR 004: Design System](/docs/adrs/004-design-system)** - Decision to use Shadcn/ui as the design system
+- **[ADR 012: Vencura AI Architecture](/docs/adrs/012-vencura-ai-architecture)** - AI-friendly architecture patterns
+- **[ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy)** - Environment variable management patterns
+- **[ADR 015: Database vs Dynamic Metadata](/docs/adrs/015-database-vs-dynamic-metadata)** - Data storage strategy
+- **[ADR 016: Documentation Framework](/docs/adrs/016-documentation-framework)** - Decision to use Fumadocs for documentation
+
+## Tooling & Workflow
+
+Development tools, package management, and code quality decisions:
+
+- **[ADR 005: Package Manager](/docs/adrs/005-package-manager)** - Decision to use Bun for package management
+- **[ADR 006: Linters](/docs/adrs/006-linters)** - Decision to use Biome + ESLint for formatting and linting
+- **[ADR 010: Vencura Infrastructure Orchestration](/docs/adrs/010-vencura-infra-orchestration)** - Infrastructure orchestration patterns
+
+## Infrastructure & Deployment
+
+Infrastructure, deployment, and blockchain integration decisions:
+
+- **[ADR 007: Vencura API Infrastructure](/docs/adrs/007-vencura-api-infrastructure)** - Deployment platform decision (Vercel current, Google Cloud future option)
+- **[ADR 008: Frontend Infrastructure](/docs/adrs/008-frontend-infrastructure)** - Frontend infrastructure patterns
+- **[ADR 009: Viem vs Ethers](/docs/adrs/009-viem-vs-ethers)** - Decision to use Viem for EVM interactions
+- **[ADR 011: Vencura API ORM](/docs/adrs/011-vencura-api-orm)** - Decision to use Drizzle ORM
+- **[ADR 013: Vencura API Test Gas Faucet](/docs/adrs/013-vencura-api-test-gas-faucet)** - Testnet gas funding strategy
+
+## Related Documentation
+
+- [Architecture](/docs/architecture) - Monorepo architecture overview
+- [Deployment](/docs/deployment) - Deployment and branching strategy
+- [Environment Strategy](/docs/environment) - Environment variable configuration
+- [Tooling](/docs/tooling) - Development tools and stack
+

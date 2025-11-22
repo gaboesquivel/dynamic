@@ -67,7 +67,7 @@ All of these features work identically on any platform:
 - **Database**: DrizzleORM with PGLite (dev) or Postgres (prod) - platform agnostic
 - **Encryption**: AES-256-GCM using Node.js crypto (standard)
 - **Error Handling**: Standard Elysia error handling (functional patterns)
-- **Validation**: class-validator for DTOs, zod for env vars
+- **Validation**: Zod-first validation for all boundaries (requests, responses, environment variables)
 
 ### Infrastructure Components
 
@@ -79,8 +79,8 @@ All of these features work identically on any platform:
 
 ### Security Features
 
-- **Security Headers**: Helmet.js (works on any Express app)
-- **Request Size Limits**: Express body parser limits (standard)
+- **Security Headers**: Elysia security headers plugin (standard)
+- **Request Size Limits**: Elysia body parser limits (standard)
 - **CORS**: Elysia CORS configuration (standard)
 - **Rate Limiting**: Elysia rate limiting plugins (works on any Elysia app)
 

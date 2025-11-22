@@ -12,13 +12,14 @@ The docs site focuses on:
 
 - **High-level architecture**: Monorepo layout, key components, and how they interact
 - **Stack & conventions**: Major tech choices (Elysia, Next.js, Fumadocs, Bun, Biome + ESLint, Viem/Wagmi, `@vencura/*` packages)
-- **ADRs**: Architecture Decision Records documenting key technical decisions (e.g., [ADR 006: Linters](/docs/adrs/006-linters) for Biome + ESLint strategy)
+- **ADRs**: Architecture Decision Records documenting key technical decisions (see [Architecture Decisions](/docs/adrs))
 - **Deployment & environments**: Thin-layer Vercel design, environment strategy, Google Cloud/Pulumi options
-- **AI-assisted workflow**: How MCP servers, Cursor rules, and v0 are used in development
+- **AI-assisted workflow**: How MCP servers, Cursor rules, and v0 are used in development (see [MCP Servers](/docs/mcp-servers))
+- **Testing patterns**: Blackbox Vitest strategy (see [Testing Patterns](/docs/tooling/testing-patterns))
 
 For app-specific documentation, see individual app READMEs:
 - [Vencura API](../../apps/api/README.md)
-- [Vencura Next](../../apps/next/README.md)
+- [Vencura Web](../../apps/web/README.md)
 - [Mathler](../../apps/mathler/README.md)
 
 ## Tech Stack
@@ -75,6 +76,17 @@ Documentation content lives in:
    ---
    ```
 3. Content will be automatically indexed and searchable
+
+### Rich Media Components
+
+The docs site includes reusable components for enhancing documentation:
+
+- **Diagram** - Visual diagrams and flowcharts (`<Diagram>`)
+- **ComparisonTable** - Comparison tables (`<ComparisonTable>`)
+- **DocsChart** - Data visualization charts (`<DocsChart>`)
+- **DocsVideo** - Embedded videos (`<DocsVideo>`)
+
+Components are located in `components/` and automatically available in all MDX files. See [Documentation Authoring Guide](/docs/tooling/docs-authoring) for usage examples and best practices.
 
 ## Development
 

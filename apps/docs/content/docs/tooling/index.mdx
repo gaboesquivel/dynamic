@@ -6,14 +6,14 @@ description: "Development tools and stack used across the monorepo."
 ## Monorepo Management
 
 - **Turborepo**: Build system and task orchestration
-- **Bun**: Package manager and runtime with workspace support
+- **Bun**: Package manager and runtime with workspace support (see [ADR 005: Package Manager](/docs/adrs/005-package-manager))
 - **TypeScript**: Shared configuration via `@workspace/typescript-config`
 
 ## Development Tools
 
-- **Next.js 16.0.0**: React framework for frontend applications (standardized across all Next.js apps)
-- **React 19.1.1**: Standardized React version across all frontend applications
-- **Biome + ESLint**: Fast formatting (Biome) and rule enforcement (ESLint only) - optimized for speed
+- **Next.js 16**: React framework for frontend applications (standardized across all Next.js apps)
+- **React 19**: Standardized React version across all frontend applications
+- **Biome + ESLint**: Fast formatting (Biome) and rule enforcement (ESLint only) - optimized for speed (see [ADR 006: Linters](/docs/adrs/006-linters))
   - **Biome**: Rust-based formatter for extremely fast code formatting
   - **ESLint**: Configured for rule enforcement only (disabled checks Biome handles for faster execution)
   - **Strategy**: Biome handles formatting, ESLint handles code quality rules - maximum speed and DX
@@ -60,6 +60,20 @@ description: "Development tools and stack used across the monorepo."
 
 Our tech stack is **carefully selected** to maximize **speed**, **developer experience**, **production performance**, and **AI-friendliness**:
 
+<DocsChart
+  type="bar"
+  title="Tech Stack Categories"
+  data={[
+    { label: 'Runtime', value: 10, color: 'hsl(var(--primary))' },
+    { label: 'Framework', value: 9, color: 'hsl(var(--primary))' },
+    { label: 'Type Safety', value: 10, color: 'hsl(var(--primary))' },
+    { label: 'Testing', value: 9, color: 'hsl(var(--primary))' },
+    { label: 'Formatting', value: 10, color: 'hsl(var(--primary))' },
+    { label: 'Database', value: 9, color: 'hsl(var(--primary))' },
+  ]}
+  caption="Tech stack selection priorities (1-10 scale)"
+/>
+
 - **Elysia**: Fast, functional, Zod-first web framework - perfect for type-safe APIs with excellent DX
 - **Next.js**: React framework with App Router - standardized across all frontend apps
 - **Bun**: Fast JavaScript runtime, **bundler**, and package manager - significantly faster than alternatives
@@ -76,5 +90,9 @@ Each tool was chosen for its **speed**, **performance**, **developer experience*
 
 ## Testing
 
-- [Testing Patterns](/docs/tooling/testing-patterns) - Blackbox Vitest strategy for routes, schemas, hooks, clients, and components
+- **[Testing Patterns](/docs/tooling/testing-patterns)** - Blackbox Vitest strategy for routes, schemas, hooks, clients, and components. This is the canonical testing reference for the monorepo.
+
+## Documentation Authoring
+
+- **[Documentation Authoring Guide](/docs/tooling/docs-authoring)** - Guide for writing and enhancing documentation with rich media components (diagrams, charts, comparison tables, videos).
 

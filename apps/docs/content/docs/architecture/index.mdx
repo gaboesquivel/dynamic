@@ -23,7 +23,7 @@ This monorepo follows a modular architecture with clear separation between appli
 dynamic/
 ├── apps/              # Applications
 │   ├── api/           # Elysia backend API (multichain custodial wallet platform)
-│   ├── next/          # Next.js frontend for Vencura API (multichain support)
+│   ├── web/            # Next.js frontend for Vencura API (multichain support)
 │   ├── docs/          # Documentation site (Fumadocs)
 │   ├── mathler/       # Next.js Mathler game (Wordle with numbers)
 │   └── elysia/        # Elysia template/example app
@@ -47,9 +47,36 @@ dynamic/
 
 **Applications** (`apps/`) are deployable services with their own dependencies and configurations. **Packages** (`packages/`) provide shared code and utilities consumed by applications. **Config** (`config/`) contains shared configuration packages for ESLint and TypeScript. **Infrastructure** (`infra/`) contains infrastructure-as-code definitions using Pulumi.
 
+<Diagram caption="Monorepo Package Dependencies Flow">
+  <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2">
+    <div className="rounded-lg border border-border bg-background p-4">
+      <h3 className="mb-3 font-semibold">Applications Layer</h3>
+      <div className="space-y-2 text-sm">
+        <div className="rounded bg-muted p-2">apps/api</div>
+        <div className="rounded bg-muted p-2">apps/web</div>
+        <div className="rounded bg-muted p-2">apps/docs</div>
+        <div className="rounded bg-muted p-2">apps/mathler</div>
+      </div>
+    </div>
+    <div className="rounded-lg border border-border bg-background p-4">
+      <h3 className="mb-3 font-semibold">Packages Layer</h3>
+      <div className="space-y-2 text-sm">
+        <div className="rounded bg-muted p-2">@vencura/core</div>
+        <div className="rounded bg-muted p-2">@vencura/react</div>
+        <div className="rounded bg-muted p-2">@vencura/ui</div>
+        <div className="rounded bg-muted p-2">@vencura/lib</div>
+        <div className="rounded bg-muted p-2">@vencura/types</div>
+      </div>
+    </div>
+  </div>
+  <div className="mt-4 text-center text-sm text-muted-foreground">
+    Applications consume packages via workspace dependencies
+  </div>
+</Diagram>
+
 ## Standards & Conventions
 
-This project follows strict coding standards enforced through Cursor rules and documented in Architecture Decision Records (ADRs).
+This project follows strict coding standards enforced through Cursor rules and documented in Architecture Decision Records (ADRs). See [Architecture Decisions](/docs/adrs) for the complete list of ADRs.
 
 ### Key Patterns
 
@@ -74,19 +101,58 @@ See [Cursor Rules](/.cursor/rules/) for detailed patterns and guidelines.
 ### Applications
 
 - **Vencura API** (`apps/api`) - Elysia backend for multichain custodial wallet management
-- **Vencura Next** (`apps/next`) - Next.js frontend for Vencura API
+- **Vencura Web** (`apps/web`) - Next.js frontend for Vencura API
 - **Documentation Site** (`apps/docs`) - Fumadocs-based documentation site
 - **Mathler** (`apps/mathler`) - Next.js Mathler game
 
 ### Packages
 
-- **@vencura/core** - TypeScript SDK for Vencura API (contract-first)
-- **@vencura/react** - React hooks with TanStack Query for Vencura API
-- **@vencura/types** - Shared API contracts and types (Zod schemas, ts-rest contracts)
-- **@vencura/evm** - EVM token contract ABIs and utilities
-- **@vencura/lib** - Shared utility library (error handling, async utilities, env validation)
-- **@vencura/tools** - Development tools enabled by feature flags
-- **@vencura/ui** - Shared Shadcn/ui component library
+<ComparisonTable
+  headers={['Package', 'Purpose', 'Used By']}
+  rows={[
+    {
+      label: '@vencura/core',
+      values: [
+        'TypeScript SDK for Vencura API (contract-first)',
+        'API, Web, Mathler',
+      ],
+    },
+    {
+      label: '@vencura/react',
+      values: [
+        'React hooks with TanStack Query for Vencura API',
+        'Web, Mathler',
+      ],
+    },
+    {
+      label: '@vencura/types',
+      values: [
+        'Shared API contracts and types (Zod schemas, ts-rest contracts)',
+        'All apps',
+      ],
+    },
+    {
+      label: '@vencura/ui',
+      values: ['Shared Shadcn/ui component library', 'Web, Mathler, Docs'],
+    },
+    {
+      label: '@vencura/lib',
+      values: [
+        'Shared utility library (error handling, async utilities, env validation)',
+        'All apps',
+      ],
+    },
+    {
+      label: '@vencura/evm',
+      values: ['EVM token contract ABIs and utilities', 'API, Web'],
+    },
+    {
+      label: '@vencura/tools',
+      values: ['Development tools enabled by feature flags', 'All apps'],
+    },
+  ]}
+  caption="Package overview and usage across applications"
+/>
 
 See individual READMEs for detailed documentation on each app and package.
 

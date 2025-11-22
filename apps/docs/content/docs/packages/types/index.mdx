@@ -1,0 +1,51 @@
+---
+title: "@vencura/types"
+description: "Shared API contracts and types for contract-first, type-safe API development."
+---
+
+`@vencura/types` is the **single source of truth** for API contracts and types. It defines Zod schemas and REST-style contracts that are used across backend, SDK, and frontend for contract-first, type-safe API development.
+
+## Overview
+
+This package provides:
+
+- **Zod schemas** for request/response validation
+- **REST contracts** (ts-rest style) for endpoint definitions
+- **TypeScript types** inferred from Zod schemas
+
+This contract-first approach ensures type safety across the entire stack: backend API (`apps/api`), TypeScript SDK (`@vencura/core`), and React hooks (`@vencura/react`).
+
+## Features
+
+- **Contract-first**: API contracts defined here are consumed by backend and clients
+- **Zod validation**: All schemas use Zod for runtime validation and type inference
+- **Type inference**: TypeScript types inferred using `z.infer<typeof schema>`
+- **Dual exports**: Supports both ESM and CommonJS
+
+## Usage
+
+```typescript
+import { HelloResponseSchema, WalletSchema } from '@vencura/types'
+
+// Use for validation
+const validated = HelloResponseSchema.parse(data)
+
+// Infer types
+type HelloResponse = z.infer<typeof HelloResponseSchema>
+```
+
+## Related Documentation
+
+See the [@vencura/types README](../../../../packages/types/README.md) for complete documentation including:
+
+- Package structure
+- Adding new contracts
+- Architecture patterns
+- Coding standards
+
+## Related Packages
+
+- [@vencura/core](/docs/packages/core) - TypeScript SDK (consumes contracts)
+- [@vencura/react](/docs/packages/react) - React hooks (consumes contracts)
+- [Vencura API](/docs/apps/api) - Backend API (consumes contracts)
+

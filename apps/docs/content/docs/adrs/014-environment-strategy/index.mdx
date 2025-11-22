@@ -81,7 +81,7 @@ All apps now enforce validated environment configuration objects (`zEnv`) using 
 - Replaced all `process.env` usage with `zEnv`
 - **Zod-first**: All environment variables validated with Zod for type safety and clear error messages
 
-**Next.js Apps (`apps/next`, `apps/mathler`):**
+**Next.js Apps (`apps/web`, `apps/mathler`):**
 - Updated existing `lib/env.ts` files to export `zEnv` const object
 - Already using `getEnvHelper` from `@vencura/lib` and Zod schemas
 - Validation happens at module load (build time for `NEXT_PUBLIC_*` vars)

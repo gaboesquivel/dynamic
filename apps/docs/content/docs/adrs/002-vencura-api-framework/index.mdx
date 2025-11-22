@@ -112,6 +112,21 @@ Fast and low overhead web framework.
 
 We will use **Elysia** as our backend API framework.
 
+### TLDR: Comparison Table
+
+| Feature | Elysia ✅ | Hono | Express | Fastify |
+|---------|-----------|------|---------|---------|
+| **Zod-first validation** | ✅ Native | ❌ Plugin required | ❌ Manual setup | ❌ Plugin required |
+| **Functional style** | ✅ Pure functions | ✅ Functional | ⚠️ Flexible | ⚠️ Flexible |
+| **ESM-native** | ✅ Built-in | ✅ Built-in | ❌ Config needed | ❌ Config needed |
+| **OpenAPI generation** | ✅ Built-in | ⚠️ Limited | ❌ Manual | ⚠️ Plugin |
+| **TypeScript inference** | ✅ Excellent | ✅ Good | ⚠️ Manual types | ✅ Good |
+| **Testing (Vitest)** | ✅ Perfect fit | ✅ Good | ⚠️ Manual setup | ✅ Good |
+| **WebSocket support** | ✅ Good | ⚠️ Limited | ⚠️ Additional libs | ⚠️ Additional setup |
+| **Ecosystem maturity** | ⚠️ Growing | ⚠️ Smaller | ✅ Large | ✅ Mature |
+| **Performance** | ✅ Fast | ✅ Very fast | ✅ Good | ✅ Fast |
+| **AI-friendly (OpenAPI)** | ✅ Excellent | ⚠️ Limited | ❌ Manual | ⚠️ Plugin |
+
 **Main reasons:**
 
 - **Zod-first validation**: Native Zod validation built-in ensures type-safe contracts at all API boundaries, with inferred types throughout the codebase

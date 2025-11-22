@@ -190,19 +190,44 @@ Global application platform.
 
 ## Decision
 
-We will deploy the Elysia-based Vencura API on **Google Cloud Run with Docker containers**, with **Cloudflare** in front of it for CDN, DDoS protection, and global distribution. We will configure Cloud Run with a **minimum instance count of 1** to eliminate cold starts and ensure consistent performance.
+**Current Deployment**: We deploy the Elysia-based Vencura API on **Vercel** for all environments. This leverages Vercel's zero-configuration backend support, Fluid Compute, reduced cold starts, and excellent developer experience.
 
-**Main reasons:**
+### TLDR: Comparison Table
 
-- Serverless containers provide auto-scaling with pay-per-use pricing, making it cost-effective
-- Native Docker support simplifies deployment and aligns with containerization best practices
-- Excellent WebSocket support for real-time features required by the Vencura API
-- Cloudflare provides global edge network, DDoS protection, and free SSL/TLS certificates
-- Minimum instance of 1 eliminates cold starts and ensures consistent response times
-- Good integration with Google Cloud services for future expansion (Cloud SQL, Pub/Sub, etc.)
-- Built-in monitoring and logging capabilities
-- Simple CI/CD integration with Cloud Build and GitHub Actions
-- Cloudflare's caching layer reduces latency and improves performance globally
+| Feature | Vercel ✅ (Current) | Google Cloud Run (Future Option) | AWS Lambda | Railway/Render |
+|---------|---------------------|----------------------------------|------------|----------------|
+| **Zero-config backend** | ✅ Elysia support | ⚠️ Docker required | ⚠️ Adaptation needed | ✅ Simple |
+| **Cold starts** | ✅ Reduced (2024) | ⚠️ Can occur | ⚠️ Significant | ✅ Minimal |
+| **WebSocket support** | ⚠️ Limited | ✅ Excellent | ❌ Complex | ⚠️ Limited |
+| **Global distribution** | ✅ 100+ edge locations | ⚠️ Cloudflare CDN | ✅ CloudFront | ⚠️ Limited |
+| **Developer experience** | ✅ Excellent | ⚠️ More complex | ⚠️ Complex | ✅ Good |
+| **CI/CD integration** | ✅ Git push = deploy | ⚠️ Cloud Build setup | ⚠️ Manual | ✅ Simple |
+| **Cost (low traffic)** | ✅ Pay-per-use | ⚠️ Min instance cost | ✅ Pay-per-use | ⚠️ Fixed pricing |
+| **Security features** | ✅ SOC 2, ISO 27001 | ✅ Enhanced (HSM, VPC) | ✅ Good | ⚠️ Standard |
+| **Portability** | ✅ Portable code | ✅ Docker containers | ⚠️ Lambda-specific | ✅ Docker |
+
+**Documented Future Option**: Google Cloud Run with Docker containers and Cloudflare is documented as a potential future option for production workloads requiring enhanced security and data governance. This option would use:
+
+- **Google Cloud Run** with Docker containers for serverless auto-scaling
+- **Cloudflare** in front for CDN, DDoS protection, and global distribution
+- **Minimum instance count of 1** to eliminate cold starts and ensure consistent performance
+
+**Main reasons for Vercel (current)**:
+
+- Zero-configuration backend support for Elysia and Next.js
+- Fluid Compute with Active CPU pricing (automatic scaling, pay-for-what-you-use)
+- Significantly reduced cold starts for backend APIs
+- Native support for long-running backend applications
+- Unparalleled shipping and distribution capabilities
+- Excellent developer experience with MCP integration
+
+**Main reasons for Google Cloud (future option, if needed)**:
+
+- Serverless containers provide auto-scaling with pay-per-use pricing
+- Native Docker support simplifies deployment
+- Excellent WebSocket support for real-time features
+- Enhanced security features for production workloads (HSM-backed keys, private networking)
+- Good integration with Google Cloud services (Cloud SQL, Pub/Sub, etc.)
 
 ## Notes
 
@@ -223,7 +248,7 @@ We will deploy the Elysia-based Vencura API on **Google Cloud Run with Docker co
 - **Vercel as convenience**: Vercel is chosen for rapid deployment and excellent developer experience, not as a requirement
 - **All core components** can be migrated to any platform without code changes
 
-**Current Deployment**: The Vencura API is currently deployed to **Vercel** for all environments. We are NOT splitting the architecture now - everything stays on Vercel to leverage its unparalleled shipping and distribution capabilities.
+**Current Deployment**: ⚠️ **All systems are currently deployed to Vercel** for all environments. We are NOT splitting the architecture now - everything stays on Vercel to leverage its unparalleled shipping and distribution capabilities.
 
 **For custodial wallet security**: Google Cloud + Pulumi provides enhanced control and security over sensitive financial data, making it a potential option for future production workloads requiring strict data governance. See [Future Production Security Option](#future-production-security-option-documented-not-implemented) below.
 

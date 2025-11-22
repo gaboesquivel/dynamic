@@ -53,6 +53,18 @@ Each app or service lives in its own repo, communicating via published packages 
 Adopt a **Monorepo architecture** using **Turborepo** to orchestrate builds and caching.  
 Shared components, utilities, and standards will live under `packages/`, while each app resides under `apps/`.
 
+### TLDR: Comparison Table
+
+| Feature | Monorepo ✅ (Turborepo) | Standalone Repos |
+|---------|-------------------------|------------------|
+| **Code reuse** | ✅ Shared components/types | ❌ Requires publishing |
+| **Unified tooling** | ✅ Consistent standards | ❌ Multiple configs |
+| **CI/CD speed** | ✅ Turborepo caching | ⚠️ Separate pipelines |
+| **Dependency sync** | ✅ Automatic | ❌ Manual coordination |
+| **Developer onboarding** | ✅ Single repo | ⚠️ Multiple repos |
+| **Complexity** | ⚠️ Higher repo complexity | ✅ Simpler per repo |
+| **Team independence** | ⚠️ Requires coordination | ✅ Independent work |
+
 **Main reasons:**
 
 - Enables code reuse across UI and backend apps through shared components and types

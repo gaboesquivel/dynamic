@@ -1,0 +1,38 @@
+---
+title: "Documentation Site"
+description: "Fumadocs-based documentation site for architecture, ADRs, and developer guides."
+---
+
+The documentation site is built with **Fumadocs** (Next.js + MDX) and serves as the central documentation hub for the Vencura monorepo.
+
+## Overview
+
+This is the **@docs** site - the canonical place for high-level architecture, stack overview, and workflows. It focuses on:
+
+- **High-level architecture**: Monorepo layout, key components, and how they interact
+- **Stack & conventions**: Major tech choices (Elysia, Next.js, Fumadocs, Bun, Biome + ESLint, Viem/Wagmi, `@vencura/*` packages)
+- **ADRs**: Architecture Decision Records documenting key technical decisions
+- **Deployment & environments**: Thin-layer Vercel design, environment strategy, Google Cloud/Pulumi options
+- **AI-assisted workflow**: How MCP servers, Cursor rules, and v0 are used in development
+
+## Tech Stack
+
+- **Next.js** - React framework
+- **Fumadocs** - Documentation framework built on Next.js and MDX
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+
+## Getting Started
+
+See the [Documentation Site README](../../../../apps/docs/README.md) for:
+
+- Running the docs site locally
+- Adding new documentation
+- Content structure and organization
+- Development workflow
+
+## Related Documentation
+
+- [ADR 016: Documentation Framework](/docs/adrs/016-documentation-framework) - Decision to use Fumadocs
+- [MCP Servers](/docs/mcp-servers) - AI-assisted development workflows
+

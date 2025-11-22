@@ -1,4 +1,6 @@
 {
   "api": "Vencura API",
-  "web": "Vencura Web"
+  "web": "Vencura Web",
+  "mathler": "Mathler",
+  "docs": "Documentation Site"
 }
