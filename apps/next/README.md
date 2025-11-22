@@ -29,6 +29,21 @@ A Mathler game built with Next.js - like Wordle but with numbers. Users have 6 g
 - react-error-boundary for error handling
 - zod-validation-error for better validation error messages
 
+## Utility Libraries
+
+This app leverages shared utility libraries to reduce boilerplate and ensure consistency:
+
+- **@vencura/lib**: Use for shared utilities:
+  - `delay` - Replace `setTimeout` with `delay()` for async delays
+  - `fetchWithTimeout` - Always use for external API calls (addresses security concerns)
+  - `getErrorMessage` - Consistent error message extraction
+  - `formatZodError` / `formatZodErrors` - User-friendly zod error formatting
+  - `getEnvHelper` - Environment variable validation (used in `lib/env.ts`)
+- **zod**: Always use for schema validation and type inference
+- **lodash**: Use for complex array/object manipulations, functional utilities (debounce, throttle), and type checking (`isEmpty`, `isPlainObject`, `isString`, etc.)
+
+See [@vencura/lib README](../../packages/lib/README.md) for complete utility documentation.
+
 ## Design System & Dependencies
 
 This app uses `@vencura/ui` as the centralized design system:
@@ -62,30 +77,30 @@ See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for deta
 
 ### Prerequisites
 
+- Bun >= 1.3.2
 - Node.js >= 20.0.0
-- pnpm (package manager)
 - Dynamic SDK environment ID (see Environment Variables below)
 
 ### Installation
 
 ```bash
 # From monorepo root
-pnpm install
+bun install
 
 # Or from this directory
-cd apps/mathler
-pnpm install
+cd apps/next
+bun install
 ```
 
 ### Running the Application
 
 ```bash
 # From monorepo root
-pnpm dev
+bun run dev
 
 # Or from this directory
-cd apps/mathler
-pnpm dev
+cd apps/next
+bun run dev
 ```
 
 The application will be available at `http://localhost:3002` (or the next available port).
@@ -163,19 +178,19 @@ See [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy) for the
 
 ```bash
 # Development mode
-pnpm dev
+bun run dev
 
 # Build for production
-pnpm build
+bun run build
 
 # Start production server
-pnpm start
+bun run start
 
 # Lint
-pnpm lint
+bun run lint
 
 # Type check
-pnpm typecheck
+bun run typecheck
 ```
 
 ## Testing
@@ -184,13 +199,13 @@ pnpm typecheck
 
 ```bash
 # Run unit tests
-pnpm test
+bun run test
 
 # Run tests in watch mode
-pnpm test:watch
+bun run test:watch
 
 # Run tests with coverage
-pnpm test:cov
+bun run test:cov
 ```
 
 ### E2E Tests
@@ -199,13 +214,13 @@ E2E tests use Playwright to test the application in a real browser environment.
 
 ```bash
 # Run e2e tests (builds and starts the app automatically)
-pnpm test:e2e
+bun run test:e2e
 
 # Run e2e tests with UI mode (interactive)
-pnpm test:e2e:ui
+bun run test:e2e:ui
 
 # Run e2e tests in debug mode
-pnpm test:e2e:debug
+bun run test:e2e:debug
 ```
 
 **E2E Test Coverage:**

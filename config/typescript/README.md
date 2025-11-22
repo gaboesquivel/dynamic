@@ -114,9 +114,18 @@ This package integrates `@total-typescript/ts-reset` to enhance TypeScript's bui
 Since `JSON.parse()` and `response.json()` now return `unknown`, you must validate the data before use. This aligns perfectly with the monorepo's use of Zod for validation:
 
 ```typescript
-// ✅ Good: Validate with Zod
-const data = await response.json()
-const validated = mySchema.parse(data) // Type-safe after validation
+// ✅ Good: Validate with Zod, use @vencura/lib utilities
+import { fetchWithTimeout, parseJsonWithSchema } from '@vencura/lib'
+import { z } from 'zod'
+
+const response = await fetchWithTimeout({
+  url: '/api/data',
+  options: { method: 'GET' },
+})
+const validated = parseJsonWithSchema({
+  jsonString: await response.text(),
+  schema: mySchema,
+}) // Type-safe after validation
 
 // ✅ Good: Type assertion for test utilities
 const data = (await response.json()) as Record<string, unknown>
@@ -139,7 +148,7 @@ Packages that don't override `include` will automatically get `reset.d.ts` from 
 
 ## Usage Examples
 
-### NestJS Backend
+### Elysia Backend
 
 ```json
 // apps/vencura/tsconfig.json

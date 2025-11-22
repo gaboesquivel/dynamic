@@ -5,7 +5,7 @@ alwaysApply: false
 ---
 # Environment Variable Pattern
 
-**This pattern applies consistently across all apps in the stack** - Next.js frontend apps, NestJS API (`apps/api`), and other Node.js apps.
+**This pattern applies consistently across all apps in the stack** - Next.js frontend apps, Elysia API (`apps/api`), and other Node.js apps.
 
 ## File Structure
 

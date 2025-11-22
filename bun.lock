@@ -235,6 +235,7 @@
       "name": "@vencura/core",
       "version": "0.0.1",
       "dependencies": {
+        "@vencura/lib": "workspace:*",
         "@vencura/types": "workspace:*",
         "zod": "^3.25.76",
       },

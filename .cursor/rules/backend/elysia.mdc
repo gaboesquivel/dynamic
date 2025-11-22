@@ -1,0 +1,113 @@
+---
+description: Elysia backend development standards and patterns
+globs: *.ts,**/*route.ts,**/*service.ts
+alwaysApply: false
+---
+
+# Elysia Rules
+
+## Why Elysia
+
+We chose **Elysia** as the backend framework for the Vencura API because it aligns perfectly with our architectural values: **Zod-first**, **functional**, **ESM-native**, **fast**, and **simple to reason about**. It provides the right balance between performance, developer experience, and long-term maintainability within our monorepo.
+
+### Core Reasons
+
+1. **First-class TypeScript + Zod integration**: Native Zod validation built-in (request/response validation, typed errors, schemas stay in sync with `@vencura/types`)
+2. **Fully functional**: No decorators, no classes, pure functions + plugins, natural route co-location
+3. **ESM-first, modern, fast**: Built for ESM from day one, supports Node and Bun natively, works seamlessly with Turborepo, Bun, Vitest
+4. **Clean integration**: Perfect fit for contract-driven design with `packages/types` → shared Zod schemas + contracts
+5. **Minimal surface area**: Small, predictable primitives, lightweight route definitions, intuitive middleware model
+6. **Built-in OpenAPI**: `@elysiajs/swagger` plugin auto-generates OpenAPI from Zod + route definitions
+7. **Better fit than Hono**: Native schema support and OpenAPI generation (Hono relies on plugins)
+8. **Scales elegantly**: Composable plugins, modular route grouping, unified error handling, typed request + response flows
+9. **Perfect testing story**: Works perfectly with Vitest, no mocks, no DI boilerplate, no flaky lifecycle hooks
+
+## Module Structure
+
+- Organize routes by domain/feature (e.g., `routes/wallet.ts`, `routes/hello.ts`)
+- Keep routes focused and single-purpose
+- Use route grouping for related endpoints
+
+## ESM Patterns
+
+**Never use `__dirname` or `__filename`** - use ESM pattern:
+```typescript
+import { fileURLToPath } from 'node:url'
+import { dirname } from 'node:path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+```
+
+**Never use `require()`** - use dynamic `import()`:
+```typescript
+import { pathToFileURL } from 'node:url'
+const moduleUrl = pathToFileURL(join(__dirname, '../dist/index.js')).href
+const { default } = await import(moduleUrl)
+```
+
+## API Design
+
+- **Use Zod schemas from `@vencura/types`** for request/response validation
+- **Native Zod validation**: Request validation, response validation, and error handling are built-in
+- **Document APIs with Swagger/OpenAPI**: Use `@elysiajs/swagger` plugin for auto-generated docs
+- **Contract-first**: Routes consume contracts from `@vencura/types`, ensuring type safety across API, client, and frontend
+
+## Route Pattern
+
+```typescript
+import { Elysia } from 'elysia'
+import { walletContract, WalletSchema, CreateWalletInputSchema } from '@vencura/types'
+
+export const walletRoute = new Elysia()
+  .post(
+    walletContract.path,
+    async ({ body }) => {
+      // Body is already validated by Zod schema
+      const validated = CreateWalletInputSchema.parse(body)
+      
+      // Business logic here
+      const result = await createWalletService({ ...validated })
+      
+      // Validate response matches contract
+      return WalletSchema.parse(result)
+    },
+    {
+      detail: {
+        summary: 'Create wallet',
+        description: 'Creates a new custodial wallet',
+      },
+    },
+  )
+```
+
+## Utility Libraries
+
+- **@vencura/lib**: Always use instead of custom implementations
+  - Error: `getErrorMessage` (error extraction), `formatZodError` / `formatZodErrors` (zod error formatting), `sanitizeErrorMessage` (error sanitization)
+  - Async: `fetchWithTimeout` (external APIs - replaces `fetch`), `delay` (replaces `setTimeout`)
+  - Zod: `parseJsonWithSchema` (JSON parsing with validation), `isZodError` (type guards)
+  - Env: `validateEnvOrThrow` (environment validation - see [Environment Rules](../base/environment.mdc))
+- **zod**: Use for all validation (request bodies, responses, environment variables, internal validation)
+- **lodash**: Use for array/object operations (`isEmpty`, `uniq`, `groupBy`, `merge`), type checking (`isPlainObject`, `isString`, `isArray`)
+
+## Error Handling
+
+- Use `formatZodError` / `formatZodErrors` from `@vencura/lib` for zod validation errors
+- Use `getErrorMessage` from `@vencura/lib` for consistent error message extraction
+- Return proper HTTP status codes (400 for validation errors, 500 for server errors)
+- Use Elysia's built-in error handling for consistent error responses
+
+## Environment Variables
+
+See [Environment Rules](../base/environment.mdc) for pattern. Elysia apps use `validateEnvOrThrow` from `@vencura/lib` for environment validation.
+
+## Testing
+
+See [Testing Rules](./testing.mdc) for Elysia testing patterns. Use `app.handle()` for blackbox testing of routes.
+
+## Related Rules
+
+- [Testing Rules](./testing.mdc) - Elysia testing patterns
+- [TypeScript Rules](../base/typescript.mdc) - Type safety patterns
+- [Environment Rules](../base/environment.mdc) - Environment variable patterns

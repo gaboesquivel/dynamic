@@ -113,7 +113,7 @@ const today = getDateKey() // Uses today's date
 
 #### `validateEnv`
 
-Generic environment variable validation helper using zod. Supports both Next.js pattern (return result) and NestJS pattern (throw on error).
+Generic environment variable validation helper using zod. Supports both Next.js pattern (return result) and server apps pattern (throw on error).
 
 ```typescript
 // Next.js pattern (return result)
@@ -134,8 +134,8 @@ if (result.isValid) {
 ```
 
 ```typescript
-// NestJS pattern (throw on error)
-import { validateEnv } from '@vencura/lib'
+// Server apps pattern (throw on error - Elysia, etc.)
+import { validateEnvOrThrow } from '@vencura/lib'
 import { z } from 'zod'
 
 const envSchema = z.object({
@@ -143,7 +143,7 @@ const envSchema = z.object({
   PORT: z.string().optional(),
 })
 
-const env = validateEnv({ schema: envSchema, throwOnError: true })
+const env = validateEnvOrThrow({ schema: envSchema })
 // env is typed as z.infer<typeof envSchema>
 // Throws error if validation fails
 ```
@@ -186,6 +186,22 @@ if (!result.success) {
 }
 ```
 
+#### `parseJsonWithSchema`
+
+Parses a JSON string and validates it against a Zod schema. Encapsulates the common pattern of JSON.parse + Zod validation with proper error handling.
+
+```typescript
+import { parseJsonWithSchema } from '@vencura/lib'
+import { z } from 'zod'
+
+const keyShares = parseJsonWithSchema({
+  jsonString: encryptedData,
+  schema: z.array(z.string())
+})
+// Returns validated data typed from the schema
+// Throws ZodError if validation fails, Error if JSON parsing fails
+```
+
 ## Usage
 
 This package is part of the monorepo and is automatically available to all apps. No separate installation needed.
@@ -193,7 +209,7 @@ This package is part of the monorepo and is automatically available to all apps.
 Import utilities as needed:
 
 ```typescript
-import { delay, getErrorMessage, getDateKey, getEnvHelper, validateEnv } from '@vencura/lib'
+import { delay, fetchWithTimeout, getErrorMessage, formatZodError, formatZodErrors, parseJsonWithSchema, getDateKey, getEnvHelper, validateEnv } from '@vencura/lib'
 ```
 
 ## Best Practices
@@ -206,9 +222,9 @@ import { delay, getErrorMessage, getDateKey, getEnvHelper, validateEnv } from '@
 - Define zod schema and use `z.infer<typeof schema>` for type inference
 - Let zod handle object reconstruction automatically
 
-**NestJS Apps:**
+**Server Apps (Elysia, etc.):**
 
-- Use `validateEnv` with `throwOnError: true` for NestJS pattern
+- Use `validateEnvOrThrow` for server apps pattern (fails fast on invalid config)
 - Define zod schema and use `z.infer<typeof schema>` for type inference
 - Use `formatZodErrors` from @lib for consistent error formatting
 
@@ -235,7 +251,7 @@ import { delay, getErrorMessage, getDateKey, getEnvHelper, validateEnv } from '@
 ## Related Packages
 
 - [@vencura/types](../types/README.md) - Shared API contracts and types
-- [apps/api](../../apps/api/README.md) - NestJS backend using these utilities
+- [apps/api](../../apps/api/README.md) - Elysia backend using these utilities
 - [@vencura/react](../react/README.md) - React hooks using these utilities
 
 ## Coding Standards
