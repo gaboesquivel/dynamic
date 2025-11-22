@@ -5,6 +5,7 @@ import {
   generateEquationsForTarget,
 } from './math'
 import { getDateKey } from '@vencura/lib'
+import { isArray } from 'lodash'
 
 describe('evaluateExpression', () => {
   it('should evaluate simple addition', () => {
@@ -262,7 +263,7 @@ describe('generateSolutionEquation', () => {
 describe('generateEquationsForTarget', () => {
   it('should return array of valid equations', () => {
     const equations = generateEquationsForTarget(10)
-    expect(Array.isArray(equations)).toBe(true)
+    expect(isArray(equations)).toBe(true)
     expect(equations.length).toBeGreaterThan(0)
   })
 

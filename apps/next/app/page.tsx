@@ -3,6 +3,7 @@
 import { useHello } from '@vencura/react'
 import { DynamicWidget, useDynamicContext } from '@dynamic-labs/sdk-react-core'
 import { delay, getErrorMessage } from '@vencura/lib'
+import { isString } from 'lodash'
 import { useState } from 'react'
 
 export const dynamic = 'force-dynamic'
@@ -37,9 +38,7 @@ export default function Home() {
         null
 
       if (token) {
-        await navigator.clipboard.writeText(
-          typeof token === 'string' ? token : JSON.stringify(token),
-        )
+        await navigator.clipboard.writeText(isString(token) ? token : JSON.stringify(token))
         setCopied(true)
         await delay(2000)
         setCopied(false)
