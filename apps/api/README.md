@@ -123,6 +123,7 @@ bun run test:e2e
 - **Test tokens**: Uses deployed test tokens (USDT, USDC, DNMC) on Arbitrum Sepolia
 - **Blackbox testing**: All tests hit HTTP endpoints only, ensuring end-to-end validation
 - **Dynamic SDK integration**: All transaction signing uses the real Dynamic SDK (no mocks)
+- **Balance endpoint tests**: `src/routes/balance.spec.ts` tests the `/wallets/balance` endpoint which requires `chainId`, `chainType`, and authentication. Supports both native token and ERC20 token balance queries.
 
 See [API Test Documentation](./test/README.md) for complete testing strategy details.
 
@@ -144,15 +145,42 @@ This app leverages shared utility libraries:
 
 See [@vencura/lib README](../../packages/lib/README.md) for complete utility documentation.
 
+## Database
+
+The API uses **PGLite** (embedded PostgreSQL) for local development and testing. Database schema is initialized automatically on first access.
+
+### Tables
+
+- **`key_shares`**: Stores encrypted server-side key shares for wallet signing operations. Keyed by `(user_id, address, chain_type)`.
+- **`token_metadata`**: Caches ERC20 token metadata (name, symbol, decimals) to avoid repeated on-chain queries. Keyed by `(address, chain_id)`.
+
+### Token Metadata Caching
+
+Token metadata is automatically cached in the database to improve performance:
+
+1. **First request**: Token metadata is fetched from the blockchain via viem `readContract` calls
+2. **Caching**: Metadata is stored in `token_metadata` table
+3. **Subsequent requests**: Metadata is retrieved from database cache (no on-chain calls)
+
+**Seeded tokens**: The database is automatically seeded with testnet token metadata on initialization:
+- **USDC** (`0x6a2fE04d877439a44938D38709698d524BCF5c40`) on Arbitrum Sepolia (chain ID: 421614)
+- **USDT** (`0x5f036f0B6948d4593364f975b81caBB3206aD994`) on Arbitrum Sepolia (chain ID: 421614)
+- **DNMC** (`0x4F28D4eD49E20d064C9052E7Ff4Fd12878aBA09F`) on Arbitrum Sepolia (chain ID: 421614)
+
 ## Project Structure
 
 ```
 api/
 ├── src/
 │   ├── index.ts          # Elysia app entry point
-│   ├── routes/           # Route handlers (wallet, hello, etc.)
+│   ├── routes/           # Route handlers (wallet, balance, hello, etc.)
 │   ├── lib/              # Utilities (env, errors, etc.)
-│   └── services/         # Business logic services
+│   ├── services/         # Business logic services
+│   │   ├── balance.service.ts      # Balance retrieval logic
+│   │   ├── token-metadata.service.ts  # Token metadata caching
+│   │   └── wallet.service.ts      # Wallet creation logic
+│   └── db/               # Database schema and migrations
+│       └── schema.ts     # Drizzle ORM schema definitions
 ├── test/                 # E2E tests
 └── package.json
 ```

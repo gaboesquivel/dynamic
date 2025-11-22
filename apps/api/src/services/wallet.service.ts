@@ -40,7 +40,7 @@ async function getUserWallets(
 /**
  * Get wallet by userId and chainType.
  */
-async function getWalletByChainType(
+export async function getWalletByChainType(
   userId: string,
   chainType: ChainType,
 ): Promise<{ id: string; address: string; chainType: ChainType } | null> {

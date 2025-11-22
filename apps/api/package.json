@@ -18,11 +18,13 @@
     "elysia": "^1.1.0",
     "@vencura/types": "workspace:*",
     "@vencura/lib": "workspace:*",
+    "@vencura/evm": "workspace:*",
     "@dynamic-labs-wallet/node": "^0.0.188",
     "@dynamic-labs-wallet/node-evm": "^0.0.188",
     "@dynamic-labs-wallet/node-svm": "^0.0.188",
     "drizzle-orm": "^0.36.4",
     "@electric-sql/pglite": "^0.2.0",
+    "viem": "^2.21.45",
     "zod": "^3.25.76"
   },
   "devDependencies": {
