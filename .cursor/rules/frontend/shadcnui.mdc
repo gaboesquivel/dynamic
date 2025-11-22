@@ -9,6 +9,7 @@ alwaysApply: false
 ## Core Principles
 - Install ShadcnUI components in `@vencura/ui` (packages/ui)
 - Always import from `@vencura/ui/components/*`, never directly from packages/ui
+- All Radix UI primitives must be imported from `@vencura/ui/radix`; never import any `@radix-ui/react-*` packages directly in apps or other packages
 - Update Tailwind preset/tokens in packages/ui (not per app)
 - Application-specific components go in app's `components` folder
 - Hooks and utils must be collocated with components (same directory)

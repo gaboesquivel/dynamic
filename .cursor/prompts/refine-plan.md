@@ -7,6 +7,7 @@ Refine your plan using the checklist below. Update your plan so it explicitly ad
 - Ensure all dependencies are managed with the appropriate initialization and retrieval methods required by your stack.
 - Avoid manual instantiation where the environment expects other patterns (like dependency injection).
 - Confirm setup occurs after all needed resources are available and compatible with test harnesses.
+- For frontend UI work, ensure all components and Radix primitives come from `@vencura/ui` (e.g., `@vencura/ui/components/*`, `@vencura/ui/radix`) and avoid installing or importing `@radix-ui/react-*` directly in apps.
 
 ## 2. Robust Error and Rate Limit Handling
 

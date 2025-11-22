@@ -41,6 +41,7 @@
       "name": "docs",
       "version": "0.0.0",
       "dependencies": {
+        "@vencura/ui": "workspace:*",
         "fumadocs-core": "16.0.15",
         "fumadocs-mdx": "14.0.3",
         "fumadocs-ui": "16.0.15",
