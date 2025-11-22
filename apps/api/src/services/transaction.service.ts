@@ -1,24 +1,10 @@
-import {
-  createWalletClient,
-  createPublicClient,
-  http,
-  parseEther,
-  type LocalAccount,
-  type Hex,
-  type TypedData,
-  type SignableMessage,
-  type TransactionSerializable,
-} from 'viem'
+import { createWalletClient, http, parseEther, type Hex } from 'viem'
 import { arbitrumSepolia } from 'viem/chains'
-import { getErrorMessage } from '@vencura/lib'
-import { parseJsonWithSchema, keySharesSchema, getChainMetadata } from '@vencura/lib'
-import { getDatabase } from './database'
-import { keyShares } from '../db/schema'
-import { decryptKeyShare } from './encryption'
+import { getErrorMessage, getChainMetadata } from '@vencura/lib'
 import { getEvmClient } from './wallet-client'
-import { eq, and } from 'drizzle-orm'
-import { getWalletByIdForUser } from './wallet.service'
 import { zEnv } from '../lib/env'
+import { getWalletAndKeyShares } from './helpers/wallet'
+import { createDynamicLocalAccount } from './helpers/account'
 
 /**
  * Send transaction service for EVM wallets.
@@ -37,11 +23,11 @@ export async function sendTransactionService({
   amount: number
   data?: string | null
 }): Promise<{ transactionHash: string }> {
-  // Get wallet info by ID and user
-  const walletInfo = await getWalletByIdForUser({ userId, walletId })
-  if (!walletInfo) {
-    throw new Error(`Wallet not found for user ${userId}`)
-  }
+  // Get wallet info and key shares
+  const { walletInfo, externalServerKeyShares } = await getWalletAndKeyShares({
+    userId,
+    walletId,
+  })
 
   const { address, chainType } = walletInfo
 
@@ -58,35 +44,15 @@ export async function sendTransactionService({
     throw new Error(`Could not determine chain metadata for chain ID ${chainId}`)
   }
 
-  const dynamicNetworkId = chainMetadata.dynamicNetworkId
-
-  // Get key shares from database
-  const db = await getDatabase()
-  const [keyShare] = await db
-    .select()
-    .from(keyShares)
-    .where(
-      and(
-        eq(keyShares.userId, userId),
-        eq(keyShares.address, address),
-        eq(keyShares.chainType, chainType),
-      ),
-    )
-    .limit(1)
-
-  if (!keyShare) {
-    throw new Error(`Wallet key shares not found for wallet ${address}`)
-  }
-
-  // Decrypt key shares
-  const keySharesEncrypted = await decryptKeyShare(keyShare.encryptedKeyShares)
-  const externalServerKeyShares = parseJsonWithSchema({
-    jsonString: keySharesEncrypted,
-    schema: keySharesSchema,
-  })
-
   // Get Dynamic EVM client
   const dynamicEvmClient = await getEvmClient()
+
+  // Create account with Dynamic SDK signing methods
+  const account = createDynamicLocalAccount({
+    address,
+    externalServerKeyShares,
+    dynamicEvmClient,
+  })
 
   // Get RPC URL (priority: SEPOLIA_RPC_URL > default)
   const rpcUrl =
@@ -96,49 +62,6 @@ export async function sendTransactionService({
 
   // Get viem chain (use Arbitrum Sepolia as default for now, extend later)
   const viemChain = chainMetadata.viemChain || arbitrumSepolia
-
-  // Helper to convert SignableMessage to string for Dynamic SDK
-  const messageToString = (message: SignableMessage): string => {
-    if (typeof message === 'string') return message
-    if (message instanceof Uint8Array) {
-      return new TextDecoder().decode(message)
-    }
-    if ('raw' in message) {
-      if (typeof message.raw === 'string') return message.raw
-      return new TextDecoder().decode(message.raw)
-    }
-    return String(message)
-  }
-
-  // Create a wallet account that can sign transactions
-  const account = {
-    address: address as `0x${string}`,
-    type: 'local' as const,
-    signMessage: async ({ message }: { message: SignableMessage }) => {
-      const messageStr = messageToString(message)
-      return (await dynamicEvmClient.signMessage({
-        accountAddress: address,
-        externalServerKeyShares,
-        message: messageStr,
-      })) as Hex
-    },
-    signTypedData: async <const TTypedData extends TypedData | { [key: string]: unknown }>(
-      parameters: TTypedData,
-    ) =>
-      (await dynamicEvmClient.signTypedData({
-        accountAddress: address,
-        externalServerKeyShares,
-        typedData: parameters,
-      })) as Hex,
-    signTransaction: async <transaction extends TransactionSerializable = TransactionSerializable>(
-      transaction: transaction,
-    ) =>
-      (await dynamicEvmClient.signTransaction({
-        senderAddress: address,
-        externalServerKeyShares,
-        transaction,
-      })) as Hex,
-  } as LocalAccount
 
   const walletClient = createWalletClient({
     account,
