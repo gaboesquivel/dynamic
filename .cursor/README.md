@@ -20,7 +20,7 @@ Coding standards and best practices organized by domain:
 - `base/`: Foundational rules (TypeScript, environment variables, MCP, general patterns)
 - `frontend/`: Frontend rules (React, Next.js, mobile-first, ShadcnUI, testing)
 - `web3/`: Web3 rules (Cosmos, Solana, Solidity, Viem, Wagmi, Ponder, multichain)
-- `backend/`: Backend rules (NestJS, testing)
+- `backend/`: Backend rules (Elysia, testing)
 
 **Rule guidelines:**
 
@@ -57,10 +57,10 @@ Model Context Protocol servers for specialized capabilities:
 - `github`: `GITHUB_TOKEN`
 - `vercel`: `VERCEL_API_TOKEN`
 
-**Package Manager:** All MCP servers use `pnpm dlx` for command execution.
+**Package Manager:** All MCP servers use `bunx` for command execution, consistent with the project's package manager choice.
 
 ## Documentation
 
-- [MCP Servers Guide](../../docs/mcp-servers.md)
+- [MCP Servers Guide](/docs/mcp-servers) - See [MCP Servers Usage Guide](../../apps/docs/content/docs/mcp-servers/index.mdx) for detailed documentation
 - [Cursor Rules](https://cursor.com/docs/context/rules)
 - [MCP Documentation](https://cursor.com/docs/context/model-context-protocol)

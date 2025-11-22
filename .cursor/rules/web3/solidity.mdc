@@ -13,7 +13,7 @@ alwaysApply: false
 
 ## Foundry Dependencies
 - **Never manually edit files in `lib/` directory**: Contains third-party dependencies (e.g., OpenZeppelin Contracts) managed by Foundry
-- **Update dependencies via Foundry**: Use `forge update` or `pnpm run deps:update`
+- **Update dependencies via Foundry**: Use `forge update` or `bun run deps:update`
 - **Formatting protection**: `lib/` directory excluded from formatting via `foundry.toml` and `.prettierignore`
 - **Dependency management**: All dependencies installed/updated through Foundry (`forge install`, `forge update`)
 

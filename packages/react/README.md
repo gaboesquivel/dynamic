@@ -9,6 +9,7 @@ React hooks for the Vencura API using TanStack Query. Built on top of `@vencura/
 ## Features
 
 - **TanStack Query**: Built on React Query for caching, refetching, and state management
+- **Query Key Factory**: Uses `@lukemorales/query-key-factory` for centralized, type-safe query keys
 - **Type-safe**: Full TypeScript support with types inferred from `@vencura/types` contracts
 - **Contract-first**: Consumes contracts from `@vencura/types` via `@vencura/core`
 - **Provider pattern**: `VencuraProvider` wraps your app with QueryClient and API client
@@ -141,7 +142,22 @@ function CreateWalletButton() {
 
 - **Built on @vencura/core**: Uses the typed HTTP client from `@vencura/core`
 - **TanStack Query**: Leverages React Query for caching, background refetching, and state management
+- **Query Key Factory**: Uses `@lukemorales/query-key-factory` for centralized query key management (see `src/queries/`)
 - **Contract-first**: All hooks are typed based on contracts from `@vencura/types`
+
+### Query Key Factory Pattern
+
+All hooks use query-key factories from `src/queries/` for centralized, type-safe query keys:
+
+```typescript
+// Query keys are defined in src/queries/wallets.ts
+import { wallets } from '@vencura/react/queries'
+
+// Hooks use these factories internally
+const { data } = useWallets() // Uses wallets.all query key
+```
+
+This ensures consistent query key structure and enables easy invalidation across the app.
 
 ## Related Packages
 
@@ -166,10 +182,11 @@ bun run test:cov
 
 This package follows the monorepo's coding standards:
 
+- **Query Key Factory**: Always use `@lukemorales/query-key-factory` for query keys (see [React Hooks Rules](../../.cursor/rules/frontend/react-hooks.mdc))
 - **RORO Pattern**: Multi-parameter functions use Receive Object, Return Object pattern
 - **Type Inference**: Types inferred from Zod schemas and contracts
 - **Functional Code**: Prefer functional and declarative programming patterns
-- **React Hooks**: Follow React hooks patterns (see [React Hooks Rules](../../.cursor/rules/frontend/react-hooks.mdc))
+- **React Hooks**: Follow React hooks patterns - use TanStack Query's built-in state (`isLoading`, `isError`), never manually manage loading/error states
 
 See [TypeScript Rules](../../.cursor/rules/base/typescript.mdc) and [React Hooks Rules](../../.cursor/rules/frontend/react-hooks.mdc) for detailed guidelines.
 

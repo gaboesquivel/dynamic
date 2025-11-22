@@ -18,6 +18,7 @@
     "test:cov": "vitest run --coverage"
   },
   "dependencies": {
+    "@lukemorales/query-key-factory": "^1.1.0",
     "@vencura/core": "workspace:*",
     "@tanstack/react-query": "^5.0.0"
   },

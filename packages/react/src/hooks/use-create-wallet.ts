@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query'
 import type { Wallet, CreateWalletInput } from '@vencura/types'
 import { useVencuraClient } from './use-vencura-client'
+import { wallets } from '../queries/wallets'
 
 export const useCreateWallet = (): UseMutationResult<Wallet, Error, CreateWalletInput> => {
   const client = useVencuraClient()
@@ -10,7 +11,7 @@ export const useCreateWallet = (): UseMutationResult<Wallet, Error, CreateWallet
     mutationFn: (input: CreateWalletInput) => client.createWallet(input),
     onSuccess: () => {
       // Invalidate wallets query to refetch list
-      queryClient.invalidateQueries({ queryKey: ['wallets'] })
+      queryClient.invalidateQueries({ queryKey: wallets._def })
     },
   })
 }

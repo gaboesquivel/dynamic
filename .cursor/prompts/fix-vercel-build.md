@@ -103,7 +103,7 @@ Refine your plan using the checklist below. Update your plan so it explicitly ad
 
 - List exact files and code regions to update
 - Explain briefly why each fix is needed and how to verify it
-- Include verification steps (e.g., "Run `pnpm build` locally to verify the fix")
+- Include verification steps (e.g., "Run `bun run build` locally to verify the fix")
 
 ## Step 5: Present the Plan
 

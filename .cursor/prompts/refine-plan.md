@@ -1,6 +1,6 @@
 Refine your plan using the checklist below. Update your plan so it explicitly addresses each area. Apply these requirements to maximize quality, reusability, and clarity:
 
-**Note**: This project uses **Biome + ESLint** for linting/formatting (Biome for formatting, ESLint for rule enforcement only) and **Bun** for package management. See [ADR 006: Linters](/docs/adrs/006-linters) and [ADR 005: Package Manager](/docs/adrs/005-package-manager) for details.
+**Note**: This project uses **Biome + ESLint** for linting/formatting (Biome for formatting, ESLint for rule enforcement only) and **Bun** for package management. See [ADR 006: Linters](../../apps/docs/content/docs/adrs/006-linters/index.mdx) and [ADR 005: Package Manager](../../apps/docs/content/docs/adrs/005-package-manager/index.mdx) for details.
 
 ## 1. Dependency and Resource Management
 
@@ -48,7 +48,7 @@ Refine your plan using the checklist below. Update your plan so it explicitly ad
 
 ## 9. Tooling and Commands
 
-- Use **Bun** for all package management commands (`bun install`, `bun add`, etc.) - see [ADR 005: Package Manager](/docs/adrs/005-package-manager)
-- Use **Biome** for formatting (`bun run format`) and **ESLint** for linting (`bun run lint`) - see [ADR 006: Linters](/docs/adrs/006-linters)
+- Use **Bun** for all package management commands (`bun install`, `bun add`, etc.) - see [ADR 005: Package Manager](../../apps/docs/content/docs/adrs/005-package-manager/index.mdx)
+- Use **Biome** for formatting (`bun run format`) and **ESLint** for linting (`bun run lint`) - see [ADR 006: Linters](../../apps/docs/content/docs/adrs/006-linters/index.mdx)
 - Run quality checks: `bun run qa` (installs, formats, lints, builds, tests)
 - All commands should use `bun` or `bunx` (not npm, pnpm, or yarn)
