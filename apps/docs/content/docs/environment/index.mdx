@@ -82,7 +82,7 @@ We use a consistent pattern for RPC URLs:
 
 ## Environment Validation
 
-All apps enforce **Zod-validated** environment configuration objects using Zod schemas and `@vencura/lib` utilities. This ensures:
+All apps enforce **Zod-validated** environment configuration objects using Zod schemas and `@vencura/lib` utilities. See [ADR 014: Environment Strategy](/docs/adrs/014-environment-strategy) for the complete architecture decision. This ensures:
 
 - **Type safety**: Full TypeScript inference from Zod schemas (`z.infer<typeof envSchema>`)
 - **Fail fast**: Invalid config causes immediate failure at module load with clear error messages

@@ -63,6 +63,19 @@ Fast, all-in-one runtime and package manager.
 
 We initially used **pnpm** as our package manager, but have since migrated to **Bun**.
 
+### TLDR: Comparison Table
+
+| Feature | Bun ✅ (Current) | pnpm (Original) |
+|---------|------------------|-----------------|
+| **Installation speed** | ✅ Very fast | ⚠️ Fast |
+| **Workspace support** | ✅ Mature (2024) | ✅ Mature |
+| **Monorepo reliability** | ✅ Works seamlessly | ✅ Battle-tested |
+| **Runtime** | ✅ All-in-one | ❌ Separate |
+| **TypeScript support** | ✅ Excellent | ✅ Good |
+| **Ecosystem testing** | ✅ Improved | ✅ Extensive |
+| **Lockfile format** | ✅ Binary (`bun.lockb`) | ✅ YAML (`pnpm-lock.yaml`) |
+| **CI/CD integration** | ✅ Bun setup action | ✅ pnpm setup action |
+
 **Original decision (pnpm) reasons:**
 
 - Correctly hoists and resolves dependencies across workspace packages (handles complex scenarios like `@tailwindcss/postcss`)

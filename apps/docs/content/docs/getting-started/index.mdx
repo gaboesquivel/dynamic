@@ -27,6 +27,46 @@ bun run build
 
 ## Quick Start
 
+<Diagram caption="Getting Started Flow">
+  <div className="flex flex-col gap-3 p-4 text-left">
+    <div className="flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+        1
+      </div>
+      <div className="flex-1 rounded-lg border border-border bg-background p-3">
+        <strong>Clone & Install:</strong> <code className="text-sm">bun install</code>
+      </div>
+    </div>
+    <div className="ml-4 h-4 w-0.5 bg-border" />
+    <div className="flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+        2
+      </div>
+      <div className="flex-1 rounded-lg border border-border bg-background p-3">
+        <strong>Configure Environment:</strong> Copy <code className="text-sm">.env-example</code> files
+      </div>
+    </div>
+    <div className="ml-4 h-4 w-0.5 bg-border" />
+    <div className="flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+        3
+      </div>
+      <div className="flex-1 rounded-lg border border-border bg-background p-3">
+        <strong>Start Development:</strong> <code className="text-sm">bun run dev:local</code>
+      </div>
+    </div>
+    <div className="ml-4 h-4 w-0.5 bg-border" />
+    <div className="flex items-center gap-2">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground">
+        4
+      </div>
+      <div className="flex-1 rounded-lg border border-border bg-background p-3">
+        <strong>Run QA:</strong> <code className="text-sm">bun run qa</code> (format, lint, build, test)
+      </div>
+    </div>
+  </div>
+</Diagram>
+
 1. Copy example env files for each app:
    ```bash
    cp apps/api/.env-example apps/api/.env
@@ -37,14 +77,50 @@ bun run build
 
 ## Environment Setup
 
-This monorepo uses environment-specific configuration files. See [Environment Strategy](/docs/environment) for detailed configuration.
+This monorepo uses environment-specific configuration files. See [Environment Strategy](/docs/environment) for detailed configuration and validation patterns.
 
-**Environment Files:**
+**Quick Setup:**
 
-- **`.env`** - Sensitive data (API keys, tokens, secrets) - **NEVER COMMIT**
-- **`.env.development`** - Development configuration (committed, non-sensitive) - Local Anvil blockchain
-- **`.env.staging`** - Staging configuration (committed, non-sensitive) - Testnets
-- **`.env.production`** - Production configuration (committed, non-sensitive) - Mainnet
+1. Copy example env files for each app:
+   ```bash
+   cp apps/api/.env-example apps/api/.env
+   cp apps/web/.env-example apps/web/.env
+   ```
+2. Fill in your values (Dynamic environment ID, API token, etc.) in `.env` files
+3. See [Environment Strategy](/docs/environment) for complete environment variable documentation
+
+## Development Commands
+
+<ComparisonTable
+  headers={['Command', 'Description']}
+  rows={[
+    {
+      label: 'bun run dev:local',
+      values: ['Run all apps with local Anvil blockchain'],
+    },
+    {
+      label: 'bun run dev:staging',
+      values: ['Run all apps with testnet networks'],
+    },
+    {
+      label: 'bun run build',
+      values: ['Build all apps for production'],
+    },
+    {
+      label: 'bun run format',
+      values: ['Format code using Biome'],
+    },
+    {
+      label: 'bun run lint',
+      values: ['Lint code using ESLint'],
+    },
+    {
+      label: 'bun run qa',
+      values: ['Run full QA pipeline (install, format, lint, build, test)'],
+    },
+  ]}
+  caption="Common development commands and their purposes"
+/>
 
 ## Testing
 
@@ -53,11 +129,12 @@ This monorepo uses environment-specific configuration files. See [Environment St
 cd apps/api && bun run test:e2e
 ```
 
-The API uses a **blackbox testing strategy** with local chains for automation.
+The API uses a **blackbox testing strategy** with testnet networks. See [Testing Patterns](/docs/tooling/testing-patterns) for the complete testing strategy.
 
 ## Next Steps
 
-- Read the [Architecture](/docs/architecture) guide
-- Set up your [Environment](/docs/environment)
-- Learn about [Deployment](/docs/deployment)
+- Read the [Architecture](/docs/architecture) guide for monorepo structure and design principles
+- Configure your [Environment](/docs/environment) with proper validation patterns
+- Learn about [Deployment](/docs/deployment) and branching strategy
+- Explore [Tooling](/docs/tooling) for development tools and testing patterns
 

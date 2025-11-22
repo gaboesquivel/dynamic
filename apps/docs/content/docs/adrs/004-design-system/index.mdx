@@ -99,6 +99,20 @@ Building everything from scratch.
 
 We will use **Shadcn/ui with Tailwind CSS** as our design system foundation.
 
+### TLDR: Comparison Table
+
+| Feature | Shadcn/ui + Tailwind ✅ | Material-UI/Mantine | Radix UI + Custom | Custom Library |
+|---------|-------------------------|---------------------|-------------------|----------------|
+| **v0 integration** | ✅ Seamless | ❌ Limited | ❌ Limited | ❌ None |
+| **Component ownership** | ✅ Full (copy-paste) | ❌ External dependency | ✅ Full | ✅ Full |
+| **Customization** | ✅ Easy | ⚠️ Limited | ✅ Full control | ✅ Full control |
+| **Bundle size** | ✅ Small (tree-shakeable) | ⚠️ Larger | ✅ Small | ✅ Small |
+| **Rapid prototyping** | ✅ Excellent | ✅ Good | ⚠️ Slower | ❌ Slow |
+| **Accessibility** | ✅ Radix primitives | ✅ Good | ✅ Radix primitives | ⚠️ Manual |
+| **Vendor lock-in** | ✅ None | ❌ Yes | ✅ None | ✅ None |
+| **Maintenance** | ⚠️ Manual updates | ✅ Library updates | ⚠️ All custom | ⚠️ All custom |
+| **Time to market** | ✅ Fast | ✅ Fast | ⚠️ Slower | ❌ Slow |
+
 **Main reasons:**
 
 - Leveraging v0 for prototyping was a key factor in picking Next.js; v0 generates Next.js + Shadcn/ui components

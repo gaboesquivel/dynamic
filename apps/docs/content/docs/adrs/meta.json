@@ -1,4 +1,5 @@
 {
+  "index": "Architecture Decisions",
   "001-monorepo-vs-standalone": "Monorepo vs Standalone",
   "002-vencura-api-framework": "Vencura API Framework",
   "003-frontend-apps-framework": "Frontend Apps Framework",

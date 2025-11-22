@@ -1,0 +1,61 @@
+---
+title: "@vencura/lib"
+description: "Shared utility library for common operations across the monorepo."
+---
+
+`@vencura/lib` provides small, focused utilities that compose well, following Linux philosophy principles.
+
+## Overview
+
+This package provides utilities for:
+
+- **Error handling**: `getErrorMessage`, `formatZodError`, `formatZodErrors`, `sanitizeErrorMessage`, `isZodError`
+- **Async utilities**: `delay` (replaces `setTimeout`), `fetchWithTimeout` (replaces `fetch` for external APIs)
+- **Environment validation**: `getEnvHelper` (Next.js), `validateEnvOrThrow` (server apps)
+- **Date utilities**: `getDateKey` for consistent date formatting
+- **Zod utilities**: `parseJsonWithSchema` for JSON parsing with validation
+
+## Key Principles
+
+1. **Small, Focused Utilities**: Each utility does one thing well
+2. **Composable**: Utilities can be combined to solve complex problems
+3. **No Dependencies**: Prefer native JavaScript/TypeScript when possible
+4. **Consistent Patterns**: Multi-parameter utilities use RORO pattern
+5. **Type-Safe**: Full TypeScript support with proper types
+
+## Usage Examples
+
+```typescript
+import { delay, fetchWithTimeout, getErrorMessage, formatZodError, getEnvHelper } from '@vencura/lib'
+
+// Async utilities
+await delay(1000) // Wait 1 second
+
+const response = await fetchWithTimeout({
+  url: 'https://api.example.com/data',
+  options: { headers: { Authorization: 'Bearer token' } },
+  timeoutMs: 5000,
+})
+
+// Error handling
+const message = getErrorMessage(new Error('Something went wrong'))
+
+// Environment validation (Next.js)
+const env = getEnvHelper({ schema: envSchema })
+```
+
+## Related Documentation
+
+See the [@vencura/lib README](../../../../packages/lib/README.md) for complete documentation including:
+
+- All available utilities
+- Usage patterns and best practices
+- When to use @vencura/lib vs other libraries
+- Coding standards
+
+## Related Packages
+
+- [@vencura/types](/docs/packages/types) - Shared API contracts and types
+- [Vencura API](/docs/apps/api) - Elysia backend using these utilities
+- [Environment Strategy](/docs/environment) - Environment variable patterns
+

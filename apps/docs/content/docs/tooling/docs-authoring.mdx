@@ -1,0 +1,261 @@
+---
+title: "Documentation Authoring Guide"
+description: "Guide for writing and enhancing documentation with rich media components including diagrams, charts, comparison tables, and videos."
+---
+
+This guide explains how to use rich media components in documentation to make content more engaging and easier to understand.
+
+## Rich Media Components
+
+The docs site includes several reusable components for adding visual elements to your documentation:
+
+- **Diagram** - Visual diagrams and flowcharts
+- **ComparisonTable** - Comparison tables with consistent styling
+- **DocsChart** - Data visualization charts (bar, line, pie)
+- **DocsVideo** - Embedded videos from YouTube, Vimeo, or local files
+
+## Diagram Component
+
+Use the `Diagram` component to add visual diagrams, flowcharts, or illustrations to your documentation.
+
+### Basic Usage
+
+```mdx
+<Diagram caption="Monorepo Structure">
+  <div className="flex flex-col gap-4">
+    <div>Applications Layer</div>
+    <div>Packages Layer</div>
+  </div>
+</Diagram>
+```
+
+### With Image
+
+```mdx
+<Diagram 
+  src="/images/architecture.png" 
+  alt="System architecture diagram"
+  caption="High-level system architecture"
+  width={800}
+  height={600}
+/>
+```
+
+### Props
+
+- `src` (optional) - Path to image file
+- `alt` (required) - Alt text for accessibility
+- `caption` (optional) - Caption displayed below the diagram
+- `width` (optional) - Image width in pixels (default: 800)
+- `height` (optional) - Image height in pixels (default: 600)
+- `children` (optional) - React content to render instead of image
+
+## ComparisonTable Component
+
+Use `ComparisonTable` to create structured comparison tables with consistent styling.
+
+### Basic Usage
+
+```mdx
+<ComparisonTable
+  headers={['Feature', 'Option A', 'Option B']}
+  rows={[
+    {
+      label: 'Performance',
+      values: ['Fast', 'Very Fast'],
+    },
+    {
+      label: 'Complexity',
+      values: ['Simple', 'Moderate'],
+    },
+  ]}
+  caption="Feature comparison between options"
+/>
+```
+
+### Props
+
+- `headers` (required) - Array of header strings
+- `rows` (required) - Array of row objects with `label` and `values` array
+- `caption` (optional) - Table caption
+
+### Row Values
+
+Row values can be strings or React components:
+
+```mdx
+<ComparisonTable
+  headers={['Package', 'Purpose']}
+  rows={[
+    {
+      label: '@vencura/core',
+      values: ['TypeScript SDK for Vencura API'],
+    },
+    {
+      label: '@vencura/react',
+      values: [<strong>React hooks</strong>],
+    },
+  ]}
+/>
+```
+
+## DocsChart Component
+
+Use `DocsChart` to visualize data with bar, line, or pie charts.
+
+### Bar Chart
+
+```mdx
+<DocsChart
+  type="bar"
+  title="Package Usage"
+  data={[
+    { label: 'Core', value: 10 },
+    { label: 'React', value: 8 },
+    { label: 'UI', value: 7 },
+  ]}
+  caption="Package usage across applications"
+/>
+```
+
+### Line Chart
+
+```mdx
+<DocsChart
+  type="line"
+  title="Performance Over Time"
+  data={[
+    { label: 'Q1', value: 85 },
+    { label: 'Q2', value: 90 },
+    { label: 'Q3', value: 92 },
+  ]}
+/>
+```
+
+### Pie Chart
+
+```mdx
+<DocsChart
+  type="pie"
+  title="Tech Stack Distribution"
+  data={[
+    { label: 'Frontend', value: 40 },
+    { label: 'Backend', value: 35 },
+    { label: 'Infrastructure', value: 25 },
+  ]}
+/>
+```
+
+### Props
+
+- `type` (optional) - Chart type: `'bar'`, `'line'`, or `'pie'` (default: `'bar'`)
+- `data` (required) - Array of data points with `label` and `value`
+- `title` (optional) - Chart title
+- `caption` (optional) - Chart caption
+- `width` (optional) - Chart width in pixels (default: 800)
+- `height` (optional) - Chart height in pixels (default: 400)
+
+### Data Points
+
+Each data point can include:
+- `label` (required) - Label for the data point
+- `value` (required) - Numeric value
+- `color` (optional) - Custom color (CSS color value)
+
+## DocsVideo Component
+
+Use `DocsVideo` to embed videos from YouTube, Vimeo, or local video files.
+
+### YouTube Video
+
+```mdx
+<DocsVideo
+  youtubeId="dQw4w9WgXcQ"
+  title="Getting Started Tutorial"
+  caption="Watch this video to learn the basics"
+/>
+```
+
+### Vimeo Video
+
+```mdx
+<DocsVideo
+  vimeoId="123456789"
+  title="Architecture Overview"
+  caption="Learn about our system architecture"
+/>
+```
+
+### Local Video File
+
+```mdx
+<DocsVideo
+  src="/videos/tutorial.mp4"
+  title="Local Tutorial Video"
+  caption="Step-by-step tutorial"
+/>
+```
+
+### Props
+
+- `youtubeId` (optional) - YouTube video ID
+- `vimeoId` (optional) - Vimeo video ID
+- `src` (optional) - Path to local video file
+- `title` (required) - Video title for accessibility
+- `caption` (optional) - Caption displayed below video
+- `aspectRatio` (optional) - Aspect ratio: `'16:9'`, `'4:3'`, or `'1:1'` (default: `'16:9'`)
+- `width` (optional) - Video width in pixels (default: 800)
+- `height` (optional) - Video height in pixels
+
+**Note**: Provide exactly one of `youtubeId`, `vimeoId`, or `src`.
+
+## Best Practices
+
+### When to Use Each Component
+
+- **Diagram**: Use for architecture diagrams, flowcharts, process flows, system designs
+- **ComparisonTable**: Use for comparing features, options, packages, or configurations
+- **DocsChart**: Use for visualizing metrics, usage statistics, or performance data
+- **DocsVideo**: Use for tutorials, walkthroughs, or demonstrations
+
+### Accessibility
+
+- Always provide `alt` text for diagrams
+- Always provide `title` for videos
+- Use descriptive `caption` text for all components
+- Ensure color contrast meets WCAG guidelines for charts
+
+### Mobile Responsiveness
+
+All components are mobile-responsive by default:
+- Tables scroll horizontally on small screens
+- Charts scale appropriately
+- Videos maintain aspect ratio
+- Diagrams adapt to container width
+
+### Performance
+
+- Use optimized images for diagrams (WebP format recommended)
+- Prefer YouTube/Vimeo embeds over local video files when possible
+- Keep chart data arrays reasonable in size (< 20 data points recommended)
+
+## Examples
+
+See these pages for examples of rich media usage:
+
+- [Getting Started](/docs/getting-started) - Flow diagrams and command comparison tables
+- [Architecture](/docs/architecture) - Package dependency diagrams and comparison tables
+- [Deployment](/docs/deployment) - Branch structure diagrams and environment mapping tables
+- [Tooling](/docs/tooling) - Tech stack charts
+
+## Component Location
+
+Rich media components are located in `apps/docs/components/`:
+
+- `diagram.tsx` - Diagram component
+- `comparison-table.tsx` - ComparisonTable component
+- `docs-chart.tsx` - DocsChart component
+- `docs-video.tsx` - DocsVideo component
+
+Components are automatically available in all MDX files via the MDX components configuration.
+

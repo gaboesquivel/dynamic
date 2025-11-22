@@ -177,6 +177,20 @@ TypeScript ORM with Data Mapper, Unit of Work, and Identity Map patterns.
 
 We will use **Drizzle ORM** for database operations in the Vencura API.
 
+### TLDR: Comparison Table
+
+| Feature | Drizzle ✅ | Prisma | TypeORM | Kysely | Sequelize | MikroORM |
+|---------|------------|--------|---------|--------|-----------|----------|
+| **TypeScript inference** | ✅ Excellent | ✅ Generated | ⚠️ Good | ✅ Excellent | ⚠️ Limited | ✅ Good |
+| **Bundle size** | ✅ Small | ⚠️ Medium | ⚠️ Large | ✅ Small | ⚠️ Large | ⚠️ Medium |
+| **Code generation** | ✅ None needed | ❌ Required | ✅ None | ✅ None | ✅ None | ✅ None |
+| **Runtime overhead** | ✅ Minimal | ⚠️ Medium | ⚠️ High | ✅ Minimal | ⚠️ High | ⚠️ Medium |
+| **PGLite support** | ✅ Seamless | ⚠️ Limited | ⚠️ Custom adapter | ⚠️ Custom work | ❌ Limited | ⚠️ Limited |
+| **SQL-like syntax** | ✅ Intuitive | ⚠️ Abstraction | ⚠️ Decorators | ✅ Very close | ⚠️ Verbose | ⚠️ Complex |
+| **Migration tooling** | ✅ Built-in | ✅ Comprehensive | ⚠️ Cumbersome | ❌ None | ✅ Good | ✅ Good |
+| **Ecosystem** | ⚠️ Growing | ✅ Large | ✅ Large | ⚠️ Smaller | ✅ Large | ⚠️ Smaller |
+| **Elysia integration** | ✅ Perfect fit | ⚠️ Good | ⚠️ Less suitable | ✅ Good | ⚠️ Less suitable | ⚠️ Less suitable |
+
 **Main reasons:**
 
 - Excellent TypeScript support with full type inference aligns with our type-safe codebase

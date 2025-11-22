@@ -7,11 +7,10 @@ This document outlines the comprehensive deployment and branching strategy for a
 
 ## Overview
 
-The Vencura monorepo uses **GitHub Flow** with `develop` as the primary development branch. All systems (API, Web, Mathler) follow a consistent deployment strategy with multiple deployment target options:
+The Vencura monorepo uses **GitHub Flow** with `develop` as the primary development branch. All systems (API, Web, Mathler) follow a consistent deployment strategy:
 
-- **Primary**: Vercel (no-lock approach) - all systems deployed to Vercel
-- **Alternative**: Google Cloud with Pulumi - full infrastructure-as-code option
-- **Hybrid**: Split architecture - thin stateless API layer on Vercel Edge, critical systems (auth, key custody) on Google Cloud
+- **Current Deployment**: All systems are deployed to **Vercel** (no-lock approach)
+- **Future Option**: Google Cloud with Pulumi - documented but not implemented (see [Google Cloud](/docs/google-cloud) for details)
 
 ## Branching Strategy: GitHub Flow
 
@@ -19,13 +18,29 @@ The Vencura monorepo uses **GitHub Flow** with `develop` as the primary developm
 
 We use **GitHub Flow** with `develop` as the main development branch:
 
-```
-main (production)
-  ↑
-develop (staging/development)
-  ↑
-feature/*, fix/*, chore/* (feature branches)
-```
+<Diagram caption="GitHub Flow Branch Structure">
+  <div className="flex flex-col gap-3 p-4 text-left">
+    <div className="rounded-lg border-2 border-primary bg-primary/10 p-4 text-center font-semibold">
+      main (production)
+    </div>
+    <div className="text-center text-muted-foreground">↑ merge</div>
+    <div className="rounded-lg border-2 border-primary bg-primary/10 p-4 text-center font-semibold">
+      develop (staging/development)
+    </div>
+    <div className="text-center text-muted-foreground">↑ merge</div>
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+      <div className="rounded-lg border border-border bg-background p-3 text-center text-sm">
+        feature/*
+      </div>
+      <div className="rounded-lg border border-border bg-background p-3 text-center text-sm">
+        fix/*
+      </div>
+      <div className="rounded-lg border border-border bg-background p-3 text-center text-sm">
+        chore/*
+      </div>
+    </div>
+  </div>
+</Diagram>
 
 ### Main Branches
 
@@ -84,7 +99,7 @@ feature/*, fix/*, chore/* (feature branches)
 
 ## Deployment Strategy
 
-### Current Approach: Vercel No-Lock
+### Current Deployment: Vercel
 
 **All systems are currently deployed to Vercel** using a no-lock approach:
 
@@ -103,11 +118,36 @@ See [Vercel Portability Strategy](/docs/vercel-portability) for detailed portabi
 
 **All applications** (`apps/api`, `apps/web`, `apps/mathler`) are configured for Vercel deployment:
 
-| Application                  | Production URL               | Staging URL                              | Branch Mapping                             |
-| ---------------------------- | ---------------------------- | ---------------------------------------- | ------------------------------------------ |
-| **API** (`apps/api`)         | `vencura-api.vercel.app`     | `vencura-api-git-develop.vercel.app`     | `main` → Production<br />`develop` → Preview |
-| **Web** (`apps/web`)         | `vencura-web.vercel.app`     | `vencura-web-git-develop.vercel.app`     | `main` → Production<br />`develop` → Preview |
-| **Mathler** (`apps/mathler`) | `vencura-mathler.vercel.app` | `vencura-mathler-git-develop.vercel.app` | `main` → Production<br />`develop` → Preview |
+<ComparisonTable
+  headers={['Application', 'Production URL', 'Staging URL', 'Branch Mapping']}
+  rows={[
+    {
+      label: 'API (apps/api)',
+      values: [
+        'vencura-api.vercel.app',
+        'vencura-api-git-develop.vercel.app',
+        'main → Production, develop → Preview',
+      ],
+    },
+    {
+      label: 'Web (apps/web)',
+      values: [
+        'vencura-web.vercel.app',
+        'vencura-web-git-develop.vercel.app',
+        'main → Production, develop → Preview',
+      ],
+    },
+    {
+      label: 'Mathler (apps/mathler)',
+      values: [
+        'vencura-mathler.vercel.app',
+        'vencura-mathler-git-develop.vercel.app',
+        'main → Production, develop → Preview',
+      ],
+    },
+  ]}
+  caption="Vercel deployment URLs and branch mappings for each application"
+/>
 
 **Configuration**: Each app has a `vercel.json` file that configures:
 
@@ -118,51 +158,66 @@ See [Vercel Portability Strategy](/docs/vercel-portability) for detailed portabi
 
 #### Google Cloud Deployments (Pulumi)
 
-**Alternative deployment option** using Pulumi infrastructure-as-code:
+**Documented but not implemented** - Alternative deployment option using Pulumi infrastructure-as-code:
 
 - **Location**: `infra/vencura/` directory
 - **Stack**: Pulumi TypeScript infrastructure
 - **Target**: Google Cloud Run with Cloud SQL Postgres
 - **Environments**: `dev` and `prod` stacks
+- **Status**: Documented as future option, not currently implemented
 
-**When to Use**:
+**When to Consider** (future production security requirements):
 
 - Production workloads requiring strict data governance
 - Enhanced security requirements (HSM-backed keys, private networking)
 - Regulatory/compliance requirements
 - Need for MPC/threshold signing workflows
 
-See [Google Cloud Deployment](/docs/google-cloud) for detailed setup.
+See [Google Cloud Deployment](/docs/google-cloud) for detailed documentation.
 
 ### Hybrid Deployment Option
 
-**Future option** for production security requirements - split architecture:
+**Documented but not implemented** - Future option for production security requirements - split architecture:
 
-#### Architecture Split
+**Current Status**: Everything stays on Vercel for demo/development phase. This split architecture is documented as a potential future option ONLY if production security requirements demand it.
 
-**Vercel Edge (Stateless API Layer)**:
-
-- Next.js frontend applications (`apps/web`, `apps/mathler`)
-- Thin Elysia-based adapters for user authentication facades, dashboards, webhooks, notifications, public API facades
-- Leverages Vercel's edge network, CDN, and excellent DX
-
-**Google Cloud (Critical Systems)**:
-
-- Elysia-based "signer" service on Cloud Run in private VPC
-- Key custody and signing operations
-- Keys in Cloud KMS/HSM (optionally MPC/threshold signing)
-- Direct VPC egress control, firewall rules, VPC Flow Logs
-- Cloud Armor WAF for public endpoints
-
-**Current Status**: Documented as future option, **not implemented**. Everything stays on Vercel for demo/development phase.
+See [Google Cloud Deployment](/docs/google-cloud) for details on the potential split architecture with UI/API on Vercel and key-custody on Google Cloud.
 
 ## Environment Mapping
 
-| Branch           | Environment | Blockchain Network                      | Deployment Target | Vercel Environment |
-| ---------------- | ----------- | --------------------------------------- | ----------------- | ------------------ |
-| `main`           | Production  | Mainnet (real chains)                   | Vercel Production | Production         |
-| `develop`        | Staging     | Testnets (Sepolia, Arbitrum Sepolia)    | Vercel Preview    | Preview            |
-| Feature branches | Development | Local Anvil (dev) or Testnets (preview) | Vercel Preview    | Preview            |
+<ComparisonTable
+  headers={['Branch', 'Environment', 'Blockchain Network', 'Deployment Target', 'Vercel Environment']}
+  rows={[
+    {
+      label: 'main',
+      values: [
+        'Production',
+        'Mainnet (real chains)',
+        'Vercel Production',
+        'Production',
+      ],
+    },
+    {
+      label: 'develop',
+      values: [
+        'Staging',
+        'Testnets (Sepolia, Arbitrum Sepolia)',
+        'Vercel Preview',
+        'Preview',
+      ],
+    },
+    {
+      label: 'Feature branches',
+      values: [
+        'Development',
+        'Local Anvil (dev) or Testnets (preview)',
+        'Vercel Preview',
+        'Preview',
+      ],
+    },
+  ]}
+  caption="Branch to environment mapping for deployment and blockchain networks"
+/>
 
 ## Best Practices
 

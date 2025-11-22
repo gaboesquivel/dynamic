@@ -168,17 +168,19 @@ The API will be available at `http://localhost:3077` (or configured port).
 
 ## Testing
 
-The API uses a **blackbox Vitest testing strategy** with testnet networks:
+The API uses a **blackbox Vitest testing strategy** with testnet networks. See [Testing Patterns](/docs/tooling/testing-patterns) for the complete monorepo-wide testing strategy.
+
+**Key aspects:**
 
 - **Testnet-based**: Tests run against Arbitrum Sepolia testnet (Dynamic SDK doesn't support localhost chains)
-- **Automated gas funding**: Wallets are auto-funded with minimum ETH using `ARB_TESTNET_GAS_FAUCET_KEY`
+- **Automated gas funding**: Wallets are auto-funded with minimum ETH using `ARB_TESTNET_GAS_FAUCET_KEY` (see [ADR 013](/docs/adrs/013-vencura-api-test-gas-faucet))
 - **Test tokens**: Uses deployed test tokens (USDT, USDC, DNMC) on Arbitrum Sepolia
 - **Blackbox testing**: All tests hit HTTP endpoints only, ensuring end-to-end validation
 - **Dynamic SDK integration**: All transaction signing uses the real Dynamic SDK (no mocks)
 - **Zod-first validation**: Request/response validation tested via Zod schemas from `@vencura/types`
 - **Functional route testing**: Routes tested via `app.handle()` HTTP semantics, no mocks
 
-See [API Test Documentation](./test/README.md) for complete testing strategy details.
+See [API Test Documentation](./test/README.md) for app-specific test details and [Testing Patterns](/docs/tooling/testing-patterns) for the complete testing strategy.
 
 ## Architecture Principles
 

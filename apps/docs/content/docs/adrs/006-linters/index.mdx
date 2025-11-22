@@ -83,6 +83,20 @@ Using Biome for both linting and formatting.
 
 We will use **Biome + ESLint** for formatting and linting, optimized for **speed** and **developer experience**.
 
+### TLDR: Comparison Table
+
+| Feature | Biome + ESLint ✅ | ESLint + Prettier | Biome Only |
+|---------|-------------------|-------------------|------------|
+| **Formatting speed** | ✅ Very fast (Rust) | ⚠️ Slower (JS) | ✅ Very fast (Rust) |
+| **Linting speed** | ✅ Fast (optimized) | ⚠️ Slower | ✅ Fast |
+| **Framework rules** | ✅ ESLint ecosystem | ✅ Extensive | ⚠️ Limited |
+| **Next.js support** | ✅ Via ESLint | ✅ Native | ⚠️ Limited |
+| **React rules** | ✅ Via ESLint | ✅ Extensive | ⚠️ Limited |
+| **Ecosystem maturity** | ✅ Best of both | ✅ Mature | ⚠️ Growing |
+| **Setup complexity** | ⚠️ Two tools | ⚠️ Two tools | ✅ Single tool |
+| **Bun integration** | ✅ Seamless | ✅ Good | ✅ Seamless |
+| **Monorepo support** | ✅ Excellent | ✅ Good | ✅ Good |
+
 **Main reasons:**
 
 - **Maximum speed**: Biome's Rust-based implementation provides extremely fast formatting, aligning with our Bun-first, speed-optimized strategy

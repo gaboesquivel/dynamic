@@ -9,17 +9,17 @@ This document describes the architecture for integrating with Dynamic SDK, ensur
 
 ### Single Integration Point
 
-All Dynamic SDK calls go through the Ventura backend API:
+All Dynamic SDK calls go through the Vencura backend API:
 
 ```
-Web App → Ventura API → Dynamic SDK
+Web App → Vencura API → Dynamic SDK
 ```
 
 **Key Principles:**
 
 - **No direct Dynamic SDK usage** in web layer (except Dynamic widget for UI)
 - **Backend API is the single integration point** to Dynamic SDK
-- **All wallet operations** (create, balance, sign, send) go through Ventura API
+- **All wallet operations** (create, balance, sign, send) go through Vencura API
 
 ### Exception: Dynamic Widget
 
@@ -27,7 +27,7 @@ The Dynamic widget (`DynamicWidget`) is a UI component that uses Dynamic SDK dir
 
 - It's a UI component, not core business logic
 - It handles authentication UI/UX
-- It doesn't bypass the Ventura API for wallet operations
+- It doesn't bypass the Vencura API for wallet operations
 
 ## Token Operations Pattern
 
@@ -122,10 +122,10 @@ await assertBalanceDelta({
 
 ### @vencura/react
 
-- **React hooks** for interacting with Ventura API
+- **React hooks** for interacting with Vencura API
 - **Type-safe token operations** (`useMintToken`, `useBurnToken`)
 - **Encoding utilities** (`encodeTokenMint`, `encodeTokenBurn`)
-- **No direct blockchain calls** - all operations go through Ventura API
+- **No direct blockchain calls** - all operations go through Vencura API
 
 ### @vencura/evm
 
@@ -172,7 +172,7 @@ mintToken.mutate({
 
 ## Benefits
 
-1. **Single integration point**: All Dynamic SDK calls go through Ventura API
+1. **Single integration point**: All Dynamic SDK calls go through Vencura API
 2. **Type safety**: TypeScript utilities ensure correct function encoding
 3. **Portability**: No vendor lock-in, works with any backend
 4. **Multichain**: Generic endpoints work for all chains
