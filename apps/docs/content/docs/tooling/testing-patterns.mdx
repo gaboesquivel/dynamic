@@ -1,19 +1,22 @@
-# Testing Patterns
+---
+title: "Testing Patterns"
+description: "Vitest blackbox testing strategy for the Vencura monorepo."
+---
 
-This document outlines recommended test patterns for the Vencura monorepo using Vitest. All tests follow the **blackbox, real-API testing strategy** - tests hit HTTP endpoints only, use real APIs, and avoid mocks for core functionality.
+This guide codifies the **blackbox, real-API testing strategy** used across the Vencura monorepo. Tests always exercise public interfaces (HTTP endpoints, public hooks, exported clients) and interact with real APIs, SDKs, and blockchains whenever feasible.
 
 ## Testing Philosophy
 
-**CRITICAL**: All tests use real APIs with real API keys. NO MOCKS allowed for core functionality.
-
-- **Blackbox Testing**: Tests only interact with HTTP endpoints, not internal implementation
-- **Real APIs**: All tests use real Dynamic SDK endpoints (no mocks)
-- **Real Blockchain**: Integration tests use real blockchain RPCs (local Anvil for tests)
-- **E2E Focus**: Tests are E2E/integration tests, not unit tests
+- **Blackbox first**: Hit HTTP endpoints or exported functions instead of internal helpers.
+- **Real APIs + real keys**: Use real Dynamic SDK endpoints and RPCs (testnet networks for tests) with secrets supplied via environment variables.
+- **E2E bias**: Favor integration/E2E coverage over unit tests; validate full request/response contracts.
+- **No mocks for core flows**: Only mock UI-specific APIs (window, storage) or timers where necessary.
+- **Zod-first validation**: Request/response validation tested via Zod schemas from `@vencura/types`.
+- **Functional route testing**: Routes tested via `app.handle()` HTTP semantics, no mocks.
 
 ## Elysia Route Testing (Blackbox)
 
-Use `app.handle()` to simulate HTTP requests for blackbox testing of Elysia routes.
+Use `app.handle()` helpers (e.g., `testRoute`) to exercise each route through HTTP semantics.
 
 ### Basic Route Test
 
@@ -25,14 +28,12 @@ import { testRoute } from '../test/utils/elysia'
 
 describe('helloRoute', () => {
   it('should return hello message via HTTP endpoint', async () => {
-    // Blackbox test: hit HTTP endpoint, not internal handler
     const response = await testRoute(helloRoute, {
       method: 'GET',
       path: '/hello',
     })
     const data = await response.json()
-    
-    // Validate response matches contract
+
     expect(response.status).toBe(200)
     expect(data).toEqual({ message: 'Hello, World!' })
   })
@@ -56,7 +57,7 @@ describe('createWalletRoute', () => {
         userId: 'test-user-123',
       },
     })
-    
+
     expect(response.status).toBe(201)
     const data = await response.json()
     expect(data).toHaveProperty('walletId')
@@ -81,7 +82,7 @@ describe('getWalletRoute', () => {
         Authorization: 'Bearer test-token',
       },
     })
-    
+
     expect(response.status).toBe(200)
     const data = await response.json()
     expect(data).toHaveProperty('address')
@@ -91,7 +92,7 @@ describe('getWalletRoute', () => {
 
 ## Zod Schema Validation Testing
 
-Test Zod schemas with valid and invalid data to ensure proper validation.
+Validate schemas with representative valid and invalid payloads to guarantee runtime safety.
 
 ### Schema Parsing Test
 
@@ -107,29 +108,29 @@ describe('WalletSchema', () => {
       address: '0x1234567890123456789012345678901234567890',
       chainId: 421614,
     }
-    
+
     const result = WalletSchema.parse(validData)
     expect(result.id).toBe('wallet-123')
     expect(result.address).toBe(validData.address)
   })
-  
+
   it('should reject invalid wallet data', () => {
     const invalidData = {
       id: 'wallet-123',
       address: 'invalid-address',
       chainId: 421614,
     }
-    
+
     expect(() => WalletSchema.parse(invalidData)).toThrow()
   })
-  
+
   it('should provide clear error messages', () => {
     const invalidData = {
       id: 'wallet-123',
       address: 'invalid-address',
       chainId: 'not-a-number',
     }
-    
+
     const result = WalletSchema.safeParse(invalidData)
     expect(result.success).toBe(false)
     if (!result.success) {
@@ -156,7 +157,7 @@ describe('UserSchema', () => {
       email: 'Test@Example.COM',
       name: 'Test User',
     })
-    
+
     expect(result.email).toBe('test@example.com')
   })
 })
@@ -164,7 +165,7 @@ describe('UserSchema', () => {
 
 ## React Hooks Testing (Real APIs)
 
-Test React hooks with real API calls via TanStack Query. Never mock API calls or TanStack Query.
+React hooks interact with live APIs via TanStack Query. Never mock query clients or requests—instantiate a fresh `QueryClient` per test suite.
 
 ### Basic Hook Test
 
@@ -242,7 +243,7 @@ describe('useWallet', () => {
 
 ## Core Client Function Testing
 
-Test core client functions against real endpoints (local or testnet). Use real API keys from environment variables.
+Public SDKs (`@vencura/core`, etc.) must be validated against real endpoints (local or staging) with authentic API keys supplied through environment variables.
 
 ### API Client Test
 
@@ -254,7 +255,6 @@ describe('VencuraClient', () => {
   let client: ReturnType<typeof createVencuraClient>
 
   beforeAll(() => {
-    // Use real API key from environment
     const apiKey = process.env.VENCURA_API_KEY
     if (!apiKey) {
       throw new Error('VENCURA_API_KEY environment variable required')
@@ -270,7 +270,7 @@ describe('VencuraClient', () => {
       chainId: 421614,
       userId: 'test-user-123',
     })
-    
+
     expect(result).toHaveProperty('walletId')
     expect(result.chainId).toBe(421614)
   })
@@ -278,7 +278,7 @@ describe('VencuraClient', () => {
   it('should handle API errors correctly', async () => {
     await expect(
       client.wallets.create({
-        chainId: 999999, // Invalid chain ID
+        chainId: 999999,
         userId: 'test-user-123',
       }),
     ).rejects.toThrow()
@@ -299,7 +299,6 @@ describe('VencuraClient error handling', () => {
       baseUrl: 'http://localhost:3077',
     })
 
-    // Mock fetch to return invalid data
     const originalFetch = global.fetch
     global.fetch = async () => {
       return new Response(JSON.stringify({ invalid: 'data' }), {
@@ -317,13 +316,13 @@ describe('VencuraClient error handling', () => {
 
 ## Component Testing (Real APIs)
 
-Test React components with real API calls. Only mock UI-specific things (window, localStorage).
+Rendering tests should drive real TanStack Query fetches. Mock only browser-specific APIs when required.
 
 ### Component with Real API
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { WalletList } from './wallet-list'
 
@@ -347,7 +346,6 @@ describe('WalletList', () => {
       </QueryClientProvider>,
     )
 
-    // Wait for real API call to complete
     const wallets = await screen.findAllByRole('listitem')
     expect(wallets.length).toBeGreaterThan(0)
   })
@@ -356,31 +354,31 @@ describe('WalletList', () => {
 
 ## Best Practices
 
-1. **Use Real APIs**: Always prefer real API calls over mocks
-2. **Blackbox Testing**: Test HTTP endpoints only, not internal implementation
-3. **Wait for Async**: Use `waitFor` and `findBy` queries for async operations
-4. **Test Error States**: Include tests for error handling
-5. **Test Loading States**: Verify loading indicators work correctly
-6. **Isolation**: Each test should be independent
-7. **Clean Up**: Reset query client between tests
-8. **Environment Variables**: Use real API keys from environment variables
-9. **Documentation**: Add comments explaining what each test verifies
+1. **Use real APIs** whenever possible.
+2. **Treat tests as blackbox** by interacting through HTTP endpoints or exported hooks.
+3. **Wait for async work** using `waitFor`/`findBy`.
+4. **Assert error handling** with real failure cases.
+5. **Cover loading states** to ensure UX feedback.
+6. **Isolate test state** (fresh query clients, env resets).
+7. **Clean up** query clients or globals between tests.
+8. **Rely on environment helpers** instead of raw `process.env`.
+9. **Document intent** with inline comments for complex flows.
 
 ## Mocking Guidelines
 
 ### When to Mock
 
-- **UI-Only Tests**: Mock APIs for pure rendering tests (performance)
-- **Window APIs**: Mock `window`, `localStorage`, `sessionStorage`
-- **Timers**: Mock `setTimeout`, `setInterval` for time-dependent tests
+- Pure UI behavior (render-only snapshots, animations).
+- Browser APIs such as `window`, `localStorage`, `sessionStorage`.
+- Timers (`setTimeout`, `setInterval`) when deterministic timing is required.
 
 ### When NOT to Mock
 
-- **API Calls**: Never mock API calls in integration tests
-- **TanStack Query**: Never mock TanStack Query hooks
-- **Authentication**: Never mock authentication in integration tests
-- **Data Fetching**: Never mock data fetching hooks
-- **Blockchain RPCs**: Never mock blockchain RPC calls
+- API calls in integration tests.
+- TanStack Query hooks and caches.
+- Authentication/session flows.
+- Data fetching utilities.
+- Blockchain RPC calls.
 
 ## Running Tests
 
@@ -388,13 +386,18 @@ describe('WalletList', () => {
 # Run all tests
 bun run test
 
-# Run tests in watch mode
+# Watch mode
 bun run test:watch
 
-# Run tests with UI
+# Vitest UI
 bun run test:ui
 
-# Run tests with coverage
+# Coverage
 bun run test:cov
+
+# E2E tests (Vencura API)
+bun run test:e2e
 ```
+
+**Note**: All test commands use `bun` as the package manager and runtime. Vitest runs in ESM mode, testing TypeScript source files directly.
 

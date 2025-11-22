@@ -11,8 +11,8 @@ This is the **@docs** site - the canonical place for high-level architecture, st
 The docs site focuses on:
 
 - **High-level architecture**: Monorepo layout, key components, and how they interact
-- **Stack & conventions**: Major tech choices (Elysia, Next.js, Fumadocs, bun, Viem/Wagmi, `@vencura/*` packages)
-- **ADRs**: Architecture Decision Records documenting key technical decisions
+- **Stack & conventions**: Major tech choices (Elysia, Next.js, Fumadocs, Bun, Biome + ESLint, Viem/Wagmi, `@vencura/*` packages)
+- **ADRs**: Architecture Decision Records documenting key technical decisions (e.g., [ADR 006: Linters](/docs/adrs/006-linters) for Biome + ESLint strategy)
 - **Deployment & environments**: Thin-layer Vercel design, environment strategy, Google Cloud/Pulumi options
 - **AI-assisted workflow**: How MCP servers, Cursor rules, and v0 are used in development
 
@@ -61,6 +61,7 @@ Documentation content lives in:
   - `mcp-servers/` - MCP server documentation
   - `packages/` - Package documentation
   - `apps/` - Application documentation
+  - `tooling/testing-patterns.mdx` - Monorepo-wide Vitest blackbox testing strategy
 - **`source.config.ts`** - Fumadocs configuration (frontmatter schema, etc.)
 
 ## Adding Documentation

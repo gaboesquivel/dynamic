@@ -1,9 +1,11 @@
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SuccessModal } from './success-modal'
 
 // Mock the dialog component since it might have complex dependencies
-jest.mock('@vencura/ui/components/dialog', () => ({
+vi.mock('@vencura/ui/components/dialog', () => ({
   Dialog: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
     open ? <div data-testid="dialog">{children}</div> : null,
   DialogContent: ({ children }: { children: React.ReactNode }) => (
@@ -23,18 +25,18 @@ jest.mock('@vencura/ui/components/dialog', () => ({
   ),
 }))
 
-jest.mock('@vencura/ui/components/button', () => ({
+vi.mock('@vencura/ui/components/button', () => ({
   Button: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => (
     <button onClick={onClick}>{children}</button>
   ),
 }))
 
 describe('SuccessModal', () => {
-  const mockOnOpenChange = jest.fn()
-  const mockOnPlayAgain = jest.fn()
+  const mockOnOpenChange = vi.fn()
+  const mockOnPlayAgain = vi.fn()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should open when open prop is true', () => {

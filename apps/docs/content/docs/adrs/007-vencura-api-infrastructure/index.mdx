@@ -1,11 +1,11 @@
 ---
 title: "ADR 007: Vencura API Infrastructure"
-description: "Decision to deploy NestJS API on Google Cloud Run with Docker containers and Cloudflare CDN for serverless auto-scaling, WebSocket support, and global distribution."
+description: "Decision to deploy Elysia-based Vencura API on Google Cloud Run with Docker containers and Cloudflare CDN for serverless auto-scaling, WebSocket support, and global distribution."
 ---
 
 ## Context
 
-We need to select a deployment platform for the NestJS Vencura API that:
+We need to select a deployment platform for the Elysia-based Vencura API that:
 
 - Supports containerized deployments (Docker)
 - Handles WebSocket connections for real-time features
@@ -85,7 +85,7 @@ Serverless compute service.
 - WebSocket support is complex and limited
 - Cold starts can be significant
 - Not ideal for long-running connections
-- NestJS requires adaptation for Lambda
+- Elysia requires adaptation for Lambda
 - API Gateway can be expensive at scale
 
 ### Option D – Azure Container Apps
@@ -118,7 +118,7 @@ Serverless platform optimized for Next.js and Node.js, with significant 2024 imp
 - Built-in CI/CD
 - Good performance for serverless functions
 - **2024 Backend Improvements:**
-  - Zero-configuration support for NestJS (no manual setup required)
+  - Zero-configuration support for backend frameworks (Elysia, Next.js) - no manual setup required
   - Fluid Compute with Active CPU pricing (automatic scaling, pay-for-what-you-use)
   - Significantly reduced cold starts for backend APIs
   - Native support for long-running backend applications
@@ -190,7 +190,7 @@ Global application platform.
 
 ## Decision
 
-We will deploy the NestJS Vencura API on **Google Cloud Run with Docker containers**, with **Cloudflare** in front of it for CDN, DDoS protection, and global distribution. We will configure Cloud Run with a **minimum instance count of 1** to eliminate cold starts and ensure consistent performance.
+We will deploy the Elysia-based Vencura API on **Google Cloud Run with Docker containers**, with **Cloudflare** in front of it for CDN, DDoS protection, and global distribution. We will configure Cloud Run with a **minimum instance count of 1** to eliminate cold starts and ensure consistent performance.
 
 **Main reasons:**
 
@@ -238,13 +238,13 @@ We will deploy the NestJS Vencura API on **Google Cloud Run with Docker containe
 **UI + Stateless API Glue on Vercel:**
 
 - Next.js frontend applications
-- Thin NestJS adapters for user auth, dashboards, webhooks, notifications
+- Thin Elysia-based adapters for user auth, dashboards, webhooks, notifications
 - Public API facades
 - Leverages Vercel's excellent DX, edge network, and integrations
 
 **Key-Custody & Signing Core on Google Cloud (Only if needed):**
 
-- NestJS "signer" service on Cloud Run in private VPC
+- Elysia-based "signer" service on Cloud Run in private VPC
 - Keys in Cloud KMS/HSM (optionally MPC/threshold signing)
 - Direct VPC egress control, firewall rules, VPC Flow Logs
 - Cloud Armor WAF for public endpoints

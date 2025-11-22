@@ -1,6 +1,6 @@
 ---
 title: "ADR 006: Linters and Code Formatters"
-description: "Decision to use ESLint + Prettier for comprehensive TypeScript/React/NestJS linting, strong IDE integration, and mature ecosystem support."
+description: "Decision to use Biome for fast formatting and ESLint for rule enforcement only, optimized for speed and developer experience with Bun bundler."
 ---
 
 ## Context
@@ -8,122 +8,114 @@ description: "Decision to use ESLint + Prettier for comprehensive TypeScript/Rea
 We need to select linting and formatting tools for our monorepo that:
 
 - Enforce code quality and consistency across all packages
-- Support TypeScript, React, and NestJS
+- Support TypeScript, React, and Elysia
 - Integrate well with our monorepo structure and tooling
-- Provide good developer experience with IDE integration
-- Work seamlessly with our build tools (Turbo, Next.js, NestJS)
+- Provide **excellent developer experience** with fast feedback
+- Work seamlessly with our build tools (Turbo, Next.js, Elysia, Bun)
+- **Maximize speed** - we use Bun bundler and package manager for fastest possible workflows
 - Have strong ecosystem support and community
 
 ## Considered Options
 
-### Option A – ESLint + Prettier
+### Option A – Biome + ESLint (Chosen)
+
+Biome for fast formatting, ESLint for rule enforcement only.
+
+**Pros**
+
+- **Maximum speed**: Biome is written in Rust, providing extremely fast formatting
+- **Optimized workflow**: ESLint disabled for checks Biome handles, making linting faster
+- **Best of both worlds**: Biome's speed for formatting, ESLint's mature ecosystem for rules
+- **Bun integration**: Works seamlessly with Bun bundler and package manager
+- **Excellent DX**: Fast feedback loops, minimal waiting time
+- **All-in-one formatting**: Biome handles all formatting concerns (faster than Prettier)
+- **ESLint for rules only**: Focused on code quality rules, not formatting (faster execution)
+- **TypeScript support**: Both tools support TypeScript well
+- **Monorepo friendly**: Works well with Turborepo and Bun workspaces
+- **Modern tooling**: Latest generation of dev tools optimized for speed
+
+**Cons**
+
+- Requires configuring ESLint to disable checks Biome handles
+- Two tools to maintain (but optimized for speed)
+- Biome is newer than Prettier (but mature enough for production use)
+
+### Option B – ESLint + Prettier
 
 Separate linting and formatting tools working together.
 
 **Pros**
 
 - Mature ecosystem with extensive plugin library
-- Excellent support for TypeScript, React, Next.js, and NestJS
+- Excellent support for TypeScript, React, Next.js, and Elysia
 - Wide range of community-maintained rules and configurations
 - Native support for Next.js with `@next/eslint-plugin-next`
 - Strong integration with React and React Hooks
-- Works seamlessly with NestJS patterns
-- Turbo plugin for monorepo-specific linting
-- Works well with pnpm workspaces
-- Can share configurations across packages via workspace packages
-- Excellent IDE integration (VS Code, WebStorm, etc.)
-- Real-time linting and formatting feedback
-- Clear separation: ESLint handles code quality, Prettier handles formatting
-- `typescript-eslint` provides excellent TypeScript linting
-- Type-aware linting rules
 - Battle-tested in production environments
-- Stable and reliable
 
 **Cons**
 
-- Requires two tools instead of one (ESLint + Prettier)
-- Slightly more configuration overhead
+- **Slower than Biome**: Prettier is JavaScript-based, slower than Rust-based Biome
+- Requires two tools (ESLint + Prettier) with configuration overhead
 - Need to ensure ESLint and Prettier don't conflict (solved with eslint-config-prettier)
-- May be slower than Rust-based alternatives (acceptable trade-off)
+- **Not optimized for speed**: Doesn't align with our Bun-first, speed-optimized strategy
+- Less suitable for fast feedback loops we prioritize
 
-### Option B – Biome
+### Option C – Biome only
 
-All-in-one linter and formatter written in Rust.
-
-**Pros**
-
-- All-in-one tool (linting and formatting)
-- Very fast performance (written in Rust)
-- Modern tooling
-
-**Cons**
-
-- Newer tool with smaller ecosystem
-- Less community support and resources
-- Fewer plugins and integrations
-- Limited framework-specific rules (e.g., Next.js, NestJS)
-- Less mature support for Next.js patterns
-- Limited React-specific rules compared to ESLint
-- No official NestJS support
-- Smaller plugin ecosystem compared to ESLint
-- Less tested with complex monorepo setups
-- May have issues with workspace dependencies
-- Less integration with Turbo and other monorepo tools
-- Team has more experience with ESLint + Prettier
-- Would require migrating existing ESLint configurations
-- TypeScript support is newer and less mature
-
-### Option C – ESLint only
-
-Using ESLint for both linting and formatting.
+Using Biome for both linting and formatting.
 
 **Pros**
 
 - Single tool for both linting and formatting
+- Extremely fast (Rust-based)
 - Simpler setup
 
 **Cons**
 
-- ESLint's formatting capabilities are limited
-- Prettier provides better code formatting
-- ESLint focuses on code quality, not formatting
-- Prettier provides more consistent formatting
-- Better handling of edge cases in formatting
-
-### Option D – dprint
-
-Fast formatter written in Rust.
-
-**Pros**
-
-- Very fast formatting performance
-- Modern tooling
-
-**Cons**
-
-- Only handles formatting, not linting
-- Would still need ESLint for code quality
-- Less mature ecosystem compared to Prettier
-- Smaller community and fewer resources
-- Less integration with existing tooling
-- Fewer IDE extensions and plugins
-- Less tested with monorepo setups
+- Less mature linting rules compared to ESLint
+- Smaller ecosystem for framework-specific rules (Next.js, Elysia)
+- Limited React-specific rules compared to ESLint
+- Less tested with complex monorepo setups
+- Would lose access to ESLint's extensive rule ecosystem
 
 ## Decision
 
-We will use **ESLint + Prettier** for linting and formatting.
+We will use **Biome + ESLint** for formatting and linting, optimized for **speed** and **developer experience**.
 
 **Main reasons:**
 
-- Mature ecosystem with extensive plugin library and excellent support for TypeScript, React, Next.js, and NestJS
-- Native support for Next.js with `@next/eslint-plugin-next` and Turbo plugin for monorepo-specific linting
-- Works well with pnpm workspaces and can share configurations across packages via workspace packages
-- Clear separation of concerns: ESLint handles code quality, Prettier handles formatting
-- Excellent IDE integration with real-time feedback and type-aware linting rules via `typescript-eslint`
+- **Maximum speed**: Biome's Rust-based implementation provides extremely fast formatting, aligning with our Bun-first, speed-optimized strategy
+- **Optimized ESLint**: ESLint configured to disable checks Biome handles, making linting faster while retaining rule enforcement
+- **Best dev tools**: Combines Biome's speed with ESLint's mature ecosystem for the best developer experience
+- **Bun integration**: Works seamlessly with Bun bundler and package manager for fastest possible workflows
+- **Fast feedback loops**: Minimal waiting time, excellent developer experience
+- **Well-defined strategy**: Clear separation - Biome handles formatting (fast), ESLint handles rules only (fast)
+
+## Implementation Strategy
+
+### Biome Configuration
+
+- **Formatting**: Biome handles all code formatting (faster than Prettier)
+- **Linting**: Biome can handle basic linting, but we use ESLint for advanced rules
+
+### ESLint Configuration
+
+- **Rule enforcement only**: ESLint focused on code quality rules, not formatting
+- **Disabled checks**: ESLint configured to disable checks that Biome handles (faster execution)
+- **Framework support**: Retains Next.js, React, TypeScript, and Elysia rule support
+- **Monorepo support**: Works with Turborepo and Bun workspaces
+
+### Workflow
+
+- **Format**: `bunx biome format --write` (extremely fast)
+- **Lint**: `bunx biome lint` + `bunx eslint` (optimized for speed)
+- **Check**: Both tools run in CI/CD for quality assurance
 
 ## Notes
 
-- Biome may be reconsidered in the future as it matures and gains better framework support
-- ESLint + Prettier continues to evolve with new features and improvements
-- Consider migrating to Biome if it gains better Next.js and NestJS support
-- Monitor Biome's ecosystem growth and community adoption
+- **Speed-first approach**: All tooling choices prioritize fast feedback and developer experience
+- **Bun bundler**: We use Bun for bundling and package management for maximum speed
+- **Best dev tools**: Carefully selected modern tooling stack optimized for 2024+ development workflows
+- Biome + ESLint strategy provides the best balance of speed and functionality
+- Monitor Biome's ecosystem growth for additional rule coverage

@@ -1,14 +1,16 @@
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GameKeypad } from './game-keypad'
 
 describe('GameKeypad', () => {
-  const mockOnInput = jest.fn()
-  const mockOnBackspace = jest.fn()
-  const mockOnSubmit = jest.fn()
+  const mockOnInput = vi.fn()
+  const mockOnBackspace = vi.fn()
+  const mockOnSubmit = vi.fn()
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should render all number buttons', () => {
@@ -139,7 +141,7 @@ describe('GameKeypad', () => {
   })
 
   it('should use onInputAtPosition when provided', async () => {
-    const mockOnInputAtPosition = jest.fn()
+    const mockOnInputAtPosition = vi.fn()
     const user = userEvent.setup()
     render(
       <GameKeypad

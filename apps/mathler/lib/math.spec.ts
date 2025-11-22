@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   evaluateExpression,
   getRandomTarget,
@@ -5,6 +6,7 @@ import {
   generateEquationsForTarget,
 } from './math'
 import { getDateKey } from '@vencura/lib'
+import { isArray } from 'lodash'
 
 describe('evaluateExpression', () => {
   it('should evaluate simple addition', () => {
@@ -176,6 +178,14 @@ describe('getDateKey', () => {
 })
 
 describe('getRandomTarget', () => {
+  beforeEach(() => {
+    vi.useRealTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('should return a number between 10 and 100', () => {
     const target = getRandomTarget()
     expect(target).toBeGreaterThanOrEqual(10)
@@ -183,31 +193,25 @@ describe('getRandomTarget', () => {
   })
 
   it('should return same target for same date', () => {
-    // Mock Date to ensure consistent testing
-    const originalDate = Date
-    const mockDate = jest.fn(() => new originalDate('2024-01-15'))
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    global.Date = mockDate as any
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-01-15'))
 
     const target1 = getRandomTarget()
     const target2 = getRandomTarget()
 
     expect(target1).toBe(target2)
 
-    global.Date = originalDate
+    vi.useRealTimers()
   })
 
   it('should return different targets for different dates', () => {
     // This test verifies the seeded random works
-    // We can't easily test this without mocking, but we verify the range
     const targets = new Set()
     for (let i = 0; i < 10; i++) {
-      const date = new Date(2024, 0, i + 1)
-      const originalDate = Date
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      global.Date = jest.fn(() => date) as any
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date(2024, 0, i + 1))
       targets.add(getRandomTarget())
-      global.Date = originalDate
+      vi.useRealTimers()
     }
     // Should have some variety (though not guaranteed to be all different)
     expect(targets.size).toBeGreaterThan(1)
@@ -215,22 +219,39 @@ describe('getRandomTarget', () => {
 })
 
 describe('generateSolutionEquation', () => {
+  beforeEach(() => {
+    vi.useRealTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('should return a valid equation string', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-01-15'))
     const equation = generateSolutionEquation(10)
     expect(typeof equation).toBe('string')
     expect(equation.length).toBeGreaterThan(0)
+    vi.useRealTimers()
   })
 
   it('should return equation that evaluates to target', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-01-15'))
     const target = 15
     const equation = generateSolutionEquation(target)
     const result = evaluateExpression(equation)
     expect(result).toBe(target)
+    vi.useRealTimers()
   })
 
   it('should return equation with length <= 9', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-01-15'))
     const equation = generateSolutionEquation(50)
     expect(equation.length).toBeLessThanOrEqual(9)
+    vi.useRealTimers()
   })
 
   it('should return same equation for same seed', () => {
@@ -252,17 +273,20 @@ describe('generateSolutionEquation', () => {
   })
 
   it('should return fallback equation when no candidates found', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-01-15'))
     // This is hard to test directly, but we verify it always returns something valid
     const equation = generateSolutionEquation(999999)
     expect(typeof equation).toBe('string')
     expect(equation.length).toBeGreaterThan(0)
+    vi.useRealTimers()
   })
 })
 
 describe('generateEquationsForTarget', () => {
   it('should return array of valid equations', () => {
     const equations = generateEquationsForTarget(10)
-    expect(Array.isArray(equations)).toBe(true)
+    expect(isArray(equations)).toBe(true)
     expect(equations.length).toBeGreaterThan(0)
   })
 

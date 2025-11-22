@@ -21,6 +21,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Warn/error handling for missing environment ID
   React.useEffect(() => {
     if (!environmentId) {
+      // Note: NODE_ENV is not in zEnv schema as it's a Next.js build-time constant
+      // Access it directly for this check
       if (process.env.NODE_ENV === 'production') {
         console.error(
           'NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID is required in production. Please set it in your environment variables.',

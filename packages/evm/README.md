@@ -13,7 +13,7 @@ TypeScript package for EVM token contract ABIs and Node.js utilities.
 ## Installation
 
 ```bash
-pnpm add @vencura/evm
+bun add @vencura/evm
 ```
 
 ## Peer Dependencies

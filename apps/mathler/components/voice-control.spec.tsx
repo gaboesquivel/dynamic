@@ -1,24 +1,26 @@
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { VoiceControl } from './voice-control'
 import { useVoiceInput } from '@/hooks/use-voice-input'
 
 // Mock the useVoiceInput hook
-jest.mock('@/hooks/use-voice-input')
+vi.mock('@/hooks/use-voice-input')
 
 describe('VoiceControl', () => {
-  const mockOnResult = jest.fn()
-  const mockUseVoiceInput = useVoiceInput as jest.MockedFunction<typeof useVoiceInput>
+  const mockOnResult = vi.fn()
+  const mockUseVoiceInput = useVoiceInput as ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mockUseVoiceInput.mockReturnValue({
       isListening: false,
       isSupported: true,
       error: null,
-      startListening: jest.fn(),
-      stopListening: jest.fn(),
-      toggleListening: jest.fn(),
+      startListening: vi.fn(),
+      stopListening: vi.fn(),
+      toggleListening: vi.fn(),
     })
   })
 
@@ -33,7 +35,7 @@ describe('VoiceControl', () => {
       isListening: false,
       isSupported: false,
       error: null,
-      toggleListening: jest.fn(),
+      toggleListening: vi.fn(),
     })
 
     render(<VoiceControl onResult={mockOnResult} />)
@@ -46,9 +48,9 @@ describe('VoiceControl', () => {
       isListening: true,
       isSupported: true,
       error: null,
-      startListening: jest.fn(),
-      stopListening: jest.fn(),
-      toggleListening: jest.fn(),
+      startListening: vi.fn(),
+      stopListening: vi.fn(),
+      toggleListening: vi.fn(),
     })
 
     render(<VoiceControl onResult={mockOnResult} />)
@@ -62,9 +64,9 @@ describe('VoiceControl', () => {
       isListening: false,
       isSupported: true,
       error: 'Microphone permission denied',
-      startListening: jest.fn(),
-      stopListening: jest.fn(),
-      toggleListening: jest.fn(),
+      startListening: vi.fn(),
+      stopListening: vi.fn(),
+      toggleListening: vi.fn(),
     })
 
     render(<VoiceControl onResult={mockOnResult} />)
@@ -73,7 +75,7 @@ describe('VoiceControl', () => {
   })
 
   it('should call toggleListening when button clicked', async () => {
-    const mockToggleListening = jest.fn()
+    const mockToggleListening = vi.fn()
     mockUseVoiceInput.mockReturnValue({
       isListening: false,
       isSupported: true,
@@ -95,9 +97,9 @@ describe('VoiceControl', () => {
       isListening: false,
       isSupported: true,
       error: null,
-      startListening: jest.fn(),
-      stopListening: jest.fn(),
-      toggleListening: jest.fn(),
+      startListening: vi.fn(),
+      stopListening: vi.fn(),
+      toggleListening: vi.fn(),
     })
 
     render(<VoiceControl onResult={mockOnResult} enabled={false} />)

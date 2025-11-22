@@ -11,13 +11,12 @@ We use environment-specific configuration files to separate local development, s
 
 ## Environment Files
 
-### NestJS API (`apps/api`)
+### Vencura API (`apps/api` - Elysia backend)
 
 Environment files are loaded in priority order:
 
-1. **`.env.local`** (highest priority, never committed)
-2. **`.env.<NODE_ENV>`** (development/staging/production/test)
-3. **`.env`** (fallback, lowest priority)
+1. **`.env`** (highest priority, sensitive data, never committed, overrides everything)
+2. **`.env.<NODE_ENV>`** (development/staging/production/test, committed configs)
 
 ### Next.js Apps (`apps/web`, `apps/mathler`)
 
@@ -31,16 +30,16 @@ Next.js automatically loads environment files in priority order:
 
 | Environment | NODE_ENV      | Env File           | Blockchain Network                   | Use Case                      |
 | ----------- | ------------- | ------------------ | ------------------------------------ | ----------------------------- |
-| Local Dev   | `development` | `.env.development` | Local Anvil                          | Local development and testing |
+| Local Dev   | `development` | `.env.development` | Testnets (Arbitrum Sepolia)          | Local development and testing |
 | Staging     | `staging`     | `.env.staging`     | Testnets (Sepolia, Arbitrum Sepolia) | Pre-production validation     |
 | Production  | `production`  | `.env.production`  | Mainnet (real chains)                | Live production environment   |
-| Test        | `test`        | `.env.test`        | Local Anvil                          | CI/CD and automated tests     |
+| Test        | `test`        | `.env.test`        | Testnets (Arbitrum Sepolia)          | CI/CD and automated tests     |
 
 ## Environment Variables
 
 ### Required Variables
 
-**NestJS API:**
+**Vencura API (Elysia backend):**
 
 - `DYNAMIC_ENVIRONMENT_ID` - Dynamic Labs environment ID
 - `DYNAMIC_API_TOKEN` - Dynamic Labs API token
@@ -52,10 +51,9 @@ Next.js automatically loads environment files in priority order:
 
 ### Optional Variables
 
-**NestJS API:**
+**Vencura API (Elysia backend):**
 
 - `PORT` - Server port (default: 3077)
-- `USE_LOCAL_BLOCKCHAIN` - Use local Anvil blockchain (default: `true` for development/test, `false` for staging/production)
 - `RPC_URL_<CHAIN_ID>` - Per-chain RPC URL overrides (e.g., `RPC_URL_421614`, `RPC_URL_84532`)
 - `ARBITRUM_SEPOLIA_RPC_URL` - Legacy Arbitrum Sepolia RPC URL (backward compatibility)
 - `SOLANA_RPC_URL` - Solana RPC URL
@@ -63,7 +61,7 @@ Next.js automatically loads environment files in priority order:
 - `SENTRY_DSN` - Sentry error tracking DSN
 - `SENTRY_ENVIRONMENT` - Sentry environment name
 - `ENABLE_SWAGGER_UI` - Enable Swagger UI (default: `false`)
-- `FAUCET_PRIVATE_KEY` - Testnet faucet private key (for automated funding)
+- `ARB_TESTNET_GAS_FAUCET_KEY` - Testnet faucet private key (for automated funding in E2E tests)
 
 **Next.js Apps:**
 
@@ -82,14 +80,14 @@ We use a consistent pattern for RPC URLs:
   - `RPC_URL_42161` - Arbitrum Mainnet (chain ID: 42161)
   - `RPC_URL_8453` - Base Mainnet (chain ID: 8453)
 
-## Default Behavior
+## Environment Validation
 
-### USE_LOCAL_BLOCKCHAIN
+All apps enforce **Zod-validated** environment configuration objects using Zod schemas and `@vencura/lib` utilities. This ensures:
 
-- **Development** (`NODE_ENV=development`): Defaults to `true`
-- **Test** (`NODE_ENV=test`): Defaults to `true`
-- **Staging** (`NODE_ENV=staging`): Defaults to `false`
-- **Production** (`NODE_ENV=production`): Defaults to `false`
+- **Type safety**: Full TypeScript inference from Zod schemas (`z.infer<typeof envSchema>`)
+- **Fail fast**: Invalid config causes immediate failure at module load with clear error messages
+- **DX-focused**: Fast failure, clear error messages, no manual error checks needed
+- **Portable**: Works consistently across all environments (development, staging, production, test)
 
 ## Setup Instructions
 
@@ -107,33 +105,15 @@ We use a consistent pattern for RPC URLs:
 
 2. Fill in your values (Dynamic environment ID, API token, etc.)
 
-3. For local blockchain development, ensure Anvil is running:
+3. Start development:
 
    ```bash
-   # Option 1: Use the shared script
-   ./scripts/start-anvil.sh
-
-   # Option 2: Start manually
-   anvil --host 0.0.0.0 --port 8545
-   ```
-
-4. Point test chains to Anvil in your `.env.development`:
-
-   ```bash
-   USE_LOCAL_BLOCKCHAIN=true
-   RPC_URL_421614=http://localhost:8545
-   RPC_URL_84532=http://localhost:8545
-   ```
-
-5. Start development:
-
-   ```bash
-   # Start Anvil + all apps
-   pnpm dev:local
+   # From monorepo root
+   bun run dev:local
 
    # Or start apps individually
-   cd apps/api && pnpm start:dev
-   cd apps/web && pnpm dev:local
+   cd apps/api && bun run dev
+   cd apps/web && bun run dev
    ```
 
 ### Staging
@@ -197,19 +177,17 @@ Tests use `.env.test` with local Anvil blockchain:
 
 3. Run tests:
    ```bash
-   # Anvil starts automatically in tests
    cd apps/api
-   pnpm run test:e2e
+   bun run test:e2e
    ```
 
 ## CI/CD
 
 GitHub Actions workflows automatically:
 
-- Start Anvil as a service
 - Use `.env.test` configuration
-- Set `USE_LOCAL_BLOCKCHAIN=true`
-- Point test chains to `http://localhost:8545`
+- Tests run against Arbitrum Sepolia testnet
+- Automated gas funding via `ARB_TESTNET_GAS_FAUCET_KEY`
 
 No manual configuration needed for CI/CD.
 
@@ -224,10 +202,10 @@ All apps enforce validated environment configuration objects using Zod schemas a
 - Export `zEnv` as const object: `export const zEnv = getEnv()`
 - Validation happens at module load (build time for `NEXT_PUBLIC_*` vars)
 
-**Server Apps (API, Elysia):**
+**Server Apps (Vencura API - Elysia backend):**
 - Use `validateEnvOrThrow` from `@vencura/lib`
 - Export `zEnv` as const object: `export const zEnv = getEnv()`
-- Server crashes on invalid config (fails fast)
+- Server crashes on invalid config (fails fast with clear Zod error messages)
 
 ### Usage Example
 
@@ -269,8 +247,8 @@ const port = zEnv.PORT
 3. **Environment-specific configs** - Use `.env.development`, `.env.staging`, `.env.production` for environment-specific values
 4. **Local overrides** - Use `.env.local` for local-only overrides (highest priority)
 5. **RPC URL pattern** - Use `RPC_URL_<CHAIN_ID>` pattern for consistency
-6. **Default behavior** - Rely on defaults for `USE_LOCAL_BLOCKCHAIN` based on NODE_ENV
-7. **Always use zEnv** - Import `zEnv` from `lib/env.ts` instead of accessing `process.env` directly
-8. **Leverage @vencura/lib** - Use `validateEnvOrThrow` or `getEnvHelper` - no custom validation logic
-9. **Zod schemas** - Use `z.coerce.number()`, `z.optional()`, `z.default()` for proper type handling
+6. **Always use zEnv** - Import `zEnv` from `lib/env.ts` instead of accessing `process.env` directly
+7. **Leverage @vencura/lib** - Use `validateEnvOrThrow` or `getEnvHelper` - no custom validation logic
+8. **Zod schemas** - Use `z.coerce.number()`, `z.optional()`, `z.default()` for proper type handling
+9. **Zod-first validation** - All environment variables validated with Zod for type safety and clear error messages
 

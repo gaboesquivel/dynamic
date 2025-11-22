@@ -204,9 +204,17 @@ bun run test
 # Run tests in watch mode
 bun run test:watch
 
+# Run tests with UI mode (interactive)
+bun run test:ui
+
 # Run tests with coverage
 bun run test:cov
 ```
+
+**Testing Stack:**
+- **Vitest** - Fast unit testing framework with native ESM support
+- **@testing-library/react** - React component testing utilities
+- **jsdom** - DOM environment for browser-like testing
 
 ### E2E Tests
 

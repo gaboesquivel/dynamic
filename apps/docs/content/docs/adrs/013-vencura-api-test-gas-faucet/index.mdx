@@ -137,7 +137,7 @@ We initially chose **Option A: Local Anvil Blockchain** but later migrated to **
 
 **Test Scripts:**
 
-- `pnpm run test:e2e` - Runs tests on Arbitrum Sepolia testnet
+- `bun run test:e2e` - Runs tests on Arbitrum Sepolia testnet
 - All test scripts use testnet exclusively
 
 ### Integration Points
@@ -173,7 +173,7 @@ We initially chose **Option A: Local Anvil Blockchain** but later migrated to **
 
 - API codebase already uses Viem throughout (`createWalletClient`, `createPublicClient`)
 - Type-safe, no shelling out to external commands
-- Better error handling and integration with Jest
+- Better error handling and integration with Vitest
 - Consistent with existing codebase patterns
 - Foundry scripts remain for contract deployment (one-time), not runtime operations
 

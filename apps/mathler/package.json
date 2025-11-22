@@ -10,9 +10,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "_test": "jest",
-    "_test:watch": "jest --watch",
-    "_test:cov": "jest --coverage",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:cov": "vitest run --coverage",
     "_test:e2e": "playwright test",
     "_test:e2e:ui": "playwright test --ui",
     "_test:e2e:debug": "playwright test --debug"
@@ -57,17 +58,18 @@
     "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.5.1",
-    "@types/jest": "^29.5.14",
     "@types/lodash": "^4.17.20",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^4.0.13",
+    "@vitest/ui": "^4.0.13",
     "@workspace/eslint-config": "workspace:*",
     "eslint": "^9.32.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^27.2.0",
     "postcss": "^8.5",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.0.13"
   }
 }

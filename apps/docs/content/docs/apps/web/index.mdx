@@ -66,17 +66,17 @@ This app follows **mobile-first responsive design**:
 ### Prerequisites
 
 - Node.js >= 20.0.0
-- pnpm (package manager)
+- Bun (package manager and runtime)
 
 ### Installation
 
 ```bash
 # From monorepo root
-pnpm install
+bun install
 
 # Or from this directory
 cd apps/web
-pnpm install
+bun install
 ```
 
 ### Environment Variables
@@ -120,25 +120,25 @@ cp .env-example .env
 
 ```bash
 # Start development server
-pnpm dev
+bun run dev
 
 # Start with local blockchain
-pnpm dev:local
+bun run dev:local
 
 # Start with staging environment
-pnpm dev:staging
+bun run dev:staging
 
 # Build
-pnpm build
+bun run build
 
 # Start production server
-pnpm start
+bun run start
 
 # Lint
-pnpm lint
+bun run lint
 
 # Type check
-pnpm typecheck
+bun run typecheck
 ```
 
 ## Related Documentation

@@ -189,9 +189,23 @@ bun run test
 # Run tests in watch mode
 bun run test:watch
 
+# Run tests with UI mode (interactive)
+bun run test:ui
+
 # Run tests with coverage
 bun run test:cov
 ```
+
+**Testing Stack:**
+- **Vitest** - Fast unit testing framework with native ESM support
+- **@testing-library/react** - React component testing utilities
+- **jsdom** - DOM environment for browser-like testing
+- **@vitejs/plugin-react** - React JSX transform for Vitest (automatic runtime)
+
+**Testing Notes:**
+- Vitest is configured with `@vitejs/plugin-react` to handle JSX transforms automatically, matching Next.js's React runtime
+- Date-dependent tests (e.g., `getRandomTarget`, `generateSolutionEquation`) use `vi.useFakeTimers()` and `vi.setSystemTime()` for deterministic testing
+- All component tests use React Testing Library for black-box testing through public APIs
 
 ### E2E Tests
 

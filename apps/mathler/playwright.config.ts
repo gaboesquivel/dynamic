@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `PORT=${process.env.PORT || '3000'} pnpm run start`,
+    command: `PORT=${process.env.PORT || '3000'} bun run start`,
     url: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

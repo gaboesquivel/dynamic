@@ -6,17 +6,20 @@ description: "Development tools and stack used across the monorepo."
 ## Monorepo Management
 
 - **Turborepo**: Build system and task orchestration
-- **pnpm**: Package manager with workspace support
+- **Bun**: Package manager and runtime with workspace support
 - **TypeScript**: Shared configuration via `@workspace/typescript-config`
 
 ## Development Tools
 
 - **Next.js 16.0.0**: React framework for frontend applications (standardized across all Next.js apps)
 - **React 19.1.1**: Standardized React version across all frontend applications
-- **ESLint + Prettier**: Linting and formatting (shared config via `@workspace/eslint-config`)
-- **Zod**: Primary schema validation tool for runtime validation and type inference
+- **Biome + ESLint**: Fast formatting (Biome) and rule enforcement (ESLint only) - optimized for speed
+  - **Biome**: Rust-based formatter for extremely fast code formatting
+  - **ESLint**: Configured for rule enforcement only (disabled checks Biome handles for faster execution)
+  - **Strategy**: Biome handles formatting, ESLint handles code quality rules - maximum speed and DX
+- **Zod**: Primary schema validation tool for runtime validation and type inference (**Zod-first**)
   - Used for all schemas (environment variables, API responses, form validation, tool parameters)
-  - Exception: NestJS DTOs use `class-validator` per NestJS conventions
+  - Native integration with Elysia for request/response validation
   - **zod-validation-error**: Used for better error messages when displaying validation errors to users
 - **TanStack Query**: Data fetching and caching solution
   - **@tanstack/react-query-devtools**: Development tools for debugging queries (dev mode only)
@@ -24,16 +27,54 @@ description: "Development tools and stack used across the monorepo."
 - **react-error-boundary**: Error boundary component library for catching React errors
   - Provides fallback UI when errors occur
   - Use for app-level, section-level, and feature-level error handling
-- **nanoid**: Unique ID generation library (smaller and faster than UUID)
-- **Lodash**: Preferred utility library for common operations
+- **@vencura/lib**: Shared utility library for common operations across the monorepo
+  - Error handling: `getErrorMessage`, `formatZodError`, `formatZodErrors`, `sanitizeErrorMessage`, `isZodError`
+  - Async utilities: `delay` (replaces `setTimeout`), `fetchWithTimeout` (replaces `fetch` for external APIs)
+  - Environment validation: `getEnvHelper` (Next.js), `validateEnvOrThrow` (server apps)
+  - Date utilities: `getDateKey` for consistent date formatting
+  - Zod utilities: `parseJsonWithSchema` for JSON parsing with validation
+  - See [@vencura/lib README](../../../../packages/lib/README.md) for complete documentation
+- **zod**: Primary schema validation tool for runtime validation and type inference
+  - Used for all schemas (environment variables, API responses, form validation, tool parameters)
+  - Always use `z.infer<typeof schema>` for type inference (no manual types)
+  - **zod-validation-error**: Used for better error messages when displaying validation errors to users
+- **lodash**: Preferred utility library for common operations
   - Prefer lodash over custom implementations for array/object manipulation, type checking, string transformations, and functional utilities
+  - Array operations: `isEmpty`, `uniq`, `groupBy`, `chunk`
+  - Object operations: `merge`, `pick`, `omit`, `isPlainObject`
+  - Type checking: `isString`, `isNumber`, `isEmpty`, `isPlainObject`, `isArray`
+  - String transformations: `camelCase`, `kebabCase`, `startCase`
+  - Functional utilities: `debounce`, `throttle`, `memoize`
   - Import specific functions to reduce bundle size: `import { isEmpty, uniq, merge } from 'lodash'`
+- **nanoid**: Unique ID generation library (smaller and faster than UUID)
 - **DrizzleORM**: Type-safe database ORM
 - **Pulumi**: Infrastructure as Code (TypeScript) - See [Infrastructure](../../../infra/README.md) for details
 - **Vercel**: Primary deployment platform with 2024 backend improvements:
-  - Zero-configuration NestJS support
+  - Zero-configuration backend support (Elysia, Next.js)
   - Fluid Compute with Active CPU pricing
   - Significantly reduced cold starts
   - Native support for long-running backend applications
   - MCP integration for AI-assisted deployment workflows
+
+## Curated Tech Stack
+
+Our tech stack is **carefully selected** to maximize **speed**, **developer experience**, **production performance**, and **AI-friendliness**:
+
+- **Elysia**: Fast, functional, Zod-first web framework - perfect for type-safe APIs with excellent DX
+- **Next.js**: React framework with App Router - standardized across all frontend apps
+- **Bun**: Fast JavaScript runtime, **bundler**, and package manager - significantly faster than alternatives
+- **Biome**: Rust-based formatter and linter - extremely fast formatting, optimized for speed
+- **ESLint**: Rule enforcement only (disabled checks Biome handles) - fast, focused linting
+- **Vitest**: ESM-native testing framework - fast feedback, works seamlessly with ESM and TypeScript
+- **Zod**: Schema validation at all boundaries - type-safe contracts, inferred types throughout
+- **Drizzle ORM**: Type-safe database queries - lightweight, no code generation, excellent DX
+- **TanStack Query**: Data fetching and caching - powerful React hooks with excellent devtools
+- **Dynamic SDK**: Multichain wallet infrastructure - production-ready, well-documented
+- **Pulumi**: Infrastructure as Code - type-safe, composable, excellent for monorepos
+
+Each tool was chosen for its **speed**, **performance**, **developer experience**, **type safety**, and **AI-friendly** architecture (clean contracts, typed SDKs, OpenAPI generation). We prioritize **fastest possible workflows** with **best dev tools** available today.
+
+## Testing
+
+- [Testing Patterns](/docs/tooling/testing-patterns) - Blackbox Vitest strategy for routes, schemas, hooks, clients, and components
 

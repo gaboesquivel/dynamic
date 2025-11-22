@@ -1,3 +1,5 @@
+import React from 'react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MathlerGame } from './mathler-game'
@@ -5,23 +7,23 @@ import { evaluateExpression, getRandomTarget, generateSolutionEquation } from '@
 import { calculateFeedback } from '@/lib/feedback'
 
 // Mock the utility functions to control game behavior
-jest.mock('@/lib/math', () => ({
-  evaluateExpression: jest.fn(),
-  getRandomTarget: jest.fn(),
-  generateSolutionEquation: jest.fn(),
-  getDateKey: jest.fn(() => '2024-01-01'),
+vi.mock('@/lib/math', () => ({
+  evaluateExpression: vi.fn(),
+  getRandomTarget: vi.fn(),
+  generateSolutionEquation: vi.fn(),
+  getDateKey: vi.fn(() => '2024-01-01'),
 }))
 
-jest.mock('@/lib/feedback', () => ({
-  calculateFeedback: jest.fn(),
+vi.mock('@/lib/feedback', () => ({
+  calculateFeedback: vi.fn(),
 }))
 
-jest.mock('@/hooks/use-game-history', () => ({
-  useGameHistory: jest.fn(() => ({
-    saveGame: jest.fn().mockResolvedValue(true),
-    getHistory: jest.fn(() => []),
-    getGameByDate: jest.fn(() => undefined),
-    getStats: jest.fn(() => ({
+vi.mock('@/hooks/use-game-history', () => ({
+  useGameHistory: vi.fn(() => ({
+    saveGame: vi.fn().mockResolvedValue(true),
+    getHistory: vi.fn(() => []),
+    getGameByDate: vi.fn(() => undefined),
+    getStats: vi.fn(() => ({
       totalGames: 0,
       wins: 0,
       losses: 0,
@@ -34,7 +36,7 @@ jest.mock('@/hooks/use-game-history', () => ({
 }))
 
 // Mock child components to simplify testing
-jest.mock('./guess-row', () => ({
+vi.mock('./guess-row', () => ({
   GuessRow: function GuessRow({
     guess,
     currentInput,
@@ -65,7 +67,7 @@ jest.mock('./guess-row', () => ({
   },
 }))
 
-jest.mock('./game-keypad', () => ({
+vi.mock('./game-keypad', () => ({
   GameKeypad: function GameKeypad({
     onInput,
     onBackspace,
@@ -100,7 +102,7 @@ jest.mock('./game-keypad', () => ({
   },
 }))
 
-jest.mock('./game-status', () => ({
+vi.mock('./game-status', () => ({
   GameStatus: function GameStatus({
     status,
     onReset,
@@ -117,7 +119,7 @@ jest.mock('./game-status', () => ({
   },
 }))
 
-jest.mock('./success-modal', () => ({
+vi.mock('./success-modal', () => ({
   SuccessModal: function SuccessModal({
     open,
     onPlayAgain,
@@ -134,7 +136,7 @@ jest.mock('./success-modal', () => ({
   },
 }))
 
-jest.mock('./voice-control', () => ({
+vi.mock('./voice-control', () => ({
   VoiceControl: function VoiceControl({
     onResult,
     onCommand,
@@ -152,17 +154,13 @@ jest.mock('./voice-control', () => ({
 }))
 
 describe('MathlerGame', () => {
-  const mockEvaluateExpression = evaluateExpression as jest.MockedFunction<
-    typeof evaluateExpression
-  >
-  const mockGetRandomTarget = getRandomTarget as jest.MockedFunction<typeof getRandomTarget>
-  const mockGenerateSolutionEquation = generateSolutionEquation as jest.MockedFunction<
-    typeof generateSolutionEquation
-  >
-  const mockCalculateFeedback = calculateFeedback as jest.MockedFunction<typeof calculateFeedback>
+  const mockEvaluateExpression = evaluateExpression as ReturnType<typeof vi.fn>
+  const mockGetRandomTarget = getRandomTarget as ReturnType<typeof vi.fn>
+  const mockGenerateSolutionEquation = generateSolutionEquation as ReturnType<typeof vi.fn>
+  const mockCalculateFeedback = calculateFeedback as ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     // Set up default mocks
     mockGetRandomTarget.mockReturnValue(10)
     mockGenerateSolutionEquation.mockReturnValue('5+5')
@@ -218,7 +216,7 @@ describe('MathlerGame', () => {
   it('should validate expression before submission', async () => {
     const user = userEvent.setup()
     // Mock window.alert to avoid error
-    window.alert = jest.fn()
+    window.alert = vi.fn()
     mockEvaluateExpression.mockReturnValue(null) // Invalid expression
     render(<MathlerGame />)
 
