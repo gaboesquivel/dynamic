@@ -9,20 +9,20 @@ Vencura is a custodial wallet platform - the Venmo of wallets. A full-stack mono
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 ```
 
 ## Development
 
 ```bash
 # Run all apps in development mode (with local Anvil blockchain)
-pnpm dev:local
+bun run dev:local
 
 # Run all apps in staging mode (with testnets)
-pnpm dev:staging
+bun run dev:staging
 
 # Build all apps
-pnpm build
+bun run build
 ```
 
 ## Quick Start
@@ -33,7 +33,7 @@ pnpm build
    cp apps/web/.env-example apps/web/.env
    ```
 2. Fill in your values (Dynamic environment ID, API token, etc.) in `.env` files
-3. Start local development: `pnpm dev:local`
+3. Start local development: `bun run dev:local`
 
 ## Environment Setup
 
@@ -50,7 +50,7 @@ This monorepo uses environment-specific configuration files. See [Environment St
 
 ```bash
 # Test API (requires Foundry for Anvil local blockchain)
-cd apps/api && pnpm run test:e2e
+cd apps/api && bun run test:e2e
 ```
 
 The API uses a **blackbox testing strategy** with local chains for automation.

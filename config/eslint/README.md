@@ -21,7 +21,7 @@ export default [...baseConfig]
 
 - TypeScript ESLint parser and plugin
 - ESLint recommended rules
-- Prettier integration
+- Biome integration (disabled checks Biome handles for faster execution)
 - Turbo plugin for monorepo support
 
 ### Next.js Configuration (`@workspace/eslint-config/next-js`)
@@ -71,11 +71,12 @@ This package is part of the monorepo and is automatically available to all packa
 ## Features
 
 - **TypeScript Support**: Full TypeScript linting with type-aware rules
-- **Prettier Integration**: Prevents conflicts between ESLint and Prettier
+- **Biome Integration**: ESLint configured to disable checks Biome handles (optimized for speed)
 - **React Support**: React and React Hooks linting rules
 - **Next.js Support**: Next.js specific linting rules
 - **Turbo Support**: Monorepo-aware linting with Turbo plugin
 - **Modern ESLint**: Uses ESLint 9+ flat config format
+- **Speed Optimized**: Rule enforcement only - formatting handled by Biome for maximum speed
 
 ## Type Safety Model: Zod-First Validation Strategy
 
@@ -164,7 +165,7 @@ For more details, see:
 - `eslint-plugin-react-hooks` - React Hooks rules
 - `eslint-plugin-turbo` - Turbo monorepo rules
 - `eslint-plugin-only-warn` - Converts errors to warnings
-- `eslint-config-prettier` - Disables conflicting Prettier rules
+- Biome integration - Disabled checks that Biome handles (formatting-focused rules)
 
 ## Usage Examples
 

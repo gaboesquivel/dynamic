@@ -8,7 +8,7 @@ description: "Migrated from pnpm to Bun for faster package installation and impr
 We need to select a package manager for our monorepo that:
 
 - Works reliably with workspace dependencies
-- Supports Next.js, NestJS, and Turbo monorepo setup
+- Supports Next.js, Elysia, and Turbo monorepo setup
 - Handles complex dependency resolution (e.g., `@tailwindcss/postcss` in workspace packages)
 - Provides good performance and developer experience
 - Is production-ready and well-supported
@@ -24,7 +24,7 @@ Mature, workspace-optimized package manager.
 - Correctly hoists and resolves dependencies across workspace packages
 - Handles complex scenarios like `@tailwindcss/postcss` in `@workspace/ui` being accessible to `apps/web`
 - Uses symlinks and proper node_modules structure for workspace packages
-- Well-tested with Next.js, NestJS, and Turbo
+- Well-tested with Next.js, Elysia, and Turbo
 - Mature support for monorepo patterns
 - Extensive community adoption and documentation
 - Battle-tested in production environments
@@ -66,7 +66,7 @@ We initially used **pnpm** as our package manager, but have since migrated to **
 **Original decision (pnpm) reasons:**
 
 - Correctly hoists and resolves dependencies across workspace packages (handles complex scenarios like `@tailwindcss/postcss`)
-- Well-tested with Next.js, NestJS, and Turbo with mature support for monorepo patterns
+- Well-tested with Next.js, Elysia, and Turbo with mature support for monorepo patterns
 - Battle-tested in production with reliable builds and no module resolution issues
 - Extensive community adoption and documentation with better tooling support
 
@@ -77,12 +77,12 @@ After Bun's workspace support matured and resolved previous issues, we migrated 
 - **Faster package installation**: Significantly faster dependency installation and updates
 - **Improved developer experience**: Faster script execution and better performance
 - **Mature workspace support**: Bun's workspace implementation has improved and now handles complex monorepo scenarios reliably
-- **Compatibility**: Works seamlessly with Turbo, Next.js, and NestJS in our monorepo setup
+- **Compatibility**: Works seamlessly with Turbo, Next.js, and Elysia in our monorepo setup
 - **Modern tooling**: All-in-one package manager with excellent TypeScript and Node.js compatibility
 
 ## Notes
 
-- **Runtime**: We continue to use Node.js for runtime (especially for NestJS + WebSockets compatibility)
+- **Runtime**: We use Bun for runtime, which provides excellent performance and ESM-native support
 - **Workspace protocol**: Bun supports `workspace:*` protocol for internal package dependencies
 - **Lockfile**: Bun uses `bun.lockb` binary lockfile format (committed to repository)
 - **CI/CD**: All GitHub Actions workflows updated to use Bun setup action

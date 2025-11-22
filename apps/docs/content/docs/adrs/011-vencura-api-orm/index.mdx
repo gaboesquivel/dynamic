@@ -1,6 +1,6 @@
 ---
 title: "ADR 011: Vencura API ORM Selection"
-description: "Decision to use Drizzle ORM for type-safe PostgreSQL queries, lightweight design, and seamless NestJS integration."
+description: "Decision to use Drizzle ORM for type-safe PostgreSQL queries, lightweight design, Zod-first schema integration, and seamless Elysia integration."
 ---
 
 ## Context
@@ -11,10 +11,11 @@ We need to select an Object-Relational Mapping (ORM) tool for the Vencura API to
 - PostgreSQL compatibility (Cloud SQL and PGLite)
 - Declarative schema definitions
 - Database migrations
-- Integration with NestJS framework
+- Integration with Elysia framework (functional, Zod-first)
 - Support for both embedded (PGLite) and cloud (Cloud SQL) databases
 - Lightweight runtime overhead
 - Good developer experience with IDE autocomplete
+- **Zod-first** schema integration for type inference
 - Active community and maintenance
 
 ## Considered Options
@@ -82,12 +83,12 @@ Mature, feature-rich ORM with decorator-based entity definitions.
 
 - Mature and battle-tested platform
 - Large ecosystem and community
-- Decorator-based syntax (familiar to NestJS developers)
+- Decorator-based syntax (less suitable for functional Elysia patterns)
 - Active Record and Data Mapper patterns
 - Comprehensive feature set (relations, transactions, etc.)
 - Good documentation
 - Supports multiple databases
-- Well-integrated with NestJS
+- Less suitable for functional Elysia patterns
 
 **Cons**
 
@@ -188,7 +189,8 @@ We will use **Drizzle ORM** for database operations in the Vencura API.
 - Small bundle size reduces deployment size and cold start times
 - Composable query builder with excellent IDE autocomplete improves developer experience
 - Active development and growing community ensure long-term support
-- Works well with NestJS dependency injection patterns
+- Works well with Elysia's functional patterns and Zod-first validation
+- Type-inferred schemas integrate seamlessly with Zod validation
 
 ## Implementation Details
 
@@ -206,13 +208,14 @@ export const users = pgTable('users', {
 })
 ```
 
-### Database Module
+### Database Integration
 
-Drizzle is integrated with NestJS through a global `DatabaseModule` that provides:
+Drizzle is integrated with the Elysia-based API through functional patterns:
 
 - Database connection (supports both PGLite and PostgreSQL)
-- Drizzle instance with schema
+- Drizzle instance with schema exported from `src/database/`
 - Schema exports for type inference
+- **Zod-first**: Schema definitions align with Zod validation patterns for consistent type safety
 
 ### Migrations
 

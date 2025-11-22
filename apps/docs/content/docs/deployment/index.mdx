@@ -89,7 +89,7 @@ feature/*, fix/*, chore/* (feature branches)
 **All systems are currently deployed to Vercel** using a no-lock approach:
 
 - ✅ **No vendor lock-in**: Code remains portable and platform-agnostic
-- ✅ **Framework Defined Infrastructure (FDI)**: Uses open frameworks (Next.js, NestJS) without proprietary APIs
+- ✅ **Framework Defined Infrastructure (FDI)**: Uses open frameworks (Next.js, Elysia) without proprietary APIs
 - ✅ **Zero-configuration CI/CD**: Git push = automatic deployment
 - ✅ **Preview deployments**: Every PR gets instant production-like preview URL
 - ✅ **Global distribution**: 100+ edge locations, automatic CDN, edge functions
@@ -143,12 +143,12 @@ See [Google Cloud Deployment](/docs/google-cloud) for detailed setup.
 **Vercel Edge (Stateless API Layer)**:
 
 - Next.js frontend applications (`apps/web`, `apps/mathler`)
-- Thin NestJS adapters for user authentication facades, dashboards, webhooks, notifications, public API facades
+- Thin Elysia-based adapters for user authentication facades, dashboards, webhooks, notifications, public API facades
 - Leverages Vercel's edge network, CDN, and excellent DX
 
 **Google Cloud (Critical Systems)**:
 
-- NestJS "signer" service on Cloud Run in private VPC
+- Elysia-based "signer" service on Cloud Run in private VPC
 - Key custody and signing operations
 - Keys in Cloud KMS/HSM (optionally MPC/threshold signing)
 - Direct VPC egress control, firewall rules, VPC Flow Logs
@@ -177,7 +177,7 @@ See [Google Cloud Deployment](/docs/google-cloud) for detailed setup.
 
 ### Deployment
 
-1. ✅ **Test locally first** with `pnpm dev:local`
+1. ✅ **Test locally first** with `bun run dev:local`
 2. ✅ **Validate on staging** (`develop` branch) before production
 3. ✅ **Monitor deployments** in Vercel dashboard or GitHub Actions
 4. ✅ **Use preview deployments** for PR validation

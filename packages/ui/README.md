@@ -151,8 +151,8 @@ See [Mobile-First Rules](../../.cursor/rules/frontend/mobile-first.mdc) for deta
 ## Development
 
 ```bash
-# Lint
-pnpm lint
+# Lint (from monorepo root)
+bun run lint
 ```
 
 ## Adding New Components

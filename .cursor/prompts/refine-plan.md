@@ -1,5 +1,7 @@
 Refine your plan using the checklist below. Update your plan so it explicitly addresses each area. Apply these requirements to maximize quality, reusability, and clarity:
 
+**Note**: This project uses **Biome + ESLint** for linting/formatting (Biome for formatting, ESLint for rule enforcement only) and **Bun** for package management. See [ADR 006: Linters](/docs/adrs/006-linters) and [ADR 005: Package Manager](/docs/adrs/005-package-manager) for details.
+
 ## 1. Dependency and Resource Management
 
 - Ensure all dependencies are managed with the appropriate initialization and retrieval methods required by your stack.
@@ -21,6 +23,8 @@ Refine your plan using the checklist below. Update your plan so it explicitly ad
 
 - Tests should only interface with the system through public contracts (such as HTTP APIs).
 - Prohibit direct access to internals or imported types—assertions must use exported runtime contracts or schemas.
+- **Testing Stack**: This project uses **Vitest** for testing with black-box HTTP API testing strategy. See [Backend Testing Rules](../../.cursor/rules/backend/testing.mdc) and [Frontend Testing Rules](../../.cursor/rules/frontend/testing.mdc) for patterns.
+- **Real APIs**: Tests use real APIs with real API keys (no mocks for core functionality). See testing rules for exceptions.
 
 ## 5. Contract and Response Stability
 
@@ -40,3 +44,10 @@ Refine your plan using the checklist below. Update your plan so it explicitly ad
 
 - List exact files and code regions to update.
 - Explain briefly why each fix is needed and how to verify it.
+
+## 9. Tooling and Commands
+
+- Use **Bun** for all package management commands (`bun install`, `bun add`, etc.) - see [ADR 005: Package Manager](/docs/adrs/005-package-manager)
+- Use **Biome** for formatting (`bun run format`) and **ESLint** for linting (`bun run lint`) - see [ADR 006: Linters](/docs/adrs/006-linters)
+- Run quality checks: `bun run qa` (installs, formats, lints, builds, tests)
+- All commands should use `bun` or `bunx` (not npm, pnpm, or yarn)

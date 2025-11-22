@@ -66,6 +66,13 @@ For high-level architecture, stack overview, and workflows, see the [Documentati
 
 This project follows strict coding standards enforced through Cursor rules and documented in Architecture Decision Records (ADRs).
 
+### Linting & Formatting
+
+We use **Biome + ESLint** for code quality, optimized for speed and developer experience:
+- **Biome**: Rust-based formatter for extremely fast code formatting
+- **ESLint**: Configured for rule enforcement only (disabled checks Biome handles for faster execution)
+- See [ADR 006: Linters](/docs/adrs/006-linters) for the complete architecture decision
+
 ### Key Patterns
 
 - **Mobile-First Design**: All frontend components follow mobile-first responsive design. See [Mobile-First Rules](.cursor/rules/frontend/mobile-first.mdc) for guidelines.

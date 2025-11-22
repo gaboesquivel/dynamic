@@ -1,9 +1,9 @@
 ---
 title: "Vencura API"
-description: "A multichain custodial wallet backend API built with NestJS, Dynamic authentication, and PGLite."
+description: "A multichain custodial wallet backend API built with Elysia, Zod-first validation, Dynamic authentication, and PGLite."
 ---
 
-A multichain custodial wallet backend API built with NestJS, Dynamic authentication, and PGLite.
+A multichain custodial wallet backend API built with **Elysia**, a fast, functional, Zod-first web framework. The API integrates with the Dynamic SDK for wallet management and transaction signing, providing a unified API for multichain operations with emphasis on **developer experience**, **production performance**, and **AI-friendly architecture**.
 
 ## Overview
 
@@ -43,29 +43,46 @@ Vencura is a backend API that enables users to create and manage custodial walle
 
 ## Tech Stack
 
-- **Framework**: NestJS
+The Vencura API uses a **carefully selected tech stack** designed for **Zod-first validation**, **functional programming**, **excellent developer experience**, **production performance**, and **AI-friendly architecture**:
+
+- **Framework**: **Elysia** - Fast, functional, Zod-first web framework with native TypeScript support
+- **Runtime**: **Bun** - Fast JavaScript runtime and package manager
 - **Authentication**: Dynamic Labs SDK Client
-- **Validation**: Zod for environment variables and runtime validation
+- **Validation**: **Zod-first** - Zod schemas at all boundaries (requests, responses, environment variables)
 - **Utilities**: `@vencura/lib` for error handling, async utilities, and zod utilities
 - **Blockchain**:
   - Viem for EVM chains
   - @solana/web3.js for Solana
   - Dynamic SDK for wallet operations
-- **Database**: DrizzleORM with PGLite (development) or Cloud SQL Postgres (production)
-- **API Documentation**: Swagger/OpenAPI (generates `@vencura/core` TypeScript SDK)
+- **Database**: Drizzle ORM with PGLite (development) or Cloud SQL Postgres (production)
+- **Testing**: **Vitest** - Fast, ESM-native testing framework with blackbox testing strategy
+- **API Documentation**: Swagger/OpenAPI via `@elysiajs/swagger` (generates `@vencura/core` TypeScript SDK)
 - **Infrastructure**: Vercel with Google Cloud option
+
+### Why This Stack?
+
+- **Zod-first**: Native Zod validation built into Elysia ensures type-safe contracts at all API boundaries, with inferred types throughout the codebase
+- **Functional style**: Pure functions, composable plugins, and route co-location - no classes or decorators
+- **Developer experience**: Bun's fast package management and script execution, Vitest's instant feedback, and Elysia's intuitive API design
+- **Production performance**: Elysia's performance characteristics combined with Bun runtime deliver excellent throughput
+- **AI-friendly**: Clean HTTP contracts, auto-generated OpenAPI specs, and typed SDKs (`@vencura/core`) enable seamless AI tool integration
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js >= 20.0.0
-- pnpm (package manager)
+- Bun >= 1.3.2
+- Node.js >= 20
 
 ### Installation
 
 ```bash
-pnpm install
+# From monorepo root
+bun install
+
+# Or from this directory
+cd apps/api
+bun install
 ```
 
 ### Environment Variables
@@ -107,7 +124,6 @@ cp .env-example .env
 **Optional Environment Variables:**
 
 - `PORT` - Server port (default: 3077)
-- `USE_LOCAL_BLOCKCHAIN` - Use local Anvil blockchain (default: `true` for development/test, `false` for staging/production)
 - `RPC_URL_<CHAIN_ID>` - Per-chain RPC URL overrides (e.g., `RPC_URL_421614`, `RPC_URL_84532`)
 - `ARBITRUM_SEPOLIA_RPC_URL` - Legacy Arbitrum Sepolia RPC URL (backward compatibility)
 - `SOLANA_RPC_URL` - Solana RPC URL
@@ -115,26 +131,29 @@ cp .env-example .env
 - `SENTRY_DSN` - Sentry error tracking DSN
 - `SENTRY_ENVIRONMENT` - Sentry environment name
 - `ENABLE_SWAGGER_UI` - Enable Swagger UI (default: `false`)
-- `FAUCET_PRIVATE_KEY` - Testnet faucet private key (for automated funding)
+- `ARB_TESTNET_GAS_FAUCET_KEY` - Testnet faucet private key (for automated funding in E2E tests)
 
 ## Development
 
 ```bash
-# Start development server
-pnpm start:dev
+# Development mode (from monorepo root)
+bun run dev:local  # Starts API
 
-# Run tests
-pnpm test
+# Or from this directory
+cd apps/api
+bun run dev
 
 # Run E2E tests
-pnpm run test:e2e
+bun run test:e2e
 
 # Lint
-pnpm lint
+bun run lint
 
 # Type check
-pnpm typecheck
+bun run typecheck
 ```
+
+The API will be available at `http://localhost:3077` (or configured port).
 
 ## API Endpoints
 
@@ -149,17 +168,35 @@ pnpm typecheck
 
 ## Testing
 
-The API uses a **blackbox testing strategy** with local chains for automation:
+The API uses a **blackbox Vitest testing strategy** with testnet networks:
 
-- **Local Chain Automation**: Anvil spins up automatically before tests to save gas costs
-- **Token Mocking**: Test tokens (USDT, USDC, DNMC) are automatically deployed with open mint functionality
-- **Dynamic SDK Integration**: All transaction signing uses the real Dynamic SDK (no mocks)
-- **Blackbox Testing**: All tests hit HTTP endpoints only, ensuring end-to-end validation
+- **Testnet-based**: Tests run against Arbitrum Sepolia testnet (Dynamic SDK doesn't support localhost chains)
+- **Automated gas funding**: Wallets are auto-funded with minimum ETH using `ARB_TESTNET_GAS_FAUCET_KEY`
+- **Test tokens**: Uses deployed test tokens (USDT, USDC, DNMC) on Arbitrum Sepolia
+- **Blackbox testing**: All tests hit HTTP endpoints only, ensuring end-to-end validation
+- **Dynamic SDK integration**: All transaction signing uses the real Dynamic SDK (no mocks)
+- **Zod-first validation**: Request/response validation tested via Zod schemas from `@vencura/types`
+- **Functional route testing**: Routes tested via `app.handle()` HTTP semantics, no mocks
+
+See [API Test Documentation](./test/README.md) for complete testing strategy details.
+
+## Architecture Principles
+
+- **Zod-first**: All API boundaries (requests, responses, environment variables) use Zod schemas for validation and type inference
+- **Functional style**: Pure functions, composable plugins, co-located routes - no classes or decorators
+- **Contract-first**: Routes consume contracts from `@vencura/types` for type safety across API, client, and frontend
+- **OpenAPI**: Auto-generated Swagger documentation via `@elysiajs/swagger` plugin
+- **Blackbox testing**: E2E tests hit HTTP endpoints only (see [Testing](#testing))
 
 ## Related Documentation
 
+- [Elysia Rules](../../../.cursor/rules/backend/elysia.mdc) - Elysia development patterns
+- [Testing Rules](../../../.cursor/rules/backend/testing.mdc) - Testing patterns
+- [TypeScript Rules](../../../.cursor/rules/base/typescript.mdc) - Type safety patterns
+- [Environment Rules](../../../.cursor/rules/base/environment.mdc) - Environment variable patterns
 - [Environment Strategy](/docs/environment) - Environment variable configuration
 - [Deployment](/docs/deployment) - Deployment and branching strategy
 - [@vencura/core](/docs/packages/core) - TypeScript SDK
 - [@vencura/react](/docs/packages/react) - React hooks
+- [Documentation Site](/docs) - High-level architecture and ADRs
 

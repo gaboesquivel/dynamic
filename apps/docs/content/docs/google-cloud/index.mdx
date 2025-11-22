@@ -31,7 +31,7 @@ Consider Google Cloud deployment when production security requirements demand:
 
 ### Infrastructure Components
 
-- **Cloud Run**: Serverless container platform for running the NestJS API
+- **Cloud Run**: Serverless container platform for running the Elysia-based API
 - **Cloud SQL Postgres**: Managed PostgreSQL database with private IP
 - **VPC Network**: Dedicated VPC for network isolation
 - **VPC Connector**: Serverless VPC access for Cloud Run to connect to Cloud SQL
@@ -210,12 +210,12 @@ For detailed setup instructions, see [Infrastructure README](../../../infra/READ
 **UI + Stateless API Glue on Vercel:**
 
 - Next.js frontend applications
-- Thin NestJS adapters for user auth, dashboards, webhooks, notifications
+- Thin Elysia-based adapters for user auth, dashboards, webhooks, notifications
 - Public API facades
 
 **Key-Custody & Signing Core on Google Cloud:**
 
-- NestJS "signer" service on Cloud Run in private VPC
+- Elysia-based "signer" service on Cloud Run in private VPC
 - Keys in Cloud KMS/HSM (optionally MPC/threshold signing)
 - Direct VPC egress control, firewall rules, VPC Flow Logs
 - Cloud Armor WAF for public endpoints

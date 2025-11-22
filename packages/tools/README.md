@@ -12,7 +12,7 @@ Development tools enabled by feature flags for debugging and development purpose
 ## Installation
 
 ```bash
-pnpm add @vencura/tools
+bun add @vencura/tools
 ```
 
 ## Peer Dependencies

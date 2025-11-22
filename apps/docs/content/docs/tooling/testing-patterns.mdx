@@ -8,9 +8,11 @@ This guide codifies the **blackbox, real-API testing strategy** used across the 
 ## Testing Philosophy
 
 - **Blackbox first**: Hit HTTP endpoints or exported functions instead of internal helpers.
-- **Real APIs + real keys**: Use real Dynamic SDK endpoints and RPCs (local Anvil for tests) with secrets supplied via environment variables.
+- **Real APIs + real keys**: Use real Dynamic SDK endpoints and RPCs (testnet networks for tests) with secrets supplied via environment variables.
 - **E2E bias**: Favor integration/E2E coverage over unit tests; validate full request/response contracts.
 - **No mocks for core flows**: Only mock UI-specific APIs (window, storage) or timers where necessary.
+- **Zod-first validation**: Request/response validation tested via Zod schemas from `@vencura/types`.
+- **Functional route testing**: Routes tested via `app.handle()` HTTP semantics, no mocks.
 
 ## Elysia Route Testing (Blackbox)
 
@@ -392,5 +394,10 @@ bun run test:ui
 
 # Coverage
 bun run test:cov
+
+# E2E tests (Vencura API)
+bun run test:e2e
 ```
+
+**Note**: All test commands use `bun` as the package manager and runtime. Vitest runs in ESM mode, testing TypeScript source files directly.
 

@@ -12,10 +12,11 @@ Accepted
 We need a unified environment strategy across the monorepo that:
 
 - Separates local development, staging, and production configurations
-- Maps environments to appropriate blockchain networks (local/testnet/mainnet)
-- Works consistently across Next.js apps and NestJS API
-- Supports CI/CD with local blockchain testing
+- Maps environments to appropriate blockchain networks (testnet/mainnet)
+- Works consistently across Next.js apps and Elysia-based Vencura API
+- Supports CI/CD with testnet-based testing
 - Integrates with Vercel deployment workflows
+- **Zod-validated** environment configuration for type safety and DX
 
 ## Decision
 
@@ -23,19 +24,18 @@ We will implement an environment-based configuration strategy with the following
 
 ### Environment Files
 
-- **`.env.local`**: Sensitive local secrets (never committed, highest priority)
-- **`.env.development`**: Local development with local blockchain networks (Anvil)
+- **`.env`**: Sensitive local secrets (never committed, highest priority)
+- **`.env.development`**: Local development with testnet networks (Arbitrum Sepolia)
 - **`.env.staging`**: Testnet configuration (Sepolia, Arbitrum Sepolia, etc.)
 - **`.env.production`**: Mainnet/real chains configuration
-- **`.env.test`**: Test-specific configuration (uses local blockchain)
+- **`.env.test`**: Test-specific configuration (uses testnet networks)
 
 ### Environment Loading Priority
 
-**NestJS API:**
+**Vencura API (Elysia backend):**
 
-1. `.env.local` (highest priority)
-2. `.env.<NODE_ENV>` (development/staging/production/test)
-3. `.env` (fallback, lowest priority)
+1. `.env` (highest priority, sensitive data, never committed, overrides everything)
+2. `.env.<NODE_ENV>` (development/staging/production/test, committed configs)
 
 **Next.js Apps:**
 
@@ -48,22 +48,25 @@ We will implement an environment-based configuration strategy with the following
 
 | Environment | Blockchain Network                   | Use Case                      |
 | ----------- | ------------------------------------ | ----------------------------- |
-| Development | Local Anvil                          | Local development and testing |
+| Development | Testnets (Arbitrum Sepolia)          | Local development and testing |
 | Staging     | Testnets (Sepolia, Arbitrum Sepolia) | Pre-production validation     |
 | Production  | Mainnet (real chains)                | Live production environment   |
-| Test        | Local Anvil                          | CI/CD and automated tests     |
+| Test        | Testnets (Arbitrum Sepolia)          | CI/CD and automated tests     |
 
 ### Git Branch Mapping
 
 - **`main` branch** → Production environment → `.env.production` → Mainnet
 - **`develop` branch** → Staging environment → `.env.staging` → Testnets
-- **Feature branches** → Development environment → `.env.development` → Local Anvil or Testnets
+- **Feature branches** → Development environment → `.env.development` → Testnets
 
-### Default Behavior
+### Zod-First Environment Validation
 
-- **`USE_LOCAL_BLOCKCHAIN`**:
-  - Defaults to `true` for `development` and `test` environments
-  - Defaults to `false` for `staging` and `production` environments
+All apps enforce **Zod-validated** environment configuration objects (`zEnv`) using Zod schemas and `@vencura/lib` utilities:
+
+- **Type safety**: Full TypeScript inference from Zod schemas (`z.infer<typeof envSchema>`)
+- **Fail fast**: Invalid config causes immediate failure at module load with clear error messages
+- **DX-focused**: Fast failure, clear error messages, no manual error checks needed
+- **Portable**: Works consistently across all environments
 
 ## Implementation
 
@@ -71,17 +74,12 @@ We will implement an environment-based configuration strategy with the following
 
 All apps now enforce validated environment configuration objects (`zEnv`) using Zod schemas and `@vencura/lib` utilities:
 
-**API App (`apps/api`):**
+**Vencura API (`apps/api` - Elysia backend):**
 - Created `apps/api/src/lib/env.ts` with Zod schema
 - Uses `validateEnvOrThrow` from `@vencura/lib` (fails fast on invalid config)
 - Exports `zEnv` const object validated at module load
 - Replaced all `process.env` usage with `zEnv`
-
-**Elysia App (`apps/elysia`):**
-- Created `apps/elysia/src/lib/env.ts` with Zod schema
-- Uses `validateEnvOrThrow` from `@vencura/lib`
-- Exports `zEnv` const object validated at module load
-- Replaced all `process.env` usage with `zEnv`
+- **Zod-first**: All environment variables validated with Zod for type safety and clear error messages
 
 **Next.js Apps (`apps/next`, `apps/mathler`):**
 - Updated existing `lib/env.ts` files to export `zEnv` const object
@@ -98,24 +96,26 @@ All apps now enforce validated environment configuration objects (`zEnv`) using 
 
 ### Dev Scripts
 
-- Created `scripts/start-anvil.sh` for shared Anvil startup
-- Added `dev:local` script to start Anvil + apps with development env
-- Added `dev:staging` script to start apps with staging env (no local blockchain)
+- Added `dev:local` script to start apps with development env
+- Added `dev:staging` script to start apps with staging env
+- All scripts use `bun` as package manager
 
 ### CI/CD
 
-- GitHub Actions workflows use `.env.test` with `USE_LOCAL_BLOCKCHAIN=true`
-- Anvil starts automatically in CI for test execution
-- Tests run against local blockchain, not testnets
+- GitHub Actions workflows use `.env.test` configuration
+- Tests run against Arbitrum Sepolia testnet
+- Automated gas funding via `ARB_TESTNET_GAS_FAUCET_KEY`
 
 ## Consequences
 
 ### Positive
 
 - **Clear separation** of environments and blockchain networks
-- **Consistent patterns** across Next.js and NestJS
-- **Local development** uses local blockchain by default (faster, no network dependency)
-- **CI/CD** runs tests with local blockchain (no testnet dependency, faster, more reliable)
+- **Consistent patterns** across Next.js and Elysia-based API
+- **Zod-first validation** ensures type safety and clear error messages
+- **DX-focused** environment handling with fast failure and no manual checks
+- **Local development** uses testnet networks (Dynamic SDK requirement)
+- **CI/CD** runs tests with testnet networks (automated gas funding)
 - **Staging** validates against testnets before production
 - **Production** uses mainnet with proper security controls
 
@@ -163,5 +163,5 @@ All apps now enforce validated environment configuration objects (`zEnv`) using 
 ## References
 
 - [Next.js Environment Variables](https://nextjs.org/docs/basic-features/environment-variables)
-- [NestJS Configuration](https://docs.nestjs.com/techniques/configuration)
-- [Foundry Anvil Documentation](https://book.getfoundry.sh/anvil/)
+- [Elysia Documentation](https://elysiajs.com)
+- [Zod Documentation](https://zod.dev)

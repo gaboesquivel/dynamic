@@ -39,7 +39,7 @@ This directory contains Pulumi TypeScript infrastructure code for deploying the 
 ## Prerequisites
 
 - Node.js >= 20.0.0
-- pnpm >= 10.4.1
+- Bun >= 1.3.2 (package manager - see [ADR 005: Package Manager](/docs/adrs/005-package-manager))
 - Pulumi CLI (latest)
 - Google Cloud SDK (`gcloud`)
 - GCP project with billing enabled
@@ -135,7 +135,7 @@ This directory contains Pulumi TypeScript infrastructure code for deploying the 
 
 ```bash
 cd infra/vencura
-pnpm install
+bun install
 ```
 
 ### Step 2: Login to Pulumi (On Your Computer)

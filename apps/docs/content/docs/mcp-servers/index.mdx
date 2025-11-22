@@ -9,7 +9,7 @@ This document describes how we use Model Context Protocol (MCP) servers in our d
 
 MCP servers extend AI assistants (like Cursor's Composer 1) with specialized capabilities, allowing them to interact with external services and tools directly. This enables more powerful AI-assisted development workflows.
 
-All MCP servers are configured to use `pnpm dlx` for command execution, consistent with our project's package manager choice.
+All MCP servers are configured to use `bunx` for command execution, consistent with our project's package manager choice.
 
 ## Configured MCP Servers
 
@@ -77,9 +77,9 @@ Our project uses the following MCP servers, configured in `.cursor/mcp.json`:
 
 #### Vercel's 2024 Backend Improvements
 
-Vercel has made significant improvements in 2024 to support backend frameworks like NestJS:
+Vercel has made significant improvements in 2024 to support backend frameworks like Elysia:
 
-- **Zero-configuration NestJS support**: Deploy NestJS applications without manual configuration
+- **Zero-configuration backend support**: Deploy Elysia and Next.js applications without manual configuration
 - **Fluid Compute with Active CPU pricing**: Automatic scaling with pay-for-what-you-use pricing model
 - **Reduced cold starts**: Significantly improved cold start times for backend APIs
 - **Native support for long-running applications**: Better support for traditional backend APIs

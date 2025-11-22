@@ -1,6 +1,6 @@
 ---
 title: "ADR 012: Vencura AI Architecture"
-description: "Decision to use NestJS-first architecture with AI SDK Core for AI chatbot functionality, providing natural language interface and React/Next.js embeddability."
+description: "Decision to use backend-first (Elysia) architecture with AI SDK Core for AI chatbot functionality, providing natural language interface, React/Next.js embeddability, and AI-friendly architecture."
 ---
 
 ## Context
@@ -13,6 +13,7 @@ We need to add AI-powered chatbot functionality to the Vencura wallet platform. 
 - Expose wallet operations as AI tools
 - Maintain portability and avoid vendor lock-in
 - Work seamlessly with existing authentication and API infrastructure
+- Leverage **AI-friendly** architecture (clean HTTP contracts, OpenAPI, typed SDKs)
 
 ## Considered Options
 
@@ -32,24 +33,26 @@ Use Vercel AI SDK with serverless functions for AI inference.
 - Vendor lock-in to Vercel platform
 - Limited runtime duration (max 10 min, Edge ≤ 30s)
 - Cannot maintain persistent connections or state
-- Difficult to integrate with existing NestJS wallet services
+- Difficult to integrate with existing Elysia-based wallet services
 - Not suitable for long-running wallet operations
 - Cannot easily migrate to other platforms
 
-### Option B – NestJS-First with AI SDK Core
+### Option B – Backend-First (Elysia) with AI SDK Core
 
-Use NestJS backend with `@ai-sdk/core` for provider-agnostic AI integration.
+Use Elysia backend with `@ai-sdk/core` for provider-agnostic AI integration.
 
 **Pros**
 
 - Full control over wallet operations and security
 - Portable to any platform (GCP Cloud Run, AWS, Fly.io, self-hosted)
 - Can maintain state and persistent connections
-- Seamless integration with existing wallet services
+- Seamless integration with existing Elysia-based wallet services
 - Standard SSE streaming works everywhere
 - No vendor lock-in
 - Can orchestrate multiple AI providers
 - Better for wallet security and compliance
+- **AI-friendly**: Clean HTTP contracts, OpenAPI generation, typed SDKs (`@vencura/core`)
+- **Zod-first**: Request/response validation with Zod schemas for type-safe AI tool integration
 
 **Cons**
 
@@ -57,9 +60,9 @@ Use NestJS backend with `@ai-sdk/core` for provider-agnostic AI integration.
 - Slightly more latency than edge functions
 - Requires manual SSE implementation
 
-### Option C – Hybrid (Vercel Edge + NestJS)
+### Option C – Hybrid (Vercel Edge + Elysia)
 
-Use Vercel Edge for AI inference, NestJS for wallet operations.
+Use Vercel Edge for AI inference, Elysia for wallet operations.
 
 **Pros**
 
@@ -76,16 +79,18 @@ Use Vercel Edge for AI inference, NestJS for wallet operations.
 
 ## Decision
 
-We will use **Option B: NestJS-First with AI SDK Core**.
+We will use **Option B: Backend-First (Elysia) with AI SDK Core**.
 
 **Main reasons:**
 
 - **Portability**: No vendor lock-in - can deploy to GCP Cloud Run, AWS, Fly.io, or self-hosted
 - **Control**: Full control over wallet operations, state management, and security
-- **Integration**: Seamless integration with existing NestJS wallet services
+- **Integration**: Seamless integration with existing Elysia-based wallet services
 - **Security**: Better for wallet operations requiring secure, stateful backends
 - **Flexibility**: Can switch AI providers or add multiple providers without architectural changes
 - **Standards**: Standard SSE streaming implementation works on any platform
+- **AI-friendly**: Clean HTTP contracts, auto-generated OpenAPI specs, typed SDKs (`@vencura/core`) enable seamless AI tool integration
+- **Zod-first**: Request/response validation with Zod schemas ensures type-safe AI tool integration
 
 ## Architecture
 
@@ -150,7 +155,7 @@ This ensures:
 
 ### Streaming
 
-Uses NestJS `@Res()` decorator with SSE response:
+Uses Elysia's functional SSE response pattern:
 
 ```typescript
 res.setHeader('Content-Type', 'text/event-stream')
@@ -187,7 +192,7 @@ createWallet: tool({
 
 We considered using Supabase SDK for portability, but decided against it because:
 
-- **NestJS Integration**: Our existing infrastructure is NestJS-based
+- **Elysia Integration**: Our existing infrastructure is Elysia-based (functional, Zod-first)
 - **Control**: Direct database access gives us more control over queries and transactions
 - **Flexibility**: Can use any database (PostgreSQL, Cloud SQL, PGLite) without SDK dependency
 - **Performance**: Direct database access is more performant than SDK abstraction
@@ -195,7 +200,7 @@ We considered using Supabase SDK for portability, but decided against it because
 
 ### Deployment Options
 
-The NestJS backend can be deployed to:
+The Elysia backend can be deployed to:
 
 - **Google Cloud Run**: Serverless containers with auto-scaling
 - **AWS Lambda/ECS**: Serverless or containerized
@@ -224,6 +229,6 @@ All use standard SSE streaming - no platform-specific code required.
 
 ## Related ADRs
 
-- [ADR 002: Vencura API Framework](/docs/adrs/002-vencura-api-framework) - NestJS framework decision
+- [ADR 002: Vencura API Framework](/docs/adrs/002-vencura-api-framework) - Elysia framework decision
 - [ADR 010: Vencura Infrastructure Orchestration](/docs/adrs/010-vencura-infra-orchestration) - Deployment strategy
 - [ADR 011: Vencura API ORM Selection](/docs/adrs/011-vencura-api-orm) - Database ORM decision

@@ -17,5 +17,5 @@ alwaysApply: true
 
 ## Tooling
 - Use **bun** for package management (not pnpm, npm, or yarn)
-- Use **eslint + prettier** for linting and formatting
-- Run `bun run format` to format code, `bun run lint` to lint code
+- Use **Biome + ESLint** for linting and formatting (Biome for formatting, ESLint for rule enforcement only) - see [ADR 006](/docs/adrs/006-linters)
+- Run `bun run format` to format code (uses Biome), `bun run lint` to lint code (uses ESLint)
