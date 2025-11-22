@@ -9,6 +9,8 @@ const envSchema = z.object({
   DYNAMIC_API_TOKEN: z.string().min(1),
   ENCRYPTION_KEY: z.string().min(1),
   PORT: z.coerce.number().optional().default(3077),
+  ARB_TESTNET_GAS_FAUCET_KEY: z.string().min(1).optional(),
+  SEPOLIA_RPC_URL: z.string().url().optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

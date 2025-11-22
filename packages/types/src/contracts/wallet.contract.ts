@@ -1,4 +1,9 @@
-import { CreateWalletInputSchema, WalletSchema } from '../schemas/wallet.schema'
+import {
+  CreateWalletInputSchema,
+  WalletSchema,
+  SendTransactionInputSchema,
+  SendTransactionResultSchema,
+} from '../schemas/wallet.schema'
 
 /**
  * Create wallet endpoint contract.
@@ -12,3 +17,16 @@ export const createWalletContract = {
 }
 
 export type CreateWalletContract = typeof createWalletContract
+
+/**
+ * Send transaction endpoint contract.
+ * Defines the POST /wallets/:id/send endpoint structure.
+ */
+export const sendTransactionContract = {
+  method: 'POST' as const,
+  path: '/wallets/:id/send',
+  body: SendTransactionInputSchema,
+  response: SendTransactionResultSchema,
+}
+
+export type SendTransactionContract = typeof sendTransactionContract

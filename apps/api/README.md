@@ -119,13 +119,39 @@ bun run test:e2e
 
 **Testing Strategy:**
 - **Testnet-based**: Tests run against Arbitrum Sepolia testnet (Dynamic SDK doesn't support localhost chains)
-- **Automated gas funding**: Wallets are auto-funded with minimum ETH using `ARB_TESTNET_GAS_FAUCET_KEY`
+- **Automated gas funding**: Wallets are auto-funded with minimum ETH using `ARB_TESTNET_GAS_FAUCET_KEY` (see [ADR 013](/docs/adrs/013-vencura-api-test-gas-faucet))
 - **Test tokens**: Uses deployed test tokens (USDT, USDC, DNMC) on Arbitrum Sepolia
 - **Blackbox testing**: All tests hit HTTP endpoints only, ensuring end-to-end validation
 - **Dynamic SDK integration**: All transaction signing uses the real Dynamic SDK (no mocks)
 - **Balance endpoint tests**: `src/routes/balance.spec.ts` tests the `/wallets/balance` endpoint which requires `chainId`, `chainType`, and authentication. Supports both native token and ERC20 token balance queries.
 
 See [API Test Documentation](./test/README.md) for complete testing strategy details.
+
+## API Endpoints
+
+### Wallets
+
+- `POST /wallets` - Create a new custodial wallet
+- `POST /wallets/:id/send` - Send a transaction from a wallet (EVM chains only)
+
+**Send Transaction Example:**
+```http
+POST /wallets/:id/send
+Content-Type: application/json
+
+{
+  "to": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+  "amount": 0.001,
+  "data": "0x..." // Optional: contract call data
+}
+```
+
+**Response:**
+```json
+{
+  "transactionHash": "0x..."
+}
+```
 
 ## API Documentation
 

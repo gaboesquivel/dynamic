@@ -48,6 +48,22 @@ export async function getWalletByChainType(
   return wallets.find(w => w.chainType === chainType) ?? null
 }
 
+/**
+ * Get wallet by ID for a specific user.
+ * Returns wallet info including address and chainType.
+ */
+export async function getWalletByIdForUser({
+  userId,
+  walletId,
+}: {
+  userId: string
+  walletId: string
+}): Promise<{ address: string; chainType: ChainType } | null> {
+  const wallets = await getUserWallets(userId)
+  const wallet = wallets.find(w => w.id === walletId)
+  return wallet ? { address: wallet.address, chainType: wallet.chainType } : null
+}
+
 type WalletError = Error | unknown
 
 function getErrorStrings(error: WalletError) {
