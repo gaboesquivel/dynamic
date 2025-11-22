@@ -62,7 +62,10 @@ function HelloComponent() {
 All hooks are typed based on contracts from `@vencura/types`:
 
 - `useHello()` - Example hello endpoint hook
-- More hooks added as API endpoints are defined
+- `useWallets()` - List all wallets for the authenticated user
+- `useCreateWallet()` - Create a new custodial wallet
+- `useWalletBalance()` - Get wallet balance
+- `useSendTransaction()` - Send a transaction from a wallet
 
 Each hook provides:
 - `data` - Typed response data
@@ -71,6 +74,68 @@ Each hook provides:
 - `error` - Error object
 - `refetch()` - Manual refetch function
 - Standard TanStack Query options (enabled, refetchInterval, etc.)
+
+### Wallets
+
+**List Wallets Example:**
+
+```tsx
+import { useWallets } from '@vencura/react'
+
+function WalletList() {
+  const { data: wallets, isLoading, error } = useWallets()
+
+  if (isLoading) return <div>Loading wallets...</div>
+  if (error) return <div>Error: {error.message}</div>
+
+  return (
+    <div>
+      <h2>My Wallets</h2>
+      {wallets.length === 0 ? (
+        <p>No wallets found</p>
+      ) : (
+        <ul>
+          {wallets.map(wallet => (
+            <li key={wallet.id}>
+              {wallet.address} ({wallet.chainType})
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+```
+
+**Create Wallet Example:**
+
+```tsx
+import { useCreateWallet } from '@vencura/react'
+
+function CreateWalletButton() {
+  const { mutate: createWallet, isPending } = useCreateWallet()
+
+  const handleCreate = () => {
+    createWallet(
+      { chainType: 'evm' },
+      {
+        onSuccess: wallet => {
+          console.log('Wallet created:', wallet.address)
+        },
+        onError: error => {
+          console.error('Failed to create wallet:', error)
+        },
+      },
+    )
+  }
+
+  return (
+    <button onClick={handleCreate} disabled={isPending}>
+      {isPending ? 'Creating...' : 'Create EVM Wallet'}
+    </button>
+  )
+}
+```
 
 ## Architecture
 

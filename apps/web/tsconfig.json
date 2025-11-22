@@ -1,0 +1,26 @@
+{
+  "extends": "@workspace/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@vencura/ui/*": ["../../packages/ui/src/*"],
+      "@vencura/types": ["../../packages/types/src/index.ts"],
+      "@vencura/types/*": ["../../packages/types/src/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    "next.config.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "../../config/typescript/reset.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}

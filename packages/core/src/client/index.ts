@@ -1,4 +1,5 @@
 import { createHelloClient } from './hello.client'
+import { createWalletClient } from './wallet.client'
 
 export interface VencuraClientConfig {
   baseUrl: string
@@ -11,8 +12,17 @@ export const createVencuraClient = (config: VencuraClientConfig) => {
     headers: config.headers,
   })
 
+  const walletClient = createWalletClient({
+    baseUrl: config.baseUrl,
+    headers: config.headers,
+  })
+
   return {
     hello: helloClient.hello,
+    createWallet: walletClient.createWallet,
+    listWallets: walletClient.listWallets,
+    sendTransaction: walletClient.sendTransaction,
+    getBalance: walletClient.getBalance,
   }
 }
 

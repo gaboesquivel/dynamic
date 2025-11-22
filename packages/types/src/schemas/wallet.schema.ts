@@ -57,3 +57,10 @@ export const SendTransactionResultSchema = z.object({
 })
 
 export type SendTransactionResult = z.infer<typeof SendTransactionResultSchema>
+
+/**
+ * List wallets response schema.
+ */
+export const ListWalletsResponseSchema = z.array(WalletSchema)
+
+export type ListWalletsResponse = z.infer<typeof ListWalletsResponseSchema>

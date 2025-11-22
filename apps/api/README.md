@@ -131,8 +131,32 @@ See [API Test Documentation](./test/README.md) for complete testing strategy det
 
 ### Wallets
 
+- `GET /wallets` - List all wallets for the authenticated user
 - `POST /wallets` - Create a new custodial wallet
 - `POST /wallets/:id/send` - Send a transaction from a wallet (EVM chains only)
+
+**List Wallets Example:**
+```http
+GET /wallets
+```
+
+**Response:**
+```json
+[
+  {
+    "id": "abc123...",
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0",
+    "chainType": "evm"
+  },
+  {
+    "id": "def456...",
+    "address": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "chainType": "solana"
+  }
+]
+```
+
+**Create Wallet Example:**
 
 **Send Transaction Example:**
 ```http

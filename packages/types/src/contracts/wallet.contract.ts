@@ -3,6 +3,7 @@ import {
   WalletSchema,
   SendTransactionInputSchema,
   SendTransactionResultSchema,
+  ListWalletsResponseSchema,
 } from '../schemas/wallet.schema'
 
 /**
@@ -30,3 +31,15 @@ export const sendTransactionContract = {
 }
 
 export type SendTransactionContract = typeof sendTransactionContract
+
+/**
+ * List wallets endpoint contract.
+ * Defines the GET /wallets endpoint structure.
+ */
+export const listWalletsContract = {
+  method: 'GET' as const,
+  path: '/wallets',
+  response: ListWalletsResponseSchema,
+}
+
+export type ListWalletsContract = typeof listWalletsContract

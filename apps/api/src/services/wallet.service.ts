@@ -21,7 +21,7 @@ function generateWalletId(userId: string, address: string, chainType: string): s
 /**
  * Get all wallets for a user (query DB by userId).
  */
-async function getUserWallets(
+export async function getUserWallets(
   userId: string,
 ): Promise<Array<{ id: string; address: string; chainType: ChainType }>> {
   const db = await getDatabase()

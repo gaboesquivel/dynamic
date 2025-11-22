@@ -32,7 +32,7 @@ const client = createVencuraClient({
 })
 
 // Use typed client methods
-const response = await client.hello()
+const wallets = await client.listWallets()
 ```
 
 ### Client Methods
@@ -40,9 +40,57 @@ const response = await client.hello()
 The client provides typed methods for all API endpoints defined in `@vencura/types` contracts. Each method:
 
 - Validates request parameters using Zod schemas
-- Makes HTTP requests with proper error handling
+- Makes HTTP requests with proper error handling using `fetchWithTimeout` from `@vencura/lib`
 - Validates responses using Zod schemas
 - Returns fully typed responses
+
+**Wallet Methods:**
+
+- `createWallet(input: CreateWalletInput): Promise<Wallet>` - Create a new custodial wallet
+- `listWallets(): Promise<ListWalletsResponse>` - List all wallets for the authenticated user
+- `sendTransaction(input: SendTransactionInput & { walletId: string }): Promise<SendTransactionResult>` - Send a transaction from a wallet
+- `getBalance(input: BalanceInput): Promise<Balance>` - Get wallet balance
+
+**Example Usage:**
+
+```typescript
+import { createVencuraClient } from '@vencura/core'
+import type { CreateWalletInput, ListWalletsResponse } from '@vencura/types'
+
+const client = createVencuraClient({
+  baseUrl: 'https://vencura-api.vercel.app',
+  headers: {
+    Authorization: 'Bearer your-token',
+  },
+})
+
+// List all wallets
+const wallets: ListWalletsResponse = await client.listWallets()
+// Returns: [{ id: string, address: string, chainType: ChainType }, ...]
+
+// Create a new wallet
+const wallet = await client.createWallet({ chainType: 'evm' })
+// Returns: { id: string, address: string, chainType: 'evm' }
+
+// Get balance
+const balance = await client.getBalance({
+  chainId: 421614,
+  chainType: 'evm',
+  tokenAddress: '0x...', // Optional: for ERC20 tokens
+})
+// Returns: { balance: string, decimals: number, symbol: string }
+
+// Send transaction
+const result = await client.sendTransaction({
+  walletId: 'wallet-id',
+  to: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+  amount: 0.001,
+  data: '0x...', // Optional: contract call data
+})
+// Returns: { transactionHash: string }
+```
+
+All methods respect the contracts from `@vencura/types` and use `fetchWithTimeout` for robust request handling with automatic timeout management.
 
 ## Architecture
 

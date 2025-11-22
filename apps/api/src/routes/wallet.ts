@@ -2,14 +2,16 @@ import { Elysia } from 'elysia'
 import {
   createWalletContract,
   sendTransactionContract,
+  listWalletsContract,
   WalletSchema,
   CreateWalletInputSchema,
   SendTransactionInputSchema,
   SendTransactionResultSchema,
+  ListWalletsResponseSchema,
   type ChainType,
 } from '@vencura/types'
 import { formatZodError, getErrorMessage, isZodError } from '@vencura/lib'
-import { createWalletService } from '../services/wallet.service'
+import { createWalletService, getUserWallets } from '../services/wallet.service'
 import { sendTransactionService } from '../services/transaction.service'
 import { getUserId } from '../middleware/auth'
 
@@ -17,6 +19,46 @@ export const walletRoute = new Elysia()
   .derive(({ request }) => ({
     userId: getUserId(request),
   }))
+  .get(
+    listWalletsContract.path,
+    async ({ userId }) => {
+      try {
+        const wallets = await getUserWallets(userId)
+
+        // Validate response matches contract
+        const response = ListWalletsResponseSchema.parse(
+          wallets.map(w => ({
+            id: w.id,
+            address: w.address,
+            chainType: w.chainType,
+          })),
+        )
+
+        return response
+      } catch (err) {
+        // Handle errors
+        const errorMessage = getErrorMessage(err) ?? String(err)
+
+        // All errors are 500 Internal Server Error
+        return new Response(
+          JSON.stringify({
+            error: 'Internal server error',
+            message: errorMessage,
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
+      }
+    },
+    {
+      detail: {
+        summary: 'List all wallets for the authenticated user',
+        description: 'Get all wallets associated with the authenticated user.',
+      },
+    },
+  )
   .post(
     createWalletContract.path,
     async ({ body, userId }) => {
