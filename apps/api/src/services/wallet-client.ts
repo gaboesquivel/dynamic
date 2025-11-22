@@ -65,34 +65,83 @@ export async function createWallet({
   // This matches the pattern used in dynamic-examples/nodejs-omnibus-sweep
   const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')
 
-  switch (chainType) {
-    case 'evm': {
-      const client = await getEvmClient()
-      // Leverage Dynamic SDK return type directly - no unnecessary mapping
-      // Matches NestJS pattern: thresholdSignatureScheme and backUpToClientShareService
-      const result = await client.createWalletAccount({
-        thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
-        backUpToClientShareService: false,
-      })
-      return {
-        accountAddress: result.accountAddress,
-        externalServerKeyShares: result.externalServerKeyShares,
+  // Temporarily suppress console.error for expected wallet creation errors
+  // The Dynamic SDK logs these errors before throwing, but they're expected and handled gracefully:
+  // - "Multiple wallets per chain" - wallet already exists for this chain
+  // - "Error creating wallet account" - wallet already exists (idempotent behavior)
+  const originalConsoleError = console.error
+  const suppressedConsoleError = (...args: unknown[]) => {
+    // Check if this is an expected wallet creation error log from Dynamic SDK
+    const logMessage = String(args.join(' ')).toLowerCase()
+    const isDynamicSdkError =
+      logMessage.includes('[dynamicwaaswalletclient]') && logMessage.includes('[error]')
+
+    if (isDynamicSdkError) {
+      // Suppress errors related to wallet already existing (expected idempotent behavior)
+      if (
+        logMessage.includes('multiple wallets per chain') ||
+        logMessage.includes('multiple wallets') ||
+        logMessage.includes('error creating wallet account') ||
+        logMessage.includes('dynamicServerInitializeKeyGen')
+      ) {
+        // Suppress this specific error log - it's expected and handled gracefully
+        return
       }
     }
-    case 'solana': {
-      const client = await getSolanaClient()
-      // Leverage Dynamic SDK return type directly - no unnecessary mapping
-      // Matches NestJS pattern: thresholdSignatureScheme and backUpToClientShareService
-      const result = await client.createWalletAccount({
-        thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
-        backUpToClientShareService: false,
-      })
-      return {
-        accountAddress: result.accountAddress,
-        externalServerKeyShares: result.externalServerKeyShares,
+    // For all other errors, use the original console.error
+    originalConsoleError(...args)
+  }
+
+  try {
+    switch (chainType) {
+      case 'evm': {
+        const client = await getEvmClient()
+        // Temporarily override console.error to suppress "Multiple wallets" errors
+        console.error = suppressedConsoleError
+        try {
+          // Leverage Dynamic SDK return type directly - no unnecessary mapping
+          // Matches NestJS pattern: thresholdSignatureScheme and backUpToClientShareService
+          const result = await client.createWalletAccount({
+            thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
+            backUpToClientShareService: false,
+          })
+          return {
+            accountAddress: result.accountAddress,
+            externalServerKeyShares: result.externalServerKeyShares,
+          }
+        } finally {
+          // Restore original console.error
+          console.error = originalConsoleError
+        }
       }
+      case 'solana': {
+        const client = await getSolanaClient()
+        // Temporarily override console.error to suppress "Multiple wallets" errors
+        console.error = suppressedConsoleError
+        try {
+          // Leverage Dynamic SDK return type directly - no unnecessary mapping
+          // Matches NestJS pattern: thresholdSignatureScheme and backUpToClientShareService
+          const result = await client.createWalletAccount({
+            thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
+            backUpToClientShareService: false,
+          })
+          return {
+            accountAddress: result.accountAddress,
+            externalServerKeyShares: result.externalServerKeyShares,
+          }
+        } finally {
+          // Restore original console.error
+          console.error = originalConsoleError
+        }
+      }
+      default:
+        throw new Error(`Unsupported chain type: ${chainType}`)
     }
-    default:
-      throw new Error(`Unsupported chain type: ${chainType}`)
+  } catch (error) {
+    // Restore console.error if it was overridden (in case of early return)
+    console.error = originalConsoleError
+
+    // Re-throw the error (it will be handled by wallet.service.ts)
+    throw error
   }
 }
