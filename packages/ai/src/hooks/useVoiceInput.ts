@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 export interface UseVoiceInputOptions {
   onTranscript?: (text: string) => void
@@ -16,8 +16,37 @@ export interface UseVoiceInputReturn {
   supported: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SpeechRecognitionType = any
+interface SpeechRecognitionEvent {
+  resultIndex: number
+  results: {
+    length: number
+    [index: number]: {
+      isFinal: boolean
+      [index: number]: { transcript: string }
+      0: { transcript: string }
+    }
+  }
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean
+  interimResults: boolean
+  lang: string
+  start: () => void
+  stop: () => void
+  onstart: (() => void) | null
+  onresult: ((event: SpeechRecognitionEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onend: (() => void) | null
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognition
+}
 
 export function useVoiceInput({
   onTranscript,
@@ -27,7 +56,13 @@ export function useVoiceInput({
   const [isListening, setIsListening] = useState(false)
   const [transcript, setTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [recognition, setRecognition] = useState<SpeechRecognitionType | null>(null)
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null)
+  const onTranscriptRef = useRef(onTranscript)
+
+  // Update ref whenever onTranscript changes
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript
+  }, [onTranscript])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -35,8 +70,9 @@ export function useVoiceInput({
     }
 
     const SpeechRecognition =
-      (window as unknown as { SpeechRecognition?: SpeechRecognitionType }).SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionType })
+      (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructor })
         .webkitSpeechRecognition
 
     if (!SpeechRecognition) {
@@ -54,17 +90,7 @@ export function useVoiceInput({
       setError(null)
     }
 
-    recognitionInstance.onresult = (event: {
-      resultIndex: number
-      results: {
-        length: number
-        [index: number]: {
-          isFinal: boolean
-          [index: number]: { transcript: string }
-          0: { transcript: string }
-        }
-      }
-    }) => {
+    recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
       let interimTranscript = ''
       let finalTranscript = ''
 
@@ -82,12 +108,12 @@ export function useVoiceInput({
       const fullTranscript = finalTranscript || interimTranscript
       setTranscript(fullTranscript.trim())
 
-      if (finalTranscript && onTranscript) {
-        onTranscript(finalTranscript.trim())
+      if (finalTranscript && onTranscriptRef.current) {
+        onTranscriptRef.current(finalTranscript.trim())
       }
     }
 
-    recognitionInstance.onerror = (event: { error: string }) => {
+    recognitionInstance.onerror = (event: SpeechRecognitionErrorEvent) => {
       setError(`Speech recognition error: ${event.error}`)
       setIsListening(false)
     }
@@ -103,7 +129,7 @@ export function useVoiceInput({
         recognitionInstance.stop()
       }
     }
-  }, [continuous, lang, onTranscript])
+  }, [continuous, lang])
 
   const startListening = useCallback(() => {
     if (!recognition || isListening) return

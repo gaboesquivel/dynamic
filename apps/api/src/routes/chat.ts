@@ -5,7 +5,13 @@ import { getUserId } from '../middleware/auth'
 import { createWalletService, getUserWallets } from '../services/wallet.service'
 import { getBalanceService } from '../services/balance.service'
 import { sendTransactionService } from '../services/transaction.service'
-import { WalletSchema, BalanceSchema, SendTransactionResultSchema } from '@vencura/types'
+import {
+  WalletSchema,
+  BalanceSchema,
+  SendTransactionResultSchema,
+  ChainTypeSchema,
+  type ChainType,
+} from '@vencura/types'
 
 const chatMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -27,6 +33,38 @@ const chatRequestSchema = z.object({
   stream: z.boolean().optional(),
 })
 
+// Shared chain type options for tool parameter definitions
+const CHAIN_TYPE_OPTIONS = [
+  'evm',
+  'solana',
+  'cosmos',
+  'bitcoin',
+  'flow',
+  'starknet',
+  'algorand',
+  'sui',
+  'spark',
+  'tron',
+] as const
+
+// Zod schemas for tool input validation
+const createWalletToolInputSchema = z.object({
+  chainType: ChainTypeSchema,
+})
+
+const getBalanceToolInputSchema = z.object({
+  chainId: z.number().int().positive(),
+  chainType: ChainTypeSchema,
+  tokenAddress: z.string().optional(),
+})
+
+const sendTransactionToolInputSchema = z.object({
+  walletId: z.string().min(1),
+  to: z.string().min(1),
+  amount: z.number().nonnegative(),
+  data: z.string().optional(),
+})
+
 // Tool definitions for wallet operations
 const walletTools = [
   {
@@ -46,18 +84,7 @@ const walletTools = [
       properties: {
         chainType: {
           type: 'string',
-          enum: [
-            'evm',
-            'solana',
-            'cosmos',
-            'bitcoin',
-            'flow',
-            'starknet',
-            'algorand',
-            'sui',
-            'spark',
-            'tron',
-          ],
+          enum: CHAIN_TYPE_OPTIONS,
           description: 'The chain type to create the wallet for',
         },
       },
@@ -76,18 +103,7 @@ const walletTools = [
         },
         chainType: {
           type: 'string',
-          enum: [
-            'evm',
-            'solana',
-            'cosmos',
-            'bitcoin',
-            'flow',
-            'starknet',
-            'algorand',
-            'sui',
-            'spark',
-            'tron',
-          ],
+          enum: CHAIN_TYPE_OPTIONS,
           description: 'The chain type',
         },
         tokenAddress: {
@@ -145,10 +161,10 @@ async function executeTool({
     }
 
     case 'createWallet': {
-      const { chainType } = toolCall.arguments as { chainType: string }
+      const validated = createWalletToolInputSchema.parse(toolCall.arguments)
       const result = await createWalletService({
         userId,
-        chainType: chainType as ChainType,
+        chainType: validated.chainType,
       })
       return WalletSchema.parse({
         id: result.id,
@@ -158,33 +174,24 @@ async function executeTool({
     }
 
     case 'getBalance': {
-      const { chainId, chainType, tokenAddress } = toolCall.arguments as {
-        chainId: number
-        chainType: string
-        tokenAddress?: string
-      }
+      const validated = getBalanceToolInputSchema.parse(toolCall.arguments)
       const result = await getBalanceService({
         userId,
-        chainId,
-        chainType: chainType as ChainType,
-        tokenAddress,
+        chainId: validated.chainId,
+        chainType: validated.chainType,
+        tokenAddress: validated.tokenAddress,
       })
       return BalanceSchema.parse(result)
     }
 
     case 'sendTransaction': {
-      const { walletId, to, amount, data } = toolCall.arguments as {
-        walletId: string
-        to: string
-        amount: number
-        data?: string
-      }
+      const validated = sendTransactionToolInputSchema.parse(toolCall.arguments)
       const result = await sendTransactionService({
         userId,
-        walletId,
-        to,
-        amount,
-        data: data ?? undefined,
+        walletId: validated.walletId,
+        to: validated.to,
+        amount: validated.amount,
+        data: validated.data ?? undefined,
       })
       return SendTransactionResultSchema.parse({
         transactionHash: result.transactionHash,

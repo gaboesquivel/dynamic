@@ -178,7 +178,7 @@ The chatbot has access to these wallet operations:
 This package is designed for maximum portability:
 
 - ✅ Works with any React/Next.js app
-- ✅ No vendor lock-in (NestJS backend can deploy anywhere)
+- ✅ No vendor lock-in (Elysia backend API can deploy anywhere)
 - ✅ Standard SSE streaming (works on GCP, AWS, Fly.io, self-hosted)
 - ✅ Provider-agnostic AI SDK usage
 - ✅ Peer dependencies keep bundle size small
@@ -228,7 +228,7 @@ The chatbot requires Dynamic Labs authentication. Users must be signed in to use
 - [@vencura/core](../core/README.md) - TypeScript SDK for Vencura API
 - [@vencura/react](../react/README.md) - React hooks for Vencura API
 - [@vencura/ui](../ui/README.md) - Shared UI components (used by Chatbot component)
-- [apps/api](../../apps/api/README.md) - NestJS backend API
+- [apps/api](../../apps/api/README.md) - Elysia backend API (routes like `walletRoute` are implemented with Elysia)
 
 ## License
 

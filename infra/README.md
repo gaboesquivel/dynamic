@@ -4,7 +4,7 @@ Production-grade infrastructure-as-code for the Vencura API using Pulumi and Goo
 
 ## Overview
 
-This directory contains Pulumi TypeScript infrastructure code for deploying the Vencura NestJS API to Google Cloud Run with Cloud SQL Postgres, VPC networking, Secret Manager, and secure service accounts.
+This directory contains Pulumi TypeScript infrastructure code for deploying the Vencura Elysia API to Google Cloud Run with Cloud SQL Postgres, VPC networking, Secret Manager, and secure service accounts.
 
 ## Architecture Decisions
 
@@ -1112,7 +1112,7 @@ pulumi stack output
 │   Service    │
 │              │
 │  ┌────────┐  │
-│  │ NestJS │  │
+│  │ Elysia │  │
 │  │  App   │  │
 │  └───┬────┘  │
 └──────┼───────┘
