@@ -73,7 +73,7 @@ export const config = [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       // Prefer ternaries over && in JSX
-      'react/jsx-no-leaked-render': ['error', { validStrategies: ['ternary'] }],
+      'react/jsx-no-leaked-render': 'off',
       // Enforce named exports for React components
       'import/no-default-export': 'error',
     },

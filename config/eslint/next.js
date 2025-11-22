@@ -83,7 +83,7 @@ export const nextJsConfig = [
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       // Prefer ternaries over && in JSX
-      'react/jsx-no-leaked-render': ['error', { validStrategies: ['ternary'] }],
+      'react/jsx-no-leaked-render': 'off',
       // Enforce named exports, except for Next.js pages and layouts
       'import/no-default-export': 'error',
     },

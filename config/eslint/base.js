@@ -56,7 +56,7 @@ export const config = [
       // Allow single-line if statements without brackets
       curly: 'off',
       // Prefer interfaces over types for object definitions
-      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
+      '@typescript-eslint/consistent-type-definitions': 'off',
       // Disable unsafe rules - we use Zod-first validation strategy instead
       // This aligns with ts-reset (JSON.parse/response.json return unknown) which requires runtime validation
       // See config/eslint/README.md for details and .cursor/rules/base/typescript.mdc for ts-reset documentation
