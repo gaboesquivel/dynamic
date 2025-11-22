@@ -29,7 +29,7 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
         method: 'POST',
         path: '/wallets',
         body: {
-          chainId: 421614, // Arbitrum Sepolia
+          chainType: 'evm',
         },
         headers: {
           'X-Test-User-Id': 'test-user-123',
@@ -51,9 +51,7 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
 
       expect(wallet).toHaveProperty('id')
       expect(wallet).toHaveProperty('address')
-      expect(wallet).toHaveProperty('network')
       expect(wallet).toHaveProperty('chainType')
-      expect(wallet.network).toBe('421614')
       expect(wallet.chainType).toBe('evm')
     },
   )
@@ -67,7 +65,7 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
         method: 'POST',
         path: '/wallets',
         body: {
-          chainId: 421614,
+          chainType: 'evm',
         },
         headers: {
           'X-Test-User-Id': 'test-user-idempotent',
@@ -92,7 +90,7 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
         method: 'POST',
         path: '/wallets',
         body: {
-          chainId: 421614,
+          chainType: 'evm',
         },
         headers: {
           'X-Test-User-Id': 'test-user-idempotent',
@@ -113,35 +111,35 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
       // Should return same wallet
       expect(secondWallet.id).toBe(firstWallet.id)
       expect(secondWallet.address).toBe(firstWallet.address)
-      expect(secondWallet.network).toBe(firstWallet.network)
+      expect(secondWallet.chainType).toBe(firstWallet.chainType)
     },
   )
 
-  it('should return 404 for unsupported chain', async () => {
+  it('should return 400 for invalid chainType', async () => {
     const response = await testRoute(walletRoute, {
       method: 'POST',
       path: '/wallets',
       body: {
-        chainId: 999999, // Unsupported chain
+        chainType: 'invalid-chain-type', // Invalid chainType - should fail Zod validation
       },
       headers: {
         'X-Test-User-Id': 'test-user-123',
       },
     })
 
-    expect(response.status).toBe(404)
+    // Zod validation should catch this and return 400
+    expect(response.status).toBe(400)
     const data = await response.json()
     expect(data).toHaveProperty('error')
-    expect(data).toHaveProperty('message')
-    expect(data.error).toBe('Unsupported chain')
+    expect(data.error).toBe('Validation error')
   })
 
-  it('should return 400 for invalid chainId format', async () => {
+  it('should return 400 for missing chainType', async () => {
     const response = await testRoute(walletRoute, {
       method: 'POST',
       path: '/wallets',
       body: {
-        // Missing chainId - should fail Zod validation
+        // Missing chainType - should fail Zod validation
       },
       headers: {
         'X-Test-User-Id': 'test-user-123',
@@ -160,7 +158,7 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
         method: 'POST',
         path: '/wallets',
         body: {
-          chainId: 421614,
+          chainType: 'evm',
         },
         headers: {
           'X-Test-User-Id': 'test-user-validation',
@@ -182,7 +180,6 @@ describe.skipIf(!hasDynamicCredentials)('walletRoute', () => {
       const wallet = WalletSchema.parse(data)
       expect(wallet.id).toBeTruthy()
       expect(wallet.address).toBeTruthy()
-      expect(wallet.network).toBeTruthy()
       expect(wallet.chainType).toBeTruthy()
     },
   )

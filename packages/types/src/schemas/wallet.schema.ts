@@ -22,7 +22,7 @@ export type ChainType = z.infer<typeof ChainTypeSchema>
  * Create wallet input schema.
  */
 export const CreateWalletInputSchema = z.object({
-  chainId: z.union([z.number(), z.string()]),
+  chainType: ChainTypeSchema,
 })
 
 export type CreateWalletInput = z.infer<typeof CreateWalletInputSchema>
@@ -33,7 +33,6 @@ export type CreateWalletInput = z.infer<typeof CreateWalletInputSchema>
 export const WalletSchema = z.object({
   id: z.string(),
   address: z.string(),
-  network: z.string(),
   chainType: ChainTypeSchema,
 })
 

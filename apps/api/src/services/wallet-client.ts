@@ -1,6 +1,6 @@
 import type { DynamicEvmWalletClient } from '@dynamic-labs-wallet/node-evm'
 import type { DynamicSolanaWalletClient } from '@dynamic-labs-wallet/node-svm'
-import { getChainType, type ChainMetadata } from '@vencura/lib'
+import { type ChainType } from '@vencura/lib'
 import { zEnv } from '../lib/env'
 
 let evmClient: DynamicEvmWalletClient | null = null
@@ -58,18 +58,11 @@ export async function getSolanaClient(): Promise<DynamicSolanaWalletClient> {
  */
 export async function createWallet({
   userId,
-  chainId,
-  chainMetadata,
+  chainType,
 }: {
   userId: string
-  chainId: number | string
-  chainMetadata: ChainMetadata
+  chainType: ChainType
 }) {
-  const chainType = getChainType(chainId)
-  if (!chainType) {
-    throw new Error(`Could not determine chain type for chain: ${chainId}`)
-  }
-
   // Use dynamic import for ESM module compatibility
   // This matches the pattern used in dynamic-examples/nodejs-omnibus-sweep
   const { ThresholdSignatureScheme } = await import('@dynamic-labs-wallet/node')

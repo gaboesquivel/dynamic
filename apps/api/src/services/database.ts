@@ -10,14 +10,15 @@ import { schema } from '../db/schema'
 async function initializeDatabase(client: PGlite): Promise<void> {
   try {
     // Create key_shares table - stores encrypted server-side key shares for wallet signing
-    // Keyed by address + network (Dynamic network ID)
+    // Keyed by address + chainType (e.g., 'evm', 'solana')
+    // One wallet per chainType, matching DynamicSDK's model
     await client.exec(`
       CREATE TABLE IF NOT EXISTS key_shares (
         address TEXT NOT NULL,
-        network TEXT NOT NULL,
+        chain_type TEXT NOT NULL,
         encrypted_key_shares TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-        PRIMARY KEY (address, network)
+        PRIMARY KEY (address, chain_type)
       )
     `)
   } catch (error) {

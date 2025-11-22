@@ -1,8 +1,12 @@
 import { Elysia } from 'elysia'
-import { createWalletContract, WalletSchema, CreateWalletInputSchema } from '@vencura/types'
+import {
+  createWalletContract,
+  WalletSchema,
+  CreateWalletInputSchema,
+  type ChainType,
+} from '@vencura/types'
 import { createWalletService } from '../services/wallet.service'
 import { getUserId } from '../middleware/auth'
-import { isSupportedChain } from '../services/chain-utils'
 
 export const walletRoute = new Elysia()
   .derive(({ request }) => ({
@@ -12,10 +16,11 @@ export const walletRoute = new Elysia()
     createWalletContract.path,
     async ({ body, userId }) => {
       // Validate body with Zod schema (400 if invalid)
-      let chainId: number | string
+      // ChainType validation is handled by Zod schema
+      let chainType: ChainType
       try {
         const validatedBody = CreateWalletInputSchema.parse(body)
-        chainId = validatedBody.chainId
+        chainType = validatedBody.chainType
       } catch (err) {
         // Zod validation error - return 400
         return new Response(
@@ -30,28 +35,13 @@ export const walletRoute = new Elysia()
         )
       }
 
-      // Validate chain is supported (404 for unsupported chains)
-      if (!isSupportedChain(chainId)) {
-        return new Response(
-          JSON.stringify({
-            error: 'Unsupported chain',
-            message: `Chain ${chainId} is not supported`,
-          }),
-          {
-            status: 404,
-            headers: { 'Content-Type': 'application/json' },
-          },
-        )
-      }
-
       try {
-        const result = await createWalletService({ userId, chainId })
+        const result = await createWalletService({ userId, chainType })
 
         // Validate response matches contract
         const wallet = WalletSchema.parse({
           id: result.id,
           address: result.address,
-          network: result.network,
           chainType: result.chainType,
         })
 
@@ -71,7 +61,7 @@ export const walletRoute = new Elysia()
         // Check if this is a "wallet already exists" error (400 Bad Request)
         if (
           lowerMessage.includes('wallet already exists') ||
-          lowerMessage.includes('multiple wallets per chain') ||
+          lowerMessage.includes('multiple wallets per chaintype') ||
           lowerMessage.includes('multiple wallets are not allowed')
         ) {
           return new Response(
@@ -103,7 +93,7 @@ export const walletRoute = new Elysia()
       detail: {
         summary: 'Create a new custodial wallet',
         description:
-          'Create a wallet on any supported chain. Returns 201 for new wallets, 200 for existing wallets (idempotent).',
+          'Create a wallet for a chain type. Returns 201 for new wallets, 200 for existing wallets (idempotent). One wallet per chainType.',
       },
     },
   )

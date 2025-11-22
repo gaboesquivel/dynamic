@@ -1,116 +1,71 @@
 import { createHash } from 'crypto'
-import { eq } from 'drizzle-orm'
 import { getDatabase } from './database'
 import { keyShares } from '../db/schema'
-import { encryptKeyShare, decryptKeyShare } from './encryption'
+import { encryptKeyShare } from './encryption'
 import { createWallet } from './wallet-client'
-import {
-  getChainMetadata,
-  getDynamicNetworkId,
-  isSupportedChain,
-  getChainType,
-  type ChainMetadata as ChainMetadataType,
-  type ChainType,
-} from './chain-utils'
+import { type ChainType } from './chain-utils'
 
 /**
- * Generate deterministic wallet ID from address and network.
- * Uses SHA-256 hash of address+network to create a deterministic ID.
+ * Generate deterministic wallet ID from address and chainType.
+ * Uses SHA-256 hash of address+chainType to create a deterministic ID.
  */
-function generateWalletId(address: string, network: string): string {
-  const input = `${address}:${network}`
+function generateWalletId(address: string, chainType: string): string {
+  const input = `${address}:${chainType}`
   const hash = createHash('sha256').update(input).digest('hex')
   // Format as UUID v4-like string (but deterministic)
   return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-${hash.slice(16, 20)}-${hash.slice(20, 32)}`
 }
 
 /**
- * Get chain type from Dynamic network ID.
- */
-function getChainTypeFromNetwork(network: string): ChainType {
-  if (network.startsWith('solana-')) return 'solana'
-  // Default to EVM for numeric network IDs
-  return 'evm'
-}
-
-/**
- * Get all wallets for a user (query DB by network).
+ * Get all wallets for a user (query DB by chainType).
  * Note: Schema doesn't track userId, so we return all wallets in key_shares table.
  */
 async function getUserWallets(): Promise<
-  Array<{ id: string; address: string; network: string; chainType: ChainType }>
+  Array<{ id: string; address: string; chainType: ChainType }>
 > {
   const db = await getDatabase()
   const allKeyShares = await db.select().from(keyShares)
 
   return allKeyShares.map(keyShare => {
-    const chainType = getChainTypeFromNetwork(keyShare.network)
-    const id = generateWalletId(keyShare.address, keyShare.network)
+    const id = generateWalletId(keyShare.address, keyShare.chainType)
     return {
       id,
       address: keyShare.address,
-      network: keyShare.network,
-      chainType,
+      chainType: keyShare.chainType as ChainType,
     }
   })
 }
 
 /**
  * Create wallet with idempotent behavior.
- * Matches NestJS logic exactly:
- * 1. Validate chainId and get chain metadata
- * 2. Query DB first using network
- * 3. If found, return 200 with existing wallet
- * 4. Only call Dynamic SDK if DB is empty
- * 5. Create wallet, encrypt, save to DB
- * 6. Return 201 with new wallet
+ * One wallet per chainType, matching DynamicSDK's model.
+ * 1. Query DB first using chainType
+ * 2. If found, return 200 with existing wallet
+ * 3. Only call Dynamic SDK if DB is empty
+ * 4. Create wallet, encrypt, save to DB
+ * 5. Return 201 with new wallet
  */
 export async function createWalletService({
   userId,
-  chainId,
+  chainType,
 }: {
   userId: string
-  chainId: number | string
+  chainType: ChainType
 }): Promise<{
   id: string
   address: string
-  network: string
   chainType: ChainType
   isNew: boolean
 }> {
-  // Validate chain is supported
-  if (!isSupportedChain(chainId)) {
-    throw new Error(
-      `Unsupported chain: ${chainId}. Please provide a valid chain ID or Dynamic network ID.`,
-    )
-  }
-
-  // Get chain metadata and Dynamic network ID
-  const chainMetadata = getChainMetadata(chainId)
-  if (!chainMetadata) {
-    throw new Error(`Invalid chain: ${chainId}`)
-  }
-
-  const dynamicNetworkId = getDynamicNetworkId(chainId)
-  if (!dynamicNetworkId) {
-    throw new Error(`Could not determine Dynamic network ID for chain: ${chainId}`)
-  }
-
-  const chainType = getChainType(chainId)
-  if (!chainType) {
-    throw new Error(`Could not determine chain type for chain: ${chainId}`)
-  }
-
-  // Query DB first - check if wallet exists for this network (idempotent check)
+  // Query DB first - check if wallet exists for this chainType (idempotent check)
   const existingWallets = await getUserWallets()
-  const existingWallet = existingWallets.find(w => w.network === dynamicNetworkId)
+  const existingWallet = existingWallets.find(w => w.chainType === chainType)
 
   // If wallet already exists, return it immediately (idempotent success)
   if (existingWallet) {
     return {
       id: existingWallet.id,
       address: existingWallet.address,
-      network: existingWallet.network,
       chainType: existingWallet.chainType,
       isNew: false,
     }
@@ -120,8 +75,7 @@ export async function createWalletService({
   try {
     const wallet = await createWallet({
       userId,
-      chainId,
-      chainMetadata,
+      chainType,
     })
 
     // Encrypt key shares
@@ -133,23 +87,22 @@ export async function createWalletService({
       .insert(keyShares)
       .values({
         address: wallet.accountAddress,
-        network: dynamicNetworkId,
+        chainType,
         encryptedKeyShares: keySharesEncrypted,
       })
       .onConflictDoUpdate({
-        target: [keyShares.address, keyShares.network],
+        target: [keyShares.address, keyShares.chainType],
         set: {
           encryptedKeyShares: keySharesEncrypted,
         },
       })
 
     // Compute walletId deterministically
-    const walletId = generateWalletId(wallet.accountAddress, dynamicNetworkId)
+    const walletId = generateWalletId(wallet.accountAddress, chainType)
 
     return {
       id: walletId,
       address: wallet.accountAddress,
-      network: dynamicNetworkId,
       chainType,
       isNew: true,
     }
@@ -181,23 +134,22 @@ export async function createWalletService({
     // If it's a wallet creation error, check DB again (might have been created in race condition)
     if (isWalletCreationError) {
       const finalCheckWallets = await getUserWallets()
-      const finalCheckWallet = finalCheckWallets.find(w => w.network === dynamicNetworkId)
+      const finalCheckWallet = finalCheckWallets.find(w => w.chainType === chainType)
       if (finalCheckWallet) {
         return {
           id: finalCheckWallet.id,
           address: finalCheckWallet.address,
-          network: finalCheckWallet.network,
           chainType: finalCheckWallet.chainType,
           isNew: false,
         }
       }
 
       // If we get a wallet creation error but no wallet in DB, it's likely a "multiple wallets" error
-      // that was wrapped. Dynamic SDK prevents multiple wallets per chain, so if creation fails,
+      // that was wrapped. Dynamic SDK prevents multiple wallets per chainType, so if creation fails,
       // it means a wallet already exists in Dynamic SDK's system (possibly from a previous test run).
       // Throw a user-friendly error indicating wallet already exists.
       throw new Error(
-        `Wallet already exists for chain ${chainId}. Multiple wallets per chain are not allowed.`,
+        `Wallet already exists for chainType ${chainType}. Multiple wallets per chainType are not allowed.`,
       )
     }
 
